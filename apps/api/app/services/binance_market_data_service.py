@@ -29,7 +29,7 @@ class BinanceMarketDataService:
                 if errors:
                     if len(errors) == 1:
                         raise errors[0]
-                    raise BaseExceptionGroup('fallos en gather de Binance', errors)
+                    raise ExceptionGroup('fallos en gather de Binance', errors)
                 klines_resp, ticker_resp, premium_resp, oi_resp = results
                 klines_resp.raise_for_status()
                 ticker_resp.raise_for_status()
@@ -77,9 +77,6 @@ class BinanceMarketDataService:
             self.db.add(snapshot)
             self.db.commit()
             return MarketIngestionResponse(symbol=symbol, timeframe=timeframe, candles_inserted=candles_inserted, snapshot_saved=True)
-        except BaseExceptionGroup:
-            self.db.rollback()
-            raise
         except Exception:
             self.db.rollback()
             raise

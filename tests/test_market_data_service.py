@@ -61,23 +61,19 @@ async def _run_ingest_commit_error():
     service = BinanceMarketDataService(db)
 
     original_commit = db.commit
-    original_rollback = db.rollback
-    rollback_spy = MagicMock(side_effect=original_rollback)
-
     def broken_commit():
         raise SQLAlchemyError('commit failed')
 
     with patch('httpx.AsyncClient.get', new=AsyncMock(side_effect=_fake_get_success)):
-        db.commit = broken_commit
-        db.rollback = rollback_spy
-        try:
-            await service.ingest_symbol('BTCUSDT', '15m', 1)
-        except SQLAlchemyError:
-            pass
-        finally:
-            db.commit = original_commit
-            db.rollback = original_rollback
-        return db, rollback_spy
+        with patch.object(db, 'rollback', wraps=db.rollback) as rollback_spy:
+            db.commit = broken_commit
+            try:
+                await service.ingest_symbol('BTCUSDT', '15m', 1)
+            except SQLAlchemyError:
+                pass
+            finally:
+                db.commit = original_commit
+            return db, rollback_spy
 
 
 def test_market_ingestion_rolls_back_session_on_commit_error():
