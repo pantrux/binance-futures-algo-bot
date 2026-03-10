@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass
 
-from trading_bot.engines.market_regime import MarketRegimeClassifier
-from trading_bot.models.signals import MarketContext, SignalPack
+from apps.worker.trading_bot.engines.market_regime import MarketRegimeClassifier
+from apps.worker.trading_bot.models.signals import MarketContext, SignalPack
 
 
 @dataclass

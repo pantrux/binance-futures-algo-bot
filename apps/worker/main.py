@@ -1,17 +1,17 @@
 import asyncio
 
-from trading_bot.config.settings import WorkerSettings
-from trading_bot.services.api_client import TradingBotApiClient
-from trading_bot.services.demo_signal_service import DemoSignalService
+from apps.worker.trading_bot.config.settings import WorkerSettings
+from apps.worker.trading_bot.services.api_client import TradingBotApiClient
+from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalService
 
 
 async def main() -> None:
     settings = WorkerSettings()
-    demo_service = DemoSignalService()
     api_client = TradingBotApiClient(settings.api_base_url)
+    signal_service = HybridSignalService(api_client=api_client, timeframe="15m", limit=200)
 
     for symbol in settings.symbols:
-        signals, context, thesis, levels = demo_service.build_signal_pack(symbol)
+        signals, context, thesis, levels, meta = await signal_service.build_signal_pack(symbol)
         payload = {
             "symbol": symbol,
             "side": "long",
@@ -36,7 +36,7 @@ async def main() -> None:
             },
         }
         created = await api_client.create_trade_plan(payload)
-        print({"symbol": symbol, "trade_plan": created})
+        print({"symbol": symbol, "source": meta.source, "reason": meta.reason, "trade_plan": created})
         if settings.paper_trading and created.get("status") == "approved":
             executed = await api_client.execute_paper_trade(created["id"])
             print({"symbol": symbol, "paper_execution": executed})
