@@ -1,5 +1,8 @@
+import asyncio
+
 import httpx
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from apps.api.app.core.settings import settings
@@ -13,57 +16,63 @@ class BinanceMarketDataService:
         self.base_url = settings.binance_futures_base_url.rstrip('/')
 
     async def ingest_symbol(self, symbol: str, timeframe: str = '15m', limit: int = 50) -> MarketIngestionResponse:
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            klines_resp = await client.get(f'{self.base_url}/fapi/v1/klines', params={'symbol': symbol, 'interval': timeframe, 'limit': limit})
-            klines_resp.raise_for_status()
-            ticker_resp = await client.get(f'{self.base_url}/fapi/v1/ticker/24hr', params={'symbol': symbol})
-            ticker_resp.raise_for_status()
-            premium_resp = await client.get(f'{self.base_url}/fapi/v1/premiumIndex', params={'symbol': symbol})
-            premium_resp.raise_for_status()
-            oi_resp = await client.get(f'{self.base_url}/fapi/v1/openInterest', params={'symbol': symbol})
-            oi_resp.raise_for_status()
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                klines_resp, ticker_resp, premium_resp, oi_resp = await asyncio.gather(
+                    client.get(f'{self.base_url}/fapi/v1/klines', params={'symbol': symbol, 'interval': timeframe, 'limit': limit}),
+                    client.get(f'{self.base_url}/fapi/v1/ticker/24hr', params={'symbol': symbol}),
+                    client.get(f'{self.base_url}/fapi/v1/premiumIndex', params={'symbol': symbol}),
+                    client.get(f'{self.base_url}/fapi/v1/openInterest', params={'symbol': symbol}),
+                )
+                klines_resp.raise_for_status()
+                ticker_resp.raise_for_status()
+                premium_resp.raise_for_status()
+                oi_resp.raise_for_status()
 
-        klines = klines_resp.json()
-        ticker = ticker_resp.json()
-        premium = premium_resp.json()
-        open_interest = oi_resp.json()
+            klines = klines_resp.json()
+            ticker = ticker_resp.json()
+            premium = premium_resp.json()
+            open_interest = oi_resp.json()
 
-        candles_inserted = 0
-        existing_open_times = set(self.db.scalars(select(MarketCandle.open_time_ms).where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)).all())
-        for row in klines:
-            open_time = int(row[0])
-            if open_time in existing_open_times:
-                continue
-            candle = MarketCandle(
+            candles_inserted = 0
+            existing_open_times = set(self.db.scalars(select(MarketCandle.open_time_ms).where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)).all())
+            for row in klines:
+                open_time = int(row[0])
+                if open_time in existing_open_times:
+                    continue
+                candle = MarketCandle(
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    open_time_ms=open_time,
+                    close_time_ms=int(row[6]),
+                    open_price=float(row[1]),
+                    high_price=float(row[2]),
+                    low_price=float(row[3]),
+                    close_price=float(row[4]),
+                    volume=float(row[5]),
+                    quote_volume=float(row[7]),
+                    trades_count=int(row[8]),
+                    source='binance',
+                )
+                self.db.add(candle)
+                candles_inserted += 1
+
+            snapshot = MarketSnapshot(
                 symbol=symbol,
-                timeframe=timeframe,
-                open_time_ms=open_time,
-                close_time_ms=int(row[6]),
-                open_price=float(row[1]),
-                high_price=float(row[2]),
-                low_price=float(row[3]),
-                close_price=float(row[4]),
-                volume=float(row[5]),
-                quote_volume=float(row[7]),
-                trades_count=int(row[8]),
+                last_price=float(ticker['lastPrice']),
+                mark_price=float(premium['markPrice']),
+                index_price=float(premium['indexPrice']),
+                open_interest=float(open_interest['openInterest']),
+                funding_rate=float(premium.get('lastFundingRate', 0) or 0),
+                volume_24h=float(ticker['quoteVolume']),
                 source='binance',
             )
-            self.db.add(candle)
-            candles_inserted += 1
-
-        snapshot = MarketSnapshot(
-            symbol=symbol,
-            last_price=float(ticker['lastPrice']),
-            mark_price=float(premium['markPrice']),
-            index_price=float(premium['indexPrice']),
-            open_interest=float(open_interest['openInterest']),
-            funding_rate=float(premium.get('lastFundingRate', 0) or 0),
-            volume_24h=float(ticker['quoteVolume']),
-            source='binance',
-        )
-        self.db.add(snapshot)
-        self.db.commit()
-        return MarketIngestionResponse(symbol=symbol, timeframe=timeframe, candles_inserted=candles_inserted, snapshot_saved=True)
+            self.db.add(snapshot)
+            self.db.commit()
+            return MarketIngestionResponse(symbol=symbol, timeframe=timeframe, candles_inserted=candles_inserted, snapshot_saved=True)
+        except (httpx.HTTPError, ValueError, KeyError, SQLAlchemyError):
+            self.db.rollback()
+            raise
 
     def list_candles(self, symbol: str, timeframe: str = '15m', limit: int = 50) -> list[MarketCandleRead]:
         rows = self.db.scalars(select(MarketCandle).where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe).order_by(MarketCandle.open_time_ms.desc()).limit(limit)).all()

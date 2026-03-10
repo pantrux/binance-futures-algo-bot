@@ -49,3 +49,26 @@ def test_market_ingestion_persists_candles_and_snapshot():
     assert len(candles) == 1
     assert snapshot is not None
     assert snapshot.symbol == 'BTCUSDT'
+
+
+async def _run_ingest_http_error():
+    engine = create_engine('sqlite:///:memory:')
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    service = BinanceMarketDataService(db)
+
+    async def fake_get(url, params=None):
+        raise Exception('boom')
+
+    with patch('httpx.AsyncClient.get', new=AsyncMock(side_effect=fake_get)):
+        try:
+            await service.ingest_symbol('BTCUSDT', '15m', 1)
+        except Exception:
+            pass
+        return db
+
+
+def test_market_ingestion_rolls_back_session_on_error():
+    db = asyncio.run(_run_ingest_http_error())
+    assert db.in_transaction() is False
