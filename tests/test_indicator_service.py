@@ -15,9 +15,10 @@ def test_indicator_snapshot_computes_values():
     candles = []
     base = 100.0
     pattern = [1.8, -1.1, 2.2, -0.9, 1.4, -1.6, 2.0, -0.7]
+    close = base
     for i in range(1, 70):
         step = pattern[i % len(pattern)]
-        close = max(5.0, base + step * i)
+        close = max(5.0, close + step)
         candles.append(MarketCandle(
             symbol='BTCUSDT',
             timeframe='15m',
