@@ -82,8 +82,8 @@ class HybridSignalService:
         )
 
         entry = self._entry_price(market)
-        levels = self._levels_from_atr(entry, atr_pct)
         side = "short" if trend_bias == "bearish" and momentum_bias == "bearish" else "long"
+        levels = self._levels_from_atr(entry, atr_pct, side)
 
         thesis = self._thesis(trend_bias, momentum_bias, vol_regime)
         pack = SignalPack(technical=technical, fundamental=fundamental, sentiment=sentiment, confidence=confidence)
@@ -103,12 +103,16 @@ class HybridSignalService:
     def _normalize_atr_fraction(atr_pct: float) -> float:
         return atr_pct / 100.0 if atr_pct > 1 else atr_pct
 
-    def _levels_from_atr(self, entry: float, atr_pct: float) -> dict[str, float]:
+    def _levels_from_atr(self, entry: float, atr_pct: float, side: str = "long") -> dict[str, float]:
         atr_fraction = self._normalize_atr_fraction(atr_pct)
         stop_dist = max(0.002, atr_fraction * 1.2)
         tp_dist = max(0.004, atr_fraction * 2.0)
-        stop = entry * (1.0 - stop_dist)
-        take_profit = entry * (1.0 + tp_dist)
+        if side == "short":
+            stop = entry * (1.0 + stop_dist)
+            take_profit = entry * (1.0 - tp_dist)
+        else:
+            stop = entry * (1.0 - stop_dist)
+            take_profit = entry * (1.0 + tp_dist)
         return {"entry": round(entry, 4), "stop": round(stop, 4), "take_profit": round(take_profit, 4)}
 
     @staticmethod

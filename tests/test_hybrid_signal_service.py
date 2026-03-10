@@ -91,3 +91,27 @@ def test_levels_from_atr_accepts_percentage_values():
 
     assert levels["stop"] > 0
     assert levels["take_profit"] > 100.0
+
+
+def test_hybrid_uses_short_side_and_inverted_levels_for_bearish_market():
+    snapshot = {
+        "symbol": "BTCUSDT",
+        "timeframe": "15m",
+        "last_candle_close_ms": 123,
+        "trend_bias": "bearish",
+        "momentum_bias": "bearish",
+        "volatility_regime": "medium",
+        "ema_spread_pct": -0.12,
+        "atr_pct": 0.01,
+        "rsi_14": 40.0,
+        "momentum_10": -2.0,
+    }
+    market = {"mark_price": 50000.0, "volume_24h": 1_000_000.0}
+    service = HybridSignalService(api_client=FakeApiClient(snapshot=snapshot, market=market))
+
+    signals, context, thesis, levels, meta = asyncio.run(service.build_signal_pack("BTCUSDT"))
+
+    assert meta.source == "market"
+    assert meta.side == "short"
+    assert levels["take_profit"] < levels["entry"] < levels["stop"]
+    assert signals.technical < 60
