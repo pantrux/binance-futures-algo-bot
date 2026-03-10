@@ -1,3 +1,4 @@
+import asyncio
 import math
 from dataclasses import dataclass
 
@@ -7,22 +8,12 @@ from apps.worker.trading_bot.services.demo_signal_service import DemoSignalServi
 
 @dataclass(frozen=True)
 class HybridSignalResult:
-    source: str  # 'market' | 'demo'
+    source: str
     reason: str
+    side: str
 
 
 class HybridSignalService:
-    """Construye un paquete de señales usando datos reales (API) cuando hay suficiente información.
-
-    Estrategia:
-    1) Intentar GET /signals/{symbol} (y /market/snapshot/{symbol})
-    2) Si falta data o falla la API, fallback controlado a DemoSignalService
-
-    Nota: este worker genera los campos requeridos por /trade-plans (SignalPack + MarketContext + niveles)
-    a partir de un snapshot de señales (bias/regime/features). Es una aproximación deliberadamente simple
-    para el corte mínimo del PR-7.
-    """
-
     def __init__(
         self,
         api_client,
@@ -39,31 +30,32 @@ class HybridSignalService:
         self, symbol: str
     ) -> tuple[SignalPack, MarketContext, str, dict[str, float], HybridSignalResult]:
         try:
-            snapshot = await self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
-            market = await self.api_client.get_market_snapshot(symbol)
+            snapshot, market = await asyncio.gather(
+                self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit),
+                self.api_client.get_market_snapshot(symbol),
+            )
             if not self._is_snapshot_usable(snapshot):
-                raise ValueError("snapshot incompleto (candles/indicadores insuficientes)")
+                raise ValueError("snapshot_incompleto")
+            if market is None:
+                raise ValueError("market_snapshot_missing")
 
-            pack, context, thesis, levels = self._build_from_market(symbol=symbol, snapshot=snapshot, market=market)
-            return pack, context, thesis, levels, HybridSignalResult(source="market", reason="ok")
-        except Exception as exc:  # noqa: BLE001 (fallback intentionally broad)
+            pack, context, thesis, levels, side = self._build_from_market(symbol=symbol, snapshot=snapshot, market=market)
+            return pack, context, thesis, levels, HybridSignalResult(source="market", reason="ok", side=side)
+        except Exception as exc:  # noqa: BLE001
             pack, context, thesis, levels = self.demo_service.build_signal_pack(symbol)
-            return pack, context, thesis, levels, HybridSignalResult(source="demo", reason=str(exc))
+            side = "short" if pack.technical < 50 and pack.sentiment < 50 else "long"
+            return pack, context, thesis, levels, HybridSignalResult(source="demo", reason=str(exc), side=side)
 
     @staticmethod
-    def _is_snapshot_usable(snapshot: dict) -> bool:
-        # El endpoint /signals/{symbol} ya valida candles/indicadores; pero si llega 200 con None, lo tratamos como insuficiente.
+    def _is_snapshot_usable(snapshot: dict | None) -> bool:
+        if not snapshot:
+            return False
         required_any = ["trend_bias", "momentum_bias", "volatility_regime"]
         if any(snapshot.get(k) in (None, "unknown") for k in required_any):
             return False
-        # Necesitamos al menos last_candle_close_ms y atr_pct para niveles/volatilidad.
-        if snapshot.get("last_candle_close_ms") is None:
-            return False
-        if snapshot.get("atr_pct") is None:
-            return False
-        return True
+        return snapshot.get("last_candle_close_ms") is not None and snapshot.get("atr_pct") is not None
 
-    def _build_from_market(self, symbol: str, snapshot: dict, market: dict | None) -> tuple[SignalPack, MarketContext, str, dict[str, float]]:
+    def _build_from_market(self, symbol: str, snapshot: dict, market: dict) -> tuple[SignalPack, MarketContext, str, dict[str, float], str]:
         trend_bias = snapshot.get("trend_bias", "unknown")
         momentum_bias = snapshot.get("momentum_bias", "unknown")
         vol_regime = snapshot.get("volatility_regime", "unknown")
@@ -77,7 +69,7 @@ class HybridSignalService:
         sentiment = 50.0
         confidence = self._confidence_score(vol_regime, atr_pct)
 
-        volatility_pct = max(0.0, atr_pct * 100.0)
+        volatility_pct = max(0.0, self._normalize_atr_fraction(atr_pct) * 100.0)
         trend_strength = self._trend_strength(ema_spread_pct)
         liquidity_score = self._liquidity_score(market)
 
@@ -91,15 +83,15 @@ class HybridSignalService:
 
         entry = self._entry_price(market)
         levels = self._levels_from_atr(entry, atr_pct)
+        side = "short" if trend_bias == "bearish" and momentum_bias == "bearish" else "long"
 
         thesis = self._thesis(trend_bias, momentum_bias, vol_regime)
         pack = SignalPack(technical=technical, fundamental=fundamental, sentiment=sentiment, confidence=confidence)
-        return pack, context, thesis, levels
+        return pack, context, thesis, levels, side
 
     @staticmethod
     def _entry_price(market: dict | None) -> float:
         if not market:
-            # fallback seguro si no hay snapshot de mercado: entry dummy para no crashear; el risk-engine debería filtrar
             return 1.0
         for key in ("mark_price", "last_price", "index_price"):
             value = market.get(key)
@@ -108,47 +100,39 @@ class HybridSignalService:
         return 1.0
 
     @staticmethod
-    def _levels_from_atr(entry: float, atr_pct: float) -> dict[str, float]:
-        # Default long (corte mínimo).
-        # Stop y TP protegidos contra atr_pct ridículo.
-        stop_dist = max(0.002, atr_pct * 1.2)
-        tp_dist = max(0.004, atr_pct * 2.0)
+    def _normalize_atr_fraction(atr_pct: float) -> float:
+        return atr_pct / 100.0 if atr_pct > 1 else atr_pct
+
+    def _levels_from_atr(self, entry: float, atr_pct: float) -> dict[str, float]:
+        atr_fraction = self._normalize_atr_fraction(atr_pct)
+        stop_dist = max(0.002, atr_fraction * 1.2)
+        tp_dist = max(0.004, atr_fraction * 2.0)
         stop = entry * (1.0 - stop_dist)
         take_profit = entry * (1.0 + tp_dist)
-        return {"entry": entry, "stop": stop, "take_profit": take_profit}
+        return {"entry": round(entry, 4), "stop": round(stop, 4), "take_profit": round(take_profit, 4)}
 
     @staticmethod
     def _bias_score(bias: str) -> float:
-        return {
-            "bullish": 80.0,
-            "neutral": 55.0,
-            "bearish": 30.0,
-        }.get(bias, 50.0)
+        return {"bullish": 80.0, "neutral": 55.0, "bearish": 30.0}.get(bias, 50.0)
 
     def _technical_score(self, trend_bias: str, momentum_bias: str, rsi_14: float | None, momentum_10: float | None) -> float:
         base = 0.6 * self._bias_score(trend_bias) + 0.4 * self._bias_score(momentum_bias)
-        # Ajustes suaves
         if rsi_14 is not None:
-            # RSI centrado en 50, penaliza extremos
             base += max(-8.0, min(8.0, (50.0 - abs(rsi_14 - 50.0)) / 6.0 - 4.0))
         if momentum_10 is not None:
             base += max(-6.0, min(6.0, float(momentum_10) / 2.0))
         return max(0.0, min(100.0, base))
 
-    @staticmethod
-    def _confidence_score(vol_regime: str, atr_pct: float) -> float:
-        # Volatilidad alta => menos confianza.
+    def _confidence_score(self, vol_regime: str, atr_pct: float) -> float:
         vol_penalty = {"low": 0.0, "medium": 6.0, "high": 12.0}.get(vol_regime, 8.0)
-        atr_penalty = max(0.0, min(20.0, atr_pct * 200.0))  # 0.10 atr => 20 penalty
+        atr_penalty = max(0.0, min(20.0, self._normalize_atr_fraction(atr_pct) * 200.0))
         return max(0.0, min(100.0, 75.0 - vol_penalty - atr_penalty))
 
     @staticmethod
     def _trend_strength(ema_spread_pct: float | None) -> float:
         if ema_spread_pct is None:
             return 50.0
-        # ema_spread_pct ya es porcentaje; escalamos a 0..100
-        strength = abs(float(ema_spread_pct)) * 1200.0
-        return max(0.0, min(100.0, strength))
+        return max(0.0, min(100.0, abs(float(ema_spread_pct)) * 1200.0))
 
     @staticmethod
     def _liquidity_score(market: dict | None) -> float:
@@ -157,7 +141,6 @@ class HybridSignalService:
         vol = market.get("volume_24h")
         if vol is None:
             return 50.0
-        # Escala logarítmica: 10^3 => 60, 10^4 => 80, 10^5 => 100 cap
         score = math.log10(float(vol) + 1.0) * 20.0
         return max(0.0, min(100.0, score))
 

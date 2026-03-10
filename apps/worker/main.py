@@ -14,7 +14,7 @@ async def main() -> None:
         signals, context, thesis, levels, meta = await signal_service.build_signal_pack(symbol)
         payload = {
             "symbol": symbol,
-            "side": "long",
+            "side": meta.side,
             "entry_price": levels["entry"],
             "stop_loss": levels["stop"],
             "take_profit": levels["take_profit"],

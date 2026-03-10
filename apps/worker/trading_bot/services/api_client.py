@@ -17,12 +17,14 @@ class TradingBotApiClient:
             response.raise_for_status()
             return response.json()
 
-    async def get_signal_snapshot(self, symbol: str, timeframe: str = "15m", limit: int = 200) -> dict:
+    async def get_signal_snapshot(self, symbol: str, timeframe: str = "15m", limit: int = 200) -> dict | None:
         async with httpx.AsyncClient(timeout=20.0) as client:
             response = await client.get(
                 f"{self.base_url}/signals/{symbol}",
                 params={"timeframe": timeframe, "limit": limit},
             )
+            if response.status_code in (400, 404):
+                return None
             response.raise_for_status()
             return response.json()
 
