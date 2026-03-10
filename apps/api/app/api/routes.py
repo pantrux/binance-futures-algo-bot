@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from apps.api.app.api.deps import get_db
 from apps.api.app.schemas.dashboard import DashboardSummary
+from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.market_data import MarketCandleRead, MarketIngestionResponse, MarketSnapshotRead
 from apps.api.app.services.binance_market_data_service import BinanceMarketDataService
 from apps.api.app.schemas.paper_trading import PaperExecutionResponse
@@ -11,6 +12,7 @@ from apps.api.app.schemas.trade_plan_read import TradePlanRead
 from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.dashboard_service import DashboardService
+from apps.api.app.services.indicator_service import IndicatorService
 from apps.api.app.services.paper_trading_service import PaperTradingService
 from apps.api.app.services.risk_engine import RiskEngine
 from apps.api.app.services.trade_plan_query_service import TradePlanQueryService
@@ -48,6 +50,16 @@ def latest_market_snapshot(symbol: str, db: Session = Depends(get_db)) -> Market
 @router.get("/dashboard/summary", response_model=DashboardSummary)
 def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
     return DashboardService(db).summary()
+
+
+@router.get("/indicators/{symbol}", response_model=IndicatorSnapshot)
+def indicator_snapshot(symbol: str, timeframe: str = '15m', limit: int = Query(default=200, ge=22, le=1000), db: Session = Depends(get_db)) -> IndicatorSnapshot:
+    snapshot = IndicatorService(db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
+    if snapshot.candles_used == 0:
+        raise HTTPException(status_code=404, detail=f"No hay candles para {symbol} en timeframe {timeframe}")
+    if any(value is None for value in (snapshot.ema_9, snapshot.ema_21, snapshot.rsi_14, snapshot.atr_14, snapshot.momentum_10)):
+        raise HTTPException(status_code=400, detail=f"Candles insuficientes para calcular indicadores de {symbol} en timeframe {timeframe}")
+    return snapshot
 
 
 @router.get("/trade-plans", response_model=list[TradePlanRead])
