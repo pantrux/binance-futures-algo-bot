@@ -5,6 +5,7 @@ class IndicatorSnapshot(BaseModel):
     symbol: str
     timeframe: str
     candles_used: int
+    last_candle_close_ms: int | None
     ema_9: float | None
     ema_21: float | None
     rsi_14: float | None

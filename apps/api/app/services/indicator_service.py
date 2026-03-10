@@ -79,6 +79,7 @@ class IndicatorService:
             symbol=symbol,
             timeframe=timeframe,
             candles_used=len(closes),
+            last_candle_close_ms=rows[-1].close_time_ms if rows else None,
             ema_9=self._ema(closes, 9),
             ema_21=self._ema(closes, 21),
             rsi_14=self._rsi(closes, 14),

@@ -38,6 +38,7 @@ def test_indicator_snapshot_computes_values():
 
     snapshot = IndicatorService(db).snapshot('BTCUSDT', '15m', 100)
     assert snapshot.candles_used == 69
+    assert snapshot.last_candle_close_ms == 70
     assert snapshot.ema_9 is not None
     assert snapshot.ema_21 is not None
     assert snapshot.rsi_14 is not None
