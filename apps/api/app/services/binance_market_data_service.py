@@ -18,12 +18,17 @@ class BinanceMarketDataService:
     async def ingest_symbol(self, symbol: str, timeframe: str = '15m', limit: int = 50) -> MarketIngestionResponse:
         try:
             async with httpx.AsyncClient(timeout=20.0) as client:
-                klines_resp, ticker_resp, premium_resp, oi_resp = await asyncio.gather(
+                results = await asyncio.gather(
                     client.get(f'{self.base_url}/fapi/v1/klines', params={'symbol': symbol, 'interval': timeframe, 'limit': limit}),
                     client.get(f'{self.base_url}/fapi/v1/ticker/24hr', params={'symbol': symbol}),
                     client.get(f'{self.base_url}/fapi/v1/premiumIndex', params={'symbol': symbol}),
                     client.get(f'{self.base_url}/fapi/v1/openInterest', params={'symbol': symbol}),
+                    return_exceptions=True,
                 )
+                for result in results:
+                    if isinstance(result, BaseException):
+                        raise result
+                klines_resp, ticker_resp, premium_resp, oi_resp = results
                 klines_resp.raise_for_status()
                 ticker_resp.raise_for_status()
                 premium_resp.raise_for_status()
