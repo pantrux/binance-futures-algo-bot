@@ -54,7 +54,10 @@ def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
 
 @router.get("/indicators/{symbol}", response_model=IndicatorSnapshot)
 def indicator_snapshot(symbol: str, timeframe: str = '15m', limit: int = 200, db: Session = Depends(get_db)) -> IndicatorSnapshot:
-    return IndicatorService(db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
+    snapshot = IndicatorService(db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
+    if snapshot.candles_used == 0:
+        raise HTTPException(status_code=404, detail=f"No hay candles para {symbol} en timeframe {timeframe}")
+    return snapshot
 
 
 @router.get("/trade-plans", response_model=list[TradePlanRead])

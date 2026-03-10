@@ -14,8 +14,10 @@ def test_indicator_snapshot_computes_values():
 
     candles = []
     base = 100.0
-    for i in range(1, 50):
-        close = base + i
+    pattern = [1.8, -1.1, 2.2, -0.9, 1.4, -1.6, 2.0, -0.7]
+    for i in range(1, 70):
+        step = pattern[i % len(pattern)]
+        close = base + step * i
         candles.append(MarketCandle(
             symbol='BTCUSDT',
             timeframe='15m',
@@ -33,10 +35,11 @@ def test_indicator_snapshot_computes_values():
     db.add_all(candles)
     db.commit()
 
-    snapshot = IndicatorService(db).snapshot('BTCUSDT', '15m', 50)
-    assert snapshot.candles_used == 49
+    snapshot = IndicatorService(db).snapshot('BTCUSDT', '15m', 100)
+    assert snapshot.candles_used == 69
     assert snapshot.ema_9 is not None
     assert snapshot.ema_21 is not None
     assert snapshot.rsi_14 is not None
+    assert 0 < snapshot.rsi_14 < 100
     assert snapshot.atr_14 is not None
     assert snapshot.momentum_10 is not None

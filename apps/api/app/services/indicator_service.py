@@ -10,26 +10,13 @@ class IndicatorService:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def _load_closes(self, symbol: str, timeframe: str, limit: int) -> list[float]:
-        rows = self.db.scalars(
+    def _load_rows(self, symbol: str, timeframe: str, limit: int) -> list[MarketCandle]:
+        return self.db.scalars(
             select(MarketCandle)
             .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
             .order_by(MarketCandle.open_time_ms.asc())
             .limit(limit)
         ).all()
-        return [r.close_price for r in rows]
-
-    def _load_hlc(self, symbol: str, timeframe: str, limit: int) -> tuple[list[float], list[float], list[float]]:
-        rows = self.db.scalars(
-            select(MarketCandle)
-            .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
-            .order_by(MarketCandle.open_time_ms.asc())
-            .limit(limit)
-        ).all()
-        highs = [r.high_price for r in rows]
-        lows = [r.low_price for r in rows]
-        closes = [r.close_price for r in rows]
-        return highs, lows, closes
 
     @staticmethod
     def _ema(values: list[float], period: int) -> float | None:
@@ -82,8 +69,10 @@ class IndicatorService:
         return round(values[-1] - values[-1 - period], 6)
 
     def snapshot(self, symbol: str, timeframe: str = '15m', limit: int = 200) -> IndicatorSnapshot:
-        closes = self._load_closes(symbol, timeframe, limit)
-        highs, lows, closes_hlc = self._load_hlc(symbol, timeframe, limit)
+        rows = self._load_rows(symbol, timeframe, limit)
+        closes = [r.close_price for r in rows]
+        highs = [r.high_price for r in rows]
+        lows = [r.low_price for r in rows]
         return IndicatorSnapshot(
             symbol=symbol,
             timeframe=timeframe,
@@ -91,6 +80,6 @@ class IndicatorService:
             ema_9=self._ema(closes, 9),
             ema_21=self._ema(closes, 21),
             rsi_14=self._rsi(closes, 14),
-            atr_14=self._atr(highs, lows, closes_hlc, 14),
+            atr_14=self._atr(highs, lows, closes, 14),
             momentum_10=self._momentum(closes, 10),
         )
