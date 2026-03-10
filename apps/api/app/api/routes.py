@@ -57,6 +57,8 @@ def indicator_snapshot(symbol: str, timeframe: str = '15m', limit: int = Query(d
     snapshot = IndicatorService(db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
     if snapshot.candles_used == 0:
         raise HTTPException(status_code=404, detail=f"No hay candles para {symbol} en timeframe {timeframe}")
+    if all(value is None for value in (snapshot.ema_9, snapshot.ema_21, snapshot.rsi_14, snapshot.atr_14, snapshot.momentum_10)):
+        raise HTTPException(status_code=422, detail=f"Candles insuficientes para calcular indicadores de {symbol} en timeframe {timeframe}")
     return snapshot
 
 
