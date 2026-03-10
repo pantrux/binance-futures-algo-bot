@@ -20,7 +20,7 @@ class IndicatorService:
 
     @staticmethod
     def _ema(values: list[float], period: int) -> float | None:
-        if len(values) < period:
+        if len(values) <= period:
             return None
         k = 2 / (period + 1)
         ema = fmean(values[:period])
@@ -42,6 +42,8 @@ class IndicatorService:
         for i in range(period, len(gains)):
             avg_gain = ((avg_gain * (period - 1)) + gains[i]) / period
             avg_loss = ((avg_loss * (period - 1)) + losses[i]) / period
+        if avg_loss == 0 and avg_gain == 0:
+            return 50.0
         if avg_loss == 0:
             return 100.0
         rs = avg_gain / avg_loss

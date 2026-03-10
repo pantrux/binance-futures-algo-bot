@@ -42,4 +42,6 @@ def test_indicator_snapshot_computes_values():
     assert snapshot.rsi_14 is not None
     assert 0 < snapshot.rsi_14 < 100
     assert snapshot.atr_14 is not None
+    assert snapshot.atr_14 > 0
     assert snapshot.momentum_10 is not None
+    assert abs(snapshot.momentum_10) > 0
