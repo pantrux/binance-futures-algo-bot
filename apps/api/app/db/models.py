@@ -75,3 +75,37 @@ class RiskEvent(Base):
     severity: Mapped[str] = mapped_column(String(16), index=True)
     message: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True)
+
+
+class MarketCandle(Base):
+    __tablename__ = "market_candles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(String(32), index=True)
+    timeframe: Mapped[str] = mapped_column(String(16), index=True)
+    open_time_ms: Mapped[int] = mapped_column(Integer, index=True)
+    close_time_ms: Mapped[int] = mapped_column(Integer)
+    open_price: Mapped[float] = mapped_column(Float)
+    high_price: Mapped[float] = mapped_column(Float)
+    low_price: Mapped[float] = mapped_column(Float)
+    close_price: Mapped[float] = mapped_column(Float)
+    volume: Mapped[float] = mapped_column(Float)
+    quote_volume: Mapped[float] = mapped_column(Float)
+    trades_count: Mapped[int] = mapped_column(Integer)
+    source: Mapped[str] = mapped_column(String(24), default="binance")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True)
+
+
+class MarketSnapshot(Base):
+    __tablename__ = "market_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(String(32), index=True)
+    last_price: Mapped[float] = mapped_column(Float)
+    mark_price: Mapped[float] = mapped_column(Float)
+    index_price: Mapped[float] = mapped_column(Float)
+    open_interest: Mapped[float] = mapped_column(Float, default=0)
+    funding_rate: Mapped[float] = mapped_column(Float, default=0)
+    volume_24h: Mapped[float] = mapped_column(Float, default=0)
+    source: Mapped[str] = mapped_column(String(24), default="binance")
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True)
