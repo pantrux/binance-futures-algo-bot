@@ -45,10 +45,11 @@ def test_indicator_endpoint_returns_400_when_candles_are_insufficient():
     finally:
         db.close()
 
-    client = TestClient(app)
-    response = client.get('/indicators/ETHUSDT', params={'timeframe': '15m', 'limit': 22})
+    try:
+        client = TestClient(app)
+        response = client.get('/indicators/ETHUSDT', params={'timeframe': '15m', 'limit': 22})
 
-    assert response.status_code == 400
-    assert 'Candles insuficientes' in response.json()['detail']
-
-    app.dependency_overrides.clear()
+        assert response.status_code == 400
+        assert 'Candles insuficientes' in response.json()['detail']
+    finally:
+        app.dependency_overrides.clear()
