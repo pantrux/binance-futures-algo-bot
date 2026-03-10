@@ -105,7 +105,10 @@ def test_indicator_endpoint_returns_snapshot_when_candles_are_sufficient():
         assert payload['ema_9'] is not None
         assert payload['ema_21'] is not None
         assert payload['rsi_14'] is not None
+        assert 0 < payload['rsi_14'] < 100
         assert payload['atr_14'] is not None
+        assert payload['atr_14'] > 0
         assert payload['momentum_10'] is not None
+        assert abs(payload['momentum_10']) > 0
     finally:
         app.dependency_overrides.clear()
