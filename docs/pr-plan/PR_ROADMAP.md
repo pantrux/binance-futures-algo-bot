@@ -12,13 +12,29 @@ A partir de este punto, todo cambio funcional, de infraestructura o documentaci�
 6. Si una sugerencia no aplica, se responde con justificación y se deja resuelta/cerrada según corresponda.
 7. Título obligatorio: `PR-{NÚMERO}: {TÍTULO}`.
 8. Configurar y mantener branch protection sobre `main` para exigir PRs y checks requeridos cuando el repositorio ya esté estabilizado operativamente.
+9. **Regla de documentación permanente:** después de cada PR se debe actualizar el roadmap, el estado de avance y la documentación afectada.
+10. **Regla Gantt permanente:** el proyecto debe mantener un Gantt/tabla de avance visible y actualizado para distinguir etapas completadas, en progreso y pendientes.
+11. **Regla Greptile de oro:** leer siempre resumen + comentarios; resolver cada comentario antes de merge. Objetivo por defecto: `Confidence Score 5/5`, salvo instrucción explícita del owner.
 
 ## Estado actual del proyecto
 Las fases fundacionales iniciales fueron empujadas directamente a `main` para bootstrap del repo greenfield. Desde este documento en adelante, el proyecto migra formalmente a workflow por PR.
 
-## Secuencia de PRs recomendada
+## Estado consolidado de PRs
+
+| PR | Título | Estado | Resultado |
+|---|---|---|---|
+| PR-1 | Gobierno del repositorio y workflow por PR | ✅ Mergeado | workflow formal por PR habilitado |
+| PR-2 | Ingesta inicial de mercado Binance | ✅ Mergeado | OHLCV + snapshots persistidos |
+| PR-3 | Hardening de ingesta de mercado | ✅ Mergeado | robustez de ingesta mejorada |
+| PR-4 | Hardening post-merge de ingesta | ✅ Mergeado | idempotencia/concurrencia afinadas |
+| PR-5 | Indicadores técnicos base | ✅ Mergeado | capa EMA/RSI/ATR/Momentum disponible |
+| PR-6 | Señales y features técnicos base | ✅ Mergeado | señales derivadas iniciales listas para preparar el worker |
+
+## Secuencia de PRs actualizada
 
 ### PR-1 — Gobierno del repositorio y workflow por PR
+**Estado:** ✅ Mergeado
+
 **Objetivo**
 Formalizar el carril de trabajo por Pull Requests.
 
@@ -28,13 +44,11 @@ Formalizar el carril de trabajo por Pull Requests.
 - `.github/pull_request_template.md`
 - actualización de runbook/README si aplica
 
-**Checks mínimos**
-- CI verde
-- documentación sincronizada en Outline
-
 ---
 
 ### PR-2 — Ingesta inicial de mercado Binance
+**Estado:** ✅ Mergeado
+
 **Objetivo**
 Capturar OHLCV básico y snapshot de mercado para alimentar al worker con datos reales.
 
@@ -46,7 +60,36 @@ Capturar OHLCV básico y snapshot de mercado para alimentar al worker con datos 
 
 ---
 
-### PR-3 — Indicadores técnicos base
+### PR-3 — Hardening de ingesta de mercado
+**Estado:** ✅ Mergeado
+
+**Objetivo**
+Endurecer la ingesta Binance y dejarla apta como base confiable para indicadores y señales.
+
+**Entregables**
+- correcciones de overflow
+- control de concurrencia / deduplicación
+- rollback explícito
+- revisión semántica de Greptile incorporada
+
+---
+
+### PR-4 — Hardening post-merge de ingesta
+**Estado:** ✅ Mergeado
+
+**Objetivo**
+Cerrar ajustes post-merge detectados durante la revisión de la capa de mercado sin perder trazabilidad por PR.
+
+**Entregables**
+- fixes puntuales post-merge
+- test de idempotencia
+- estabilización final de la capa de mercado
+
+---
+
+### PR-5 — Indicadores técnicos base
+**Estado:** ✅ Mergeado
+
 **Objetivo**
 Implementar la primera capa de indicadores calculados sobre candles persistidos.
 
@@ -56,25 +99,60 @@ Implementar la primera capa de indicadores calculados sobre candles persistidos.
 - ATR
 - momentum
 - tests
-- docs/ADR si cambia diseño
+- ADR-010
 
 ---
 
-### PR-4 — Worker market-driven
+### PR-6 — Señales y features técnicos base
+**Estado:** ✅ Mergeado
+
 **Objetivo**
-Reemplazar el loop demo estático por generación de trade plans basada en datos de mercado reales, manteniendo fallback demo.
+Construir la primera capa de señales derivadas sobre indicadores para preparar el worker market-driven.
+
+**Entregables**
+- `SignalService`
+- `SignalSnapshot`
+- endpoint `GET /signals/{symbol}`
+- features semánticas (`trend_bias`, `momentum_bias`, `volatility_regime`, `ema_spread_pct`, `atr_pct`)
+- ADR-011
+- tests de señales base
+
+---
+
+### PR-7 — Worker market-driven
+**Estado:** 🟡 Siguiente
+
+**Objetivo**
+Reemplazar el loop demo estático por generación de trade plans basada en señales de mercado reales, manteniendo fallback demo cuando corresponda.
 
 **Entregables**
 - worker híbrido demo/market
 - reglas de activación
-- persistencia de señales/insights
+- persistencia de señales/insights si aplica
 - documentación
 
 ---
 
-### PR-5 — Despliegue real en Synology
+### PR-8 — Observabilidad y hardening operativo
+**Estado:** ⏳ Pendiente
+
 **Objetivo**
-Llevar el stack a contenedores reales dentro del NAS.
+Agregar salud operativa, métricas y controles de incidente.
+
+**Entregables**
+- métricas
+- logs estructurados
+- alertas
+- eventos de riesgo ampliados
+- documentación
+
+---
+
+### PR-9 — Despliegue real en Synology
+**Estado:** ⏳ Pendiente
+
+**Objetivo**
+Llevar el stack a contenedores reales dentro del NAS con smoke tests y runbook final.
 
 **Entregables**
 - build/deploy real
@@ -86,22 +164,10 @@ Llevar el stack a contenedores reales dentro del NAS.
 **Gate extra**
 No activar live trading. Solo deploy + smoke tests + paper/testnet.
 
----
-
-### PR-6 — Observabilidad y hardening operativo
-**Objetivo**
-Agregar salud operativa, métricas y controles de incidentes.
-
-**Entregables**
-- métricas
-- logs estructurados
-- alertas
-- eventos de riesgo ampliados
-- documentación
-
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
 - checks terminados
 - documentación actualizada
 - comentarios/reviews resueltos
 - estado consolidado en memoria
+- roadmap y Gantt actualizados
