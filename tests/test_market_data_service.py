@@ -53,6 +53,25 @@ def test_market_ingestion_persists_candles_and_snapshot():
     assert snapshot.symbol == 'BTCUSDT'
 
 
+def test_market_ingestion_is_idempotent_for_candles():
+    async def run_twice():
+        engine = create_engine('sqlite:///:memory:')
+        Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=engine)
+        db = Session()
+        service = BinanceMarketDataService(db)
+        with patch('httpx.AsyncClient.get', new=AsyncMock(side_effect=_fake_get_success)):
+            first = await service.ingest_symbol('BTCUSDT', '15m', 1)
+            second = await service.ingest_symbol('BTCUSDT', '15m', 1)
+        candles = service.list_candles('BTCUSDT', '15m', 10)
+        return first, second, candles
+
+    first, second, candles = asyncio.run(run_twice())
+    assert first.candles_inserted == 1
+    assert second.candles_inserted == 0
+    assert len(candles) == 1
+
+
 async def _run_ingest_commit_error():
     engine = create_engine('sqlite:///:memory:')
     Base.metadata.create_all(engine)
