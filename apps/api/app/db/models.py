@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from apps.api.app.db.base import Base
@@ -79,12 +79,13 @@ class RiskEvent(Base):
 
 class MarketCandle(Base):
     __tablename__ = "market_candles"
+    __table_args__ = (UniqueConstraint("symbol", "timeframe", "open_time_ms", name="uq_market_candles_symbol_timeframe_open_time"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     symbol: Mapped[str] = mapped_column(String(32), index=True)
     timeframe: Mapped[str] = mapped_column(String(16), index=True)
-    open_time_ms: Mapped[int] = mapped_column(Integer, index=True)
-    close_time_ms: Mapped[int] = mapped_column(Integer)
+    open_time_ms: Mapped[int] = mapped_column(BigInteger, index=True)
+    close_time_ms: Mapped[int] = mapped_column(BigInteger)
     open_price: Mapped[float] = mapped_column(Float)
     high_price: Mapped[float] = mapped_column(Float)
     low_price: Mapped[float] = mapped_column(Float)

@@ -15,8 +15,8 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column('symbol', sa.String(length=32), nullable=False),
         sa.Column('timeframe', sa.String(length=16), nullable=False),
-        sa.Column('open_time_ms', sa.Integer(), nullable=False),
-        sa.Column('close_time_ms', sa.Integer(), nullable=False),
+        sa.Column('open_time_ms', sa.BigInteger(), nullable=False),
+        sa.Column('close_time_ms', sa.BigInteger(), nullable=False),
         sa.Column('open_price', sa.Float(), nullable=False),
         sa.Column('high_price', sa.Float(), nullable=False),
         sa.Column('low_price', sa.Float(), nullable=False),
@@ -31,6 +31,7 @@ def upgrade() -> None:
     op.create_index('ix_market_candles_timeframe', 'market_candles', ['timeframe'])
     op.create_index('ix_market_candles_open_time_ms', 'market_candles', ['open_time_ms'])
     op.create_index('ix_market_candles_created_at', 'market_candles', ['created_at'])
+    op.create_unique_constraint('uq_market_candles_symbol_timeframe_open_time', 'market_candles', ['symbol', 'timeframe', 'open_time_ms'])
 
     op.create_table(
         'market_snapshots',
@@ -53,6 +54,7 @@ def downgrade() -> None:
     op.drop_index('ix_market_snapshots_captured_at', table_name='market_snapshots')
     op.drop_index('ix_market_snapshots_symbol', table_name='market_snapshots')
     op.drop_table('market_snapshots')
+    op.drop_constraint('uq_market_candles_symbol_timeframe_open_time', 'market_candles', type_='unique')
     op.drop_index('ix_market_candles_created_at', table_name='market_candles')
     op.drop_index('ix_market_candles_open_time_ms', table_name='market_candles')
     op.drop_index('ix_market_candles_timeframe', table_name='market_candles')
