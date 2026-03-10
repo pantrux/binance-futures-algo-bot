@@ -7,6 +7,7 @@
 - CI base
 - dashboard base
 - motor de riesgo inicial
+- baseline Synology-first (Dockerfiles + compose objetivo)
 
 ## Fase 1 — Integración de mercado
 - OHLCV

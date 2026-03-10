@@ -23,6 +23,11 @@ Bot de trading algorítmico para **Binance USDⓈ-M Futures** orientado a operat
 
 ## Estado actual
 
+## Restricción de infraestructura
+
+Todo el runtime productivo del proyecto debe desplegarse en el **NAS Synology** mediante contenedores. El servidor de OpenClaw **no** es un host válido para producción de este bot.
+
+
 Este repositorio contiene la **fundación del proyecto**:
 
 - blueprint de arquitectura

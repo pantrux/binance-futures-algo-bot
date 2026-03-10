@@ -8,3 +8,6 @@ dist
 coverage
 .pytest_cache
 *.pyc
+
+!.env.example
+!infra/docker/synology/.env.example
