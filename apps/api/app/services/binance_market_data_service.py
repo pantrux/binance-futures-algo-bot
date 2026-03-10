@@ -25,9 +25,11 @@ class BinanceMarketDataService:
                     client.get(f'{self.base_url}/fapi/v1/openInterest', params={'symbol': symbol}),
                     return_exceptions=True,
                 )
-                for result in results:
-                    if isinstance(result, BaseException):
-                        raise result
+                errors = [result for result in results if isinstance(result, BaseException)]
+                if errors:
+                    if len(errors) == 1:
+                        raise errors[0]
+                    raise ExceptionGroup('fallos en gather de Binance', errors)
                 klines_resp, ticker_resp, premium_resp, oi_resp = results
                 klines_resp.raise_for_status()
                 ticker_resp.raise_for_status()
