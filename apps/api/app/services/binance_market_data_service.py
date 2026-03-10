@@ -70,7 +70,7 @@ class BinanceMarketDataService:
             self.db.add(snapshot)
             self.db.commit()
             return MarketIngestionResponse(symbol=symbol, timeframe=timeframe, candles_inserted=candles_inserted, snapshot_saved=True)
-        except (httpx.HTTPError, ValueError, KeyError, SQLAlchemyError):
+        except Exception:
             self.db.rollback()
             raise
 
