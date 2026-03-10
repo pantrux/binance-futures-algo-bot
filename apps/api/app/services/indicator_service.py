@@ -14,9 +14,9 @@ class IndicatorService:
         return self.db.scalars(
             select(MarketCandle)
             .where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)
-            .order_by(MarketCandle.open_time_ms.asc())
+            .order_by(MarketCandle.open_time_ms.desc())
             .limit(limit)
-        ).all()
+        ).all()[::-1]
 
     @staticmethod
     def _ema(values: list[float], period: int) -> float | None:
