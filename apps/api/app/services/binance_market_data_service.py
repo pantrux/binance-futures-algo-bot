@@ -2,7 +2,6 @@ import asyncio
 
 import httpx
 from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -26,11 +25,9 @@ class BinanceMarketDataService:
                     client.get(f'{self.base_url}/fapi/v1/openInterest', params={'symbol': symbol}),
                     return_exceptions=True,
                 )
-                errors = [result for result in results if isinstance(result, BaseException)]
+                errors = [result for result in results if isinstance(result, Exception)]
                 if errors:
-                    if len(errors) == 1:
-                        raise errors[0]
-                    raise ExceptionGroup('fallos en gather de Binance', errors)
+                    raise errors[0]
                 klines_resp, ticker_resp, premium_resp, oi_resp = results
                 klines_resp.raise_for_status()
                 ticker_resp.raise_for_status()
@@ -44,7 +41,7 @@ class BinanceMarketDataService:
 
             candles_inserted = 0
             for row in klines:
-                stmt = insert(MarketCandle).values(
+                candle = MarketCandle(
                     symbol=symbol,
                     timeframe=timeframe,
                     open_time_ms=int(row[0]),
@@ -57,10 +54,15 @@ class BinanceMarketDataService:
                     quote_volume=float(row[7]),
                     trades_count=int(row[8]),
                     source='binance',
-                ).on_conflict_do_nothing(constraint='uq_market_candles_symbol_timeframe_open_time')
-                result = self.db.execute(stmt)
-                if result.rowcount and result.rowcount > 0:
-                    candles_inserted += 1
+                )
+                try:
+                    with self.db.begin_nested():
+                        self.db.add(candle)
+                        self.db.flush()
+                        candles_inserted += 1
+                except IntegrityError:
+                    # Duplicado concurrente: ya existe por unique constraint.
+                    continue
 
             snapshot = MarketSnapshot(
                 symbol=symbol,
