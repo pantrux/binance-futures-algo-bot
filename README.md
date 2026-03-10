@@ -64,3 +64,8 @@ El sistema incorpora límites multicapa:
 ## Documentación
 
 Toda la documentación del proyecto está en español dentro de `docs/` y debe sincronizarse también en Outline.
+
+## Workflow GitHub
+
+A partir de la fase actual, el proyecto opera con **branches + Pull Requests**.
+La hoja de ruta formal de PRs está en `docs/pr-plan/PR_ROADMAP.md`.
