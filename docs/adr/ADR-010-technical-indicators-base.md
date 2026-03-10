@@ -17,4 +17,5 @@ Permite pasar de ingesta de mercado a señales técnicas reproducibles para el w
 ## Consecuencias
 - se añade `IndicatorService`
 - se expone endpoint `GET /indicators/{symbol}`
+- el valor de RSI depende de la ventana (`limit`) usada para cargar candles; en esta fase se acepta como snapshot on-demand y se deja documentado para consumidores del API
 - no se persisten todavía los indicadores (fase posterior)
