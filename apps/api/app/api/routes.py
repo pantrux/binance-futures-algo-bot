@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from apps.api.app.api.deps import get_db
 from apps.api.app.schemas.dashboard import DashboardSummary
+from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.market_data import MarketCandleRead, MarketIngestionResponse, MarketSnapshotRead
 from apps.api.app.services.binance_market_data_service import BinanceMarketDataService
 from apps.api.app.schemas.paper_trading import PaperExecutionResponse
@@ -11,6 +12,7 @@ from apps.api.app.schemas.trade_plan_read import TradePlanRead
 from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.dashboard_service import DashboardService
+from apps.api.app.services.indicator_service import IndicatorService
 from apps.api.app.services.paper_trading_service import PaperTradingService
 from apps.api.app.services.risk_engine import RiskEngine
 from apps.api.app.services.trade_plan_query_service import TradePlanQueryService
@@ -48,6 +50,11 @@ def latest_market_snapshot(symbol: str, db: Session = Depends(get_db)) -> Market
 @router.get("/dashboard/summary", response_model=DashboardSummary)
 def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
     return DashboardService(db).summary()
+
+
+@router.get("/indicators/{symbol}", response_model=IndicatorSnapshot)
+def indicator_snapshot(symbol: str, timeframe: str = '15m', limit: int = 200, db: Session = Depends(get_db)) -> IndicatorSnapshot:
+    return IndicatorService(db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
 
 
 @router.get("/trade-plans", response_model=list[TradePlanRead])
