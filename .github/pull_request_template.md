@@ -19,6 +19,8 @@
 - [ ] Respeta la regla global de riesgo del 5%
 - [ ] No bypassea el RiskEngine
 - [ ] Mantiene compatibilidad Synology-first
+- [ ] Sin runtime en OpenClaw
+- [ ] Variables de entorno documentadas
 
 ## Documentación
 

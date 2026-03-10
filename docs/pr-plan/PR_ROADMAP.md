@@ -11,6 +11,7 @@ A partir de este punto, todo cambio funcional, de infraestructura o documentaci�
 5. Si una sugerencia aplica, se incorpora antes del merge.
 6. Si una sugerencia no aplica, se responde con justificación y se deja resuelta/cerrada según corresponda.
 7. Título obligatorio: `PR-{NÚMERO}: {TÍTULO}`.
+8. Configurar y mantener branch protection sobre `main` para exigir PRs y checks requeridos cuando el repositorio ya esté estabilizado operativamente.
 
 ## Estado actual del proyecto
 Las fases fundacionales iniciales fueron empujadas directamente a `main` para bootstrap del repo greenfield. Desde este documento en adelante, el proyecto migra formalmente a workflow por PR.
