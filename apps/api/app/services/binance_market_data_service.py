@@ -2,7 +2,8 @@ import asyncio
 
 import httpx
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from apps.api.app.core.settings import settings
@@ -42,15 +43,11 @@ class BinanceMarketDataService:
             open_interest = oi_resp.json()
 
             candles_inserted = 0
-            existing_open_times = set(self.db.scalars(select(MarketCandle.open_time_ms).where(MarketCandle.symbol == symbol, MarketCandle.timeframe == timeframe)).all())
             for row in klines:
-                open_time = int(row[0])
-                if open_time in existing_open_times:
-                    continue
-                candle = MarketCandle(
+                stmt = insert(MarketCandle).values(
                     symbol=symbol,
                     timeframe=timeframe,
-                    open_time_ms=open_time,
+                    open_time_ms=int(row[0]),
                     close_time_ms=int(row[6]),
                     open_price=float(row[1]),
                     high_price=float(row[2]),
@@ -60,9 +57,10 @@ class BinanceMarketDataService:
                     quote_volume=float(row[7]),
                     trades_count=int(row[8]),
                     source='binance',
-                )
-                self.db.add(candle)
-                candles_inserted += 1
+                ).on_conflict_do_nothing(constraint='uq_market_candles_symbol_timeframe_open_time')
+                result = self.db.execute(stmt)
+                if result.rowcount and result.rowcount > 0:
+                    candles_inserted += 1
 
             snapshot = MarketSnapshot(
                 symbol=symbol,
