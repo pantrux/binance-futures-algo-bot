@@ -41,5 +41,7 @@ def test_signal_snapshot_computes_biases_and_features():
     assert snapshot.volatility_regime in {'low', 'medium', 'high'}
     assert snapshot.ema_spread_pct is not None
     assert snapshot.atr_pct is not None
+    assert snapshot.rsi_14 is not None
     assert 0 < snapshot.rsi_14 < 100
+    assert snapshot.momentum_10 is not None
     assert abs(snapshot.momentum_10) > 0

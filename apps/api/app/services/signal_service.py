@@ -1,3 +1,4 @@
+from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.signals import SignalSnapshot
 from apps.api.app.services.indicator_service import IndicatorService
 from sqlalchemy.orm import Session
@@ -38,8 +39,8 @@ class SignalService:
             return 'medium'
         return 'low'
 
-    def snapshot(self, symbol: str, timeframe: str = '15m', limit: int = 200) -> SignalSnapshot:
-        indicator_snapshot = self.indicators.snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
+    def snapshot(self, symbol: str, timeframe: str = '15m', limit: int = 200, indicator_snapshot: IndicatorSnapshot | None = None) -> SignalSnapshot:
+        indicator_snapshot = indicator_snapshot or self.indicators.snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
         ema_spread_pct = None
         atr_pct = None
         if indicator_snapshot.ema_9 is not None and indicator_snapshot.ema_21 not in (None, 0):

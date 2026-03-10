@@ -71,7 +71,7 @@ def signal_snapshot(symbol: str, timeframe: str = '15m', limit: int = Query(defa
         raise HTTPException(status_code=404, detail=f"No hay candles para {symbol} en timeframe {timeframe}")
     if any(value is None for value in (indicator_snapshot.ema_9, indicator_snapshot.ema_21, indicator_snapshot.rsi_14, indicator_snapshot.atr_14, indicator_snapshot.momentum_10)):
         raise HTTPException(status_code=400, detail=f"Candles insuficientes para calcular señales de {symbol} en timeframe {timeframe}")
-    return SignalService(db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
+    return SignalService(db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit, indicator_snapshot=indicator_snapshot)
 
 
 @router.get("/trade-plans", response_model=list[TradePlanRead])
