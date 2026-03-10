@@ -82,5 +82,5 @@ async def _run_ingest_commit_error():
 
 def test_market_ingestion_rolls_back_session_on_commit_error():
     db, rollback_spy = asyncio.run(_run_ingest_commit_error())
-    assert rollback_spy.called is True
+    rollback_spy.assert_called_once()
     assert db.in_transaction() is False

@@ -29,7 +29,7 @@ class BinanceMarketDataService:
                 if errors:
                     if len(errors) == 1:
                         raise errors[0]
-                    raise ExceptionGroup('fallos en gather de Binance', errors)
+                    raise BaseExceptionGroup('fallos en gather de Binance', errors)
                 klines_resp, ticker_resp, premium_resp, oi_resp = results
                 klines_resp.raise_for_status()
                 ticker_resp.raise_for_status()
