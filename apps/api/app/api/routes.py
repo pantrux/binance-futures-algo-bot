@@ -1,11 +1,17 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from apps.api.app.api.deps import get_db
+from apps.api.app.schemas.dashboard import DashboardSummary
+from apps.api.app.schemas.paper_trading import PaperExecutionResponse
 from apps.api.app.schemas.trade_plan import TradePlanCreateRequest, TradePlanCreateResponse
+from apps.api.app.schemas.trade_plan_read import TradePlanRead
 from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
 from apps.api.app.services.binance_client import BinanceFuturesClient
+from apps.api.app.services.dashboard_service import DashboardService
+from apps.api.app.services.paper_trading_service import PaperTradingService
 from apps.api.app.services.risk_engine import RiskEngine
+from apps.api.app.services.trade_plan_query_service import TradePlanQueryService
 from apps.api.app.services.trade_plan_service import TradePlanService
 
 router = APIRouter()
@@ -20,6 +26,16 @@ def healthcheck() -> dict:
 @router.get("/integrations/binance/testnet/ping")
 async def binance_ping() -> dict:
     return await BinanceFuturesClient().ping()
+
+
+@router.get("/dashboard/summary", response_model=DashboardSummary)
+def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
+    return DashboardService(db).summary()
+
+
+@router.get("/trade-plans", response_model=list[TradePlanRead])
+def list_trade_plans(limit: int = 20, db: Session = Depends(get_db)) -> list[TradePlanRead]:
+    return TradePlanQueryService(db).list_trade_plans(limit=limit)
 
 
 @router.post("/risk/evaluate", response_model=RiskDecision)
@@ -38,3 +54,12 @@ def evaluate_risk(payload: TradePlanRequest) -> RiskDecision:
 async def create_trade_plan(payload: TradePlanCreateRequest, db: Session = Depends(get_db)) -> TradePlanCreateResponse:
     service = TradePlanService(db=db)
     return await service.create_trade_plan(payload)
+
+
+@router.post("/paper-trading/execute/{trade_plan_id}", response_model=PaperExecutionResponse)
+def paper_execute(trade_plan_id: int, db: Session = Depends(get_db)) -> PaperExecutionResponse:
+    try:
+        result = PaperTradingService(db).execute_trade_plan(trade_plan_id)
+        return PaperExecutionResponse(**result)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
