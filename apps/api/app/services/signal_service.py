@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 class SignalService:
     def __init__(self, db: Session) -> None:
         self.db = db
-        self.indicators = IndicatorService(db)
 
     @staticmethod
     def _trend_bias(ema_9: float | None, ema_21: float | None) -> str:
@@ -40,7 +39,7 @@ class SignalService:
         return 'low'
 
     def snapshot(self, symbol: str, timeframe: str = '15m', limit: int = 200, indicator_snapshot: IndicatorSnapshot | None = None) -> SignalSnapshot:
-        indicator_snapshot = indicator_snapshot or self.indicators.snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
+        indicator_snapshot = indicator_snapshot or IndicatorService(self.db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
         ema_spread_pct = None
         atr_pct = None
         if indicator_snapshot.ema_9 is not None and indicator_snapshot.ema_21 not in (None, 0):

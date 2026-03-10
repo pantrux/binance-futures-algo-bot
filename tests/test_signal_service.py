@@ -45,3 +45,9 @@ def test_signal_snapshot_computes_biases_and_features():
     assert 0 < snapshot.rsi_14 < 100
     assert snapshot.momentum_10 is not None
     assert abs(snapshot.momentum_10) > 0
+
+
+def test_signal_service_static_methods_handle_missing_inputs():
+    assert SignalService._trend_bias(None, 100.0) == 'unknown'
+    assert SignalService._momentum_bias(None, 1.0) == 'unknown'
+    assert SignalService._volatility_regime(None) == 'unknown'
