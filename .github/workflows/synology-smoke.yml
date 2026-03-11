@@ -1,0 +1,28 @@
+name: Synology Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "Base URL de API en Synology"
+        required: true
+        default: "https://pantrux.duckdns.org/bot-api"
+      web_base_url:
+        description: "Base URL de web en Synology"
+        required: true
+        default: "https://pantrux.duckdns.org/bot-web"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Synology smoke test
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url }}
+          WEB_BASE_URL: ${{ inputs.web_base_url }}
+          METRICS_API_KEY: ${{ secrets.METRICS_API_KEY }}
+        run: |
+          ./scripts/synology_smoke_test.sh

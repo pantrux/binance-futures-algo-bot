@@ -30,6 +30,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-5 | Indicadores técnicos base | ✅ Mergeado | capa EMA/RSI/ATR/Momentum disponible |
 | PR-6 | Señales y features técnicos base | ✅ Mergeado | señales derivadas iniciales listas para preparar el worker |
 | PR-7 | Worker híbrido market-driven con fallback demo | ✅ Mergeado | worker market-driven operativo con fallback controlado |
+| PR-8 | Observabilidad y hardening operativo | ✅ Mergeado | métricas, logs estructurados y controles de hardening operativo |
 
 ## Secuencia de PRs actualizada
 
@@ -135,7 +136,7 @@ Reemplazar el loop demo estático por generación de trade plans basada en seña
 ---
 
 ### PR-8 — Observabilidad y hardening operativo
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Agregar salud operativa, métricas y controles de incidente.
@@ -150,7 +151,7 @@ Agregar salud operativa, métricas y controles de incidente.
 ---
 
 ### PR-9 — Despliegue real en Synology
-**Estado:** ⏳ Pendiente
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Llevar el stack a contenedores reales dentro del NAS con smoke tests y runbook final.
@@ -160,6 +161,7 @@ Llevar el stack a contenedores reales dentro del NAS con smoke tests y runbook f
 - verificación health
 - validación endpoints
 - validación dashboard
+- smoke test automatizado (`scripts/synology_smoke_test.sh` + workflow `synology-smoke.yml`)
 - runbook operativo final
 
 **Gate extra**
