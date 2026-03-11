@@ -30,7 +30,7 @@ def verify_payload(payload: object, expected_steps: list[str]) -> int:
         return error("steps debe ser lista")
 
     step_count = payload.get("step_count")
-    if not isinstance(step_count, int):
+    if not isinstance(step_count, int) or isinstance(step_count, bool):
         return error("step_count debe ser entero")
 
     if step_count != len(steps):

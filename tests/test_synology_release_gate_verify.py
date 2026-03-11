@@ -102,6 +102,17 @@ def test_verify_payload_fails_when_step_count_is_not_int(verify_module):
     assert verify_module.verify_payload(payload, ["Preflight", "Smoke"]) == 1
 
 
+def test_verify_payload_fails_when_step_count_is_bool(verify_module):
+    payload = {
+        "overall": "PASS",
+        "step_count": True,
+        "steps": [
+            {"name": "Preflight", "status": "PASS"},
+        ],
+    }
+    assert verify_module.verify_payload(payload, ["Preflight"]) == 1
+
+
 def test_verify_payload_passes_when_expected_steps_is_empty(verify_module):
     payload = {
         "overall": "FAIL",
@@ -119,3 +130,24 @@ def test_main_returns_2_when_missing_args(verify_module, monkeypatch):
 
     monkeypatch.setattr(sys, "argv", ["script.py"])
     assert verify_module.main() == 2
+
+
+def test_main_returns_1_for_invalid_json(verify_module, monkeypatch, tmp_path):
+    import sys
+
+    bad_json = tmp_path / "bad.json"
+    bad_json.write_text("{not valid json", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["script.py", str(bad_json)])
+    assert verify_module.main() == 1
+
+
+def test_main_returns_0_for_valid_json(verify_module, monkeypatch, tmp_path):
+    import sys
+
+    good_json = tmp_path / "good.json"
+    good_json.write_text(
+        '{"overall":"PASS","step_count":2,"steps":[{"name":"Preflight","status":"PASS"},{"name":"Smoke","status":"PASS"}]}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys, "argv", ["script.py", str(good_json), "Preflight,Smoke"])
+    assert verify_module.main() == 0
