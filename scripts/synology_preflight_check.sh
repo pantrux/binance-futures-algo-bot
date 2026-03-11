@@ -49,13 +49,17 @@ echo "SKIP_COMPOSE_VALIDATION=${SKIP_COMPOSE_VALIDATION}"
 auto_dirs() {
   local data_root="${DATA_ROOT:-}"
   [[ -n "${data_root}" ]] || return 0
-  if [[ "${AUTO_CREATE_DATA_DIRS}" == "true" ]]; then
+  if [[ "${auto_create_data_dirs_normalized}" == "true" ]]; then
     mkdir -p "${data_root}/postgres" "${data_root}/redis"
     echo "✅ Directorios de datos asegurados en ${data_root}"
   fi
 }
 
 load_env
+
+require_secrets_normalized="$(printf '%s' "${REQUIRE_SECRETS}" | tr '[:upper:]' '[:lower:]')"
+skip_compose_validation_normalized="$(printf '%s' "${SKIP_COMPOSE_VALIDATION}" | tr '[:upper:]' '[:lower:]')"
+auto_create_data_dirs_normalized="$(printf '%s' "${AUTO_CREATE_DATA_DIRS}" | tr '[:upper:]' '[:lower:]')"
 
 # Variables mínimas para levantar compose
 for key in DATA_ROOT POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD API_PORT WEB_PORT PAPER_TRADING API_BASE_URL; do
@@ -71,16 +75,14 @@ if [[ -n "${OUTLINE_API_URL:-}" && -z "${OUTLINE_API_TOKEN:-}" ]]; then
   warn "OUTLINE_API_URL está definido pero OUTLINE_API_TOKEN está vacío."
 fi
 
-if [[ "${REQUIRE_SECRETS}" == "true" ]]; then
+if [[ "${require_secrets_normalized}" == "true" ]]; then
   require_var BINANCE_API_KEY
   require_var BINANCE_API_SECRET
   require_var OUTLINE_API_TOKEN
 fi
 
-auto_dirs
-
 # Validación de compose
-if [[ "${SKIP_COMPOSE_VALIDATION}" == "true" ]]; then
+if [[ "${skip_compose_validation_normalized}" == "true" ]]; then
   warn "Se omite validación de compose por SKIP_COMPOSE_VALIDATION=true"
 elif [[ ${#COMPOSE_CMD[@]} -eq 0 ]]; then
   fail "No se encontró docker compose (docker compose / docker-compose)"
@@ -90,5 +92,7 @@ else
   "${COMPOSE_CMD[@]}" --env-file "${ENV_FILE}" config -q
   popd >/dev/null
 fi
+
+auto_dirs
 
 echo "✅ Preflight Synology OK"
