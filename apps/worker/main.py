@@ -51,7 +51,6 @@ async def process_symbol(
 
 
 async def main() -> None:
-    ensure_supported_python()
     settings = WorkerSettings()
     api_client = TradingBotApiClient(settings.api_base_url)
     signal_service = HybridSignalService(
@@ -71,4 +70,5 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    ensure_supported_python()
     asyncio.run(main())
