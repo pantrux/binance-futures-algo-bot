@@ -25,7 +25,9 @@ Implementar un **worker híbrido** que:
    - `SignalPack` (technical/fundamental/sentiment/confidence)
    - `MarketContext` (volatility_pct/trend_strength/liquidity_score)
    - Niveles (entry/stop/take_profit) **basados en ATR%** y precio de mercado.
-   - **Contrato explícito:** `atr_pct` llega desde `/signals/{symbol}` como porcentaje real (`ATR / EMA * 100`), por lo que el worker lo convierte siempre a fracción decimal dividiendo por `100` antes de calcular niveles y penalizaciones.
+   - **Contrato explícito:**
+     - `atr_pct` llega desde `/signals/{symbol}` como porcentaje real (`ATR / EMA * 100`), por lo que el worker lo convierte siempre a fracción decimal dividiendo por `100` antes de calcular niveles y penalizaciones.
+     - `ema_spread_pct` también llega como porcentaje real (`(EMA9 - EMA21) / EMA21 * 100`); `trend_strength` trabaja sobre ese formato sin convertirlo a fracción.
 3) Si falla la API o no hay data suficiente, hace **fallback controlado** a `DemoSignalService`.
 
 ## Consecuencias

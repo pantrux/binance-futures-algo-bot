@@ -72,7 +72,17 @@ class HybridSignalService:
         required_fields = ["trend_bias", "momentum_bias", "volatility_regime"]
         if any(snapshot.get(field) in (None, "unknown") for field in required_fields):
             return False
-        return snapshot.get("last_candle_close_ms") is not None and snapshot.get("atr_pct") is not None
+        if snapshot.get("last_candle_close_ms") is None:
+            return False
+
+        atr_pct = snapshot.get("atr_pct")
+        if atr_pct in (None, "unknown"):
+            return False
+        try:
+            float(atr_pct)
+        except (TypeError, ValueError):
+            return False
+        return True
 
     def _build_from_market(self, symbol: str, snapshot: dict, market: dict) -> tuple[SignalPack, MarketContext, str, dict[str, float], str]:
         trend_bias = snapshot.get("trend_bias", "unknown")
@@ -164,6 +174,8 @@ class HybridSignalService:
 
     @staticmethod
     def _trend_strength(ema_spread_pct: float | None) -> float:
+        # `ema_spread_pct` llega desde `/signals/{symbol}` en porcentaje real
+        # (ej. 0.12 = 0.12%), no en fracción decimal.
         if ema_spread_pct is None:
             return 50.0
         return max(0.0, min(100.0, abs(float(ema_spread_pct)) * 400.0))
