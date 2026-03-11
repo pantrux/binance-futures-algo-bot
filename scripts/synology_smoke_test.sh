@@ -75,14 +75,16 @@ check_contains() {
   fi
 
   if [[ -z "${body}" ]]; then
-    fail "${name} sin respuesta desde ${url}"
+    echo "❌ ${name} sin respuesta desde ${url}" >&2
+    return 1
   fi
 
   if ! grep -qF "${needle}" <<<"${body}"; then
     echo "--- body ---"
     echo "${body}"
     echo "------------"
-    fail "${name} no contiene '${needle}'"
+    echo "❌ ${name} no contiene '${needle}'" >&2
+    return 1
   fi
 
   echo "✅ ${name}"
