@@ -10,6 +10,11 @@ from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalS
 logger = logging.getLogger("apps.worker.observability")
 
 
+def ensure_logging_configured() -> None:
+    if not logging.getLogger().handlers:
+        logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+
 def log_event(event: str, **payload: object) -> None:
     logger.info(json.dumps({"event": event, **payload}, ensure_ascii=False, default=str))
 
@@ -64,6 +69,7 @@ async def process_symbol(
 
 
 async def main() -> None:
+    ensure_logging_configured()
     ensure_supported_python()
     settings = WorkerSettings()
     api_client = TradingBotApiClient(settings.api_base_url)
@@ -99,5 +105,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
     asyncio.run(main())

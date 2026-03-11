@@ -1,3 +1,5 @@
+import hmac
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -27,7 +29,7 @@ risk_engine = RiskEngine()
 
 
 def require_metrics_auth(x_metrics_key: str | None = Header(default=None, alias="x-metrics-key")) -> None:
-    if settings.metrics_api_key and x_metrics_key != settings.metrics_api_key:
+    if settings.metrics_api_key and not hmac.compare_digest(x_metrics_key or "", settings.metrics_api_key):
         raise HTTPException(status_code=401, detail="No autorizado")
 
 

@@ -21,7 +21,7 @@ class WorkerSettings(BaseSettings):
         if isinstance(value, str):
             raw = value.strip()
             if not raw:
-                return tuple()
+                raise ValueError("lista de símbolos/timeframes no puede estar vacía")
             try:
                 parsed = json.loads(raw)
                 if isinstance(parsed, (list, tuple)):
