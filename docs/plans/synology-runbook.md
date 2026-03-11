@@ -38,3 +38,7 @@ METRICS_API_KEY="<opcional>" \
 3. Dashboard responde y muestra resumen sin errores 5xx.
 4. API responde `testnet/ping` correctamente.
 5. No activar live trading; mantener `PAPER_TRADING=true`.
+
+> Nota operativa: `/integrations/binance/testnet/ping` depende de disponibilidad externa de Binance Testnet.
+> Si Binance está intermitente, repetir el smoke o ejecutar temporalmente con `STRICT_EXTERNAL_CHECKS=false`
+> para no bloquear validaciones internas del NAS por una caída externa puntual.

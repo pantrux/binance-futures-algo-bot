@@ -4,6 +4,7 @@ set -euo pipefail
 API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:8000}"
 WEB_BASE_URL="${WEB_BASE_URL:-http://127.0.0.1:3000}"
 METRICS_API_KEY="${METRICS_API_KEY:-}"
+STRICT_EXTERNAL_CHECKS="${STRICT_EXTERNAL_CHECKS:-true}"
 
 CURL_OPTS=(
   -sS
@@ -75,7 +76,13 @@ echo "WEB_BASE_URL=${WEB_BASE_URL}"
 check_status "API /health" "${API_BASE_URL}/health" 200
 check_status "API /dashboard/summary" "${API_BASE_URL}/dashboard/summary" 200
 check_status "API /trade-plans" "${API_BASE_URL}/trade-plans" 200
-check_status "API /integrations/binance/testnet/ping" "${API_BASE_URL}/integrations/binance/testnet/ping" 200
+if [[ "${STRICT_EXTERNAL_CHECKS}" == "true" ]]; then
+  check_status "API /integrations/binance/testnet/ping" "${API_BASE_URL}/integrations/binance/testnet/ping" 200
+else
+  if ! check_status "API /integrations/binance/testnet/ping" "${API_BASE_URL}/integrations/binance/testnet/ping" 200; then
+    echo "⚠️ Se omite fallo de testnet/ping por STRICT_EXTERNAL_CHECKS=false (dependencia externa Binance)."
+  fi
+fi
 
 if [[ -n "${METRICS_API_KEY}" ]]; then
   check_status "API /metrics (auth)" "${API_BASE_URL}/metrics" 200 "x-metrics-key" "${METRICS_API_KEY}"
