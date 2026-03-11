@@ -12,6 +12,7 @@ AUTO_CREATE_DATA_DIRS ?= false
 REPORT_PATH ?= artifacts/synology-release-gate.md
 EXPECTED_STEPS ?= Preflight,Smoke
 JSON_PATH ?= artifacts/synology-release-gate.json
+PYTHON ?= python3
 
 .PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify
 
@@ -52,11 +53,11 @@ synology-release-gate:
 	./scripts/synology_release_gate.sh
 
 synology-release-summary:
-	python3 scripts/synology_release_gate_summary.py \
+	$(PYTHON) scripts/synology_release_gate_summary.py \
 		"$(REPORT_PATH)" \
 		"$(JSON_PATH)"
 
 synology-release-verify:
-	python3 scripts/synology_release_gate_verify.py \
+	$(PYTHON) scripts/synology_release_gate_verify.py \
 		"$(JSON_PATH)" \
 		"$(EXPECTED_STEPS)"
