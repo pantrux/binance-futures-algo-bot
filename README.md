@@ -97,6 +97,16 @@ Checklist de aprobación manual:
 make synology-release-checklist CHECKLIST_PATH=artifacts/synology-release-checklist.md
 ```
 
+Paquete consolidado de sign-off (gate + JSON + checklist):
+
+```bash
+make synology-signoff-package \
+  REPORT_PATH=artifacts/synology-release-gate.md \
+  JSON_PATH=artifacts/synology-release-gate.json \
+  CHECKLIST_PATH=artifacts/synology-release-checklist.md \
+  PACKAGE_PATH=artifacts/synology-signoff-package.md
+```
+
 Si Binance Testnet está intermitente y solo quieres validar salud interna del stack NAS, puedes correr:
 `STRICT_EXTERNAL_CHECKS=false ./scripts/synology_smoke_test.sh`.
 

@@ -92,6 +92,11 @@ Atajos Make:
 make synology-release-summary REPORT_PATH=artifacts/synology-release-gate.md
 make synology-release-verify EXPECTED_STEPS="Preflight,Smoke"
 make synology-release-checklist CHECKLIST_PATH=artifacts/synology-release-checklist.md
+make synology-signoff-package \
+  REPORT_PATH=artifacts/synology-release-gate.md \
+  JSON_PATH=artifacts/synology-release-gate.json \
+  CHECKLIST_PATH=artifacts/synology-release-checklist.md \
+  PACKAGE_PATH=artifacts/synology-signoff-package.md
 ```
 
 ## Smoke test automático (PR-9)

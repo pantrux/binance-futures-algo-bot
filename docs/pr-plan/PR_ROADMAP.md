@@ -37,7 +37,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-12 | Resumen JSON y evidencia máquina-legible del gate | ✅ Mergeado | parser y artifacts JSON para auditoría automatizable |
 | PR-13 | Verificación automática del JSON del gate | ✅ Mergeado | validador estructural + checks de consistencia de pasos |
 | PR-14 | Atajos operativos con Makefile | ✅ Mergeado | ejecución estandarizada de preflight/smoke/release gate |
-| PR-15 | Checklist de aprobación operacional | 🟡 En progreso | plantilla y script para sign-off manual controlado |
+| PR-15 | Checklist de aprobación operacional | ✅ Mergeado | plantilla y script para sign-off manual controlado |
+| PR-16 | Paquete consolidado de sign-off | 🟡 En progreso | consolidación de evidencia final en un solo artefacto |
 
 ## Secuencia de PRs actualizada
 
@@ -258,7 +259,7 @@ Sin live trading; solo ergonomía operativa y consistencia de ejecución.
 ---
 
 ### PR-15 — Checklist de aprobación operacional
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Estandarizar la evidencia de aprobación humana posterior al gate automático mediante una checklist operacional reproducible.
@@ -271,6 +272,23 @@ Estandarizar la evidencia de aprobación humana posterior al gate automático me
 
 **Gate extra**
 No habilita live trading; formaliza aprobación manual para operación controlada.
+
+---
+
+### PR-16 — Paquete consolidado de sign-off
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Consolidar la evidencia final del ciclo operativo en un solo artefacto Markdown para auditoría/handoff.
+
+**Entregables**
+- script `scripts/synology_signoff_package.py`
+- target Make `synology-signoff-package`
+- tests del empaquetador
+- ADR-020
+
+**Gate extra**
+Sin live trading; consolida evidencia del modo controlado.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
