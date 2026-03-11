@@ -6,8 +6,8 @@
 ## Resumen ejecutivo
 
 - **Estado global actual:** Fase 5 completada en modo de operación controlada (NAS)
-- **Último hito consolidado:** workflow completo de sign-off mergeado (`PR-17`)
-- **Trabajo activo:** `PR-18` — cierre formal de fase operativa
+- **Último hito consolidado:** cierre formal de fase operativa mergeado (`PR-18`)
+- **Trabajo activo:** `PR-19` — orden documental + sync Outline idempotente
 
 ## Gantt textual de avance
 

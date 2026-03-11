@@ -109,6 +109,20 @@ make synology-signoff-all \
 El cierre operativo formal de esta fase está documentado en:
 - [`docs/plans/phase5-operational-closure.md`](./phase5-operational-closure.md)
 
+## Sync de documentación en Outline (sin duplicados)
+
+```bash
+OUTLINE_API_TOKEN="..." \
+python3 scripts/sync_outline_docs.py
+```
+
+Limpieza opcional de documentos legacy fuera del catálogo oficial:
+
+```bash
+OUTLINE_API_TOKEN="..." \
+python3 scripts/sync_outline_docs.py --archive-unknown
+```
+
 ## Smoke test automático (PR-9)
 
 Desde la raíz del repositorio:

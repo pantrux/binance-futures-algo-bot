@@ -40,7 +40,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-15 | Checklist de aprobación operacional | ✅ Mergeado | plantilla y script para sign-off manual controlado |
 | PR-16 | Paquete consolidado de sign-off | ✅ Mergeado | consolidación de evidencia final en un solo artefacto |
 | PR-17 | Workflow completo de sign-off | ✅ Mergeado | orquestación CI de checklist+paquete junto al release gate |
-| PR-18 | Cierre formal de fase operativa | 🟡 En progreso | documento de cierre fase 5 y criterios de continuidad |
+| PR-18 | Cierre formal de fase operativa | ✅ Mergeado | cierre documental de fase 5 completado con criterios consolidados |
+| PR-19 | Orden documental y sync Outline idempotente | 🟡 En progreso | dedupe de Outline + estructura documental ordenada + script anti-duplicados |
 
 ## Secuencia de PRs actualizada
 
@@ -312,7 +313,7 @@ Sin live trading; automatización solo de evidencia operativa.
 ---
 
 ### PR-18 — Cierre formal de fase operativa
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Cerrar formalmente la fase 5 con documento de cierre, checklist de criterios cumplidos y recomendaciones de continuidad.
@@ -324,6 +325,23 @@ Cerrar formalmente la fase 5 con documento de cierre, checklist de criterios cum
 
 **Gate extra**
 Mantener guardrails de paper trading y no habilitar live trading.
+
+---
+
+### PR-19 — Orden documental y sync Outline idempotente
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Eliminar duplicados en Outline, ordenar la navegación documental y dejar automatizado un sync idempotente para evitar reincidencias.
+
+**Entregables**
+- `scripts/sync_outline_docs.py` (upsert + dedupe + estructura por categorías)
+- `docs/README.md` e índices por carpeta (`docs/adr|plans|diagrams|pr-plan/README.md`)
+- resolución del conflicto de numeración moviendo `ADR-008-market-ingestion-foundation.md` a `docs/adr/archive/`
+- runbook/README actualizados con proceso de sync sin duplicados
+
+**Gate extra**
+No modifica lógica de trading; sólo gobernanza y orden documental.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

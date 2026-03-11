@@ -158,6 +158,19 @@ El sistema incorpora límites multicapa:
 
 Toda la documentación del proyecto está en español dentro de `docs/` y debe sincronizarse también en Outline.
 
+- Índice local de estructura: `docs/README.md`
+- Sync idempotente a Outline (evita duplicados por título):
+
+```bash
+OUTLINE_API_TOKEN="..." python3 scripts/sync_outline_docs.py
+```
+
+- Si se requiere limpieza de legacy docs no mapeados en el catálogo actual:
+
+```bash
+OUTLINE_API_TOKEN="..." python3 scripts/sync_outline_docs.py --archive-unknown
+```
+
 ## Workflow GitHub
 
 A partir de la fase actual, el proyecto opera con **branches + Pull Requests**.
