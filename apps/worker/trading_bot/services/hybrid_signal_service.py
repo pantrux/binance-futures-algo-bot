@@ -115,8 +115,16 @@ class HybridSignalService:
 
     @staticmethod
     def _normalize_atr_fraction(atr_pct: float) -> float:
-        # Si viene como porcentaje entero o decimal porcentual (ej. 2.5 o 0.8), normalizamos a fracción.
-        return atr_pct / 100.0 if atr_pct >= 0.5 else atr_pct
+        """Convierte `atr_pct` del API a fracción decimal.
+
+        Contrato actual del endpoint `/signals/{symbol}`:
+        - `atr_pct` se publica como porcentaje real (`ATR / EMA * 100`)
+        - ejemplos: `2.5` = 2.5%, `0.8` = 0.8%, `0.01` = 0.01%
+
+        Por lo tanto, en el worker siempre lo normalizamos dividiendo por 100 antes
+        de derivar niveles, volatilidad y penalizaciones.
+        """
+        return max(0.0, float(atr_pct)) / 100.0
 
     def _levels_from_atr(self, entry: float, atr_pct: float, side: str = "long") -> dict[str, float]:
         atr_fraction = self._normalize_atr_fraction(atr_pct)

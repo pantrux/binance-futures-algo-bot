@@ -34,7 +34,7 @@ def test_hybrid_uses_market_when_snapshot_is_usable():
         "momentum_bias": "bullish",
         "volatility_regime": "medium",
         "ema_spread_pct": 0.12,
-        "atr_pct": 0.01,
+        "atr_pct": 1.0,
         "rsi_14": 55.0,
         "momentum_10": 2.0,
     }
@@ -75,7 +75,7 @@ def test_hybrid_falls_back_when_market_snapshot_missing():
         "momentum_bias": "bullish",
         "volatility_regime": "medium",
         "ema_spread_pct": 0.12,
-        "atr_pct": 0.02,
+        "atr_pct": 2.0,
         "rsi_14": 55.0,
         "momentum_10": 2.0,
     }
@@ -105,7 +105,7 @@ def test_hybrid_uses_short_side_and_inverted_levels_for_bearish_market():
         "momentum_bias": "bearish",
         "volatility_regime": "medium",
         "ema_spread_pct": -0.12,
-        "atr_pct": 0.01,
+        "atr_pct": 1.0,
         "rsi_14": 40.0,
         "momentum_10": -2.0,
     }
@@ -122,7 +122,8 @@ def test_hybrid_uses_short_side_and_inverted_levels_for_bearish_market():
 
 def test_normalize_atr_fraction_accepts_sub_one_percent_values():
     service = HybridSignalService(api_client=FakeApiClient(snapshot=None, market=None), demo_service=DemoSignalService())
-    assert service._normalize_atr_fraction(0.8) == 0.008
+    assert abs(service._normalize_atr_fraction(0.8) - 0.008) < 1e-12
+    assert abs(service._normalize_atr_fraction(0.01) - 0.0001) < 1e-12
 
 
 def test_worker_settings_expose_signal_snapshot_config():
