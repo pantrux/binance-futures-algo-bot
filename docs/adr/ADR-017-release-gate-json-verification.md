@@ -16,6 +16,7 @@ Agregar verificación automática del JSON del gate:
      - `steps`
      - `step_count`
    - valida consistencia:
+     - `overall` en `{PASS, FAIL}`
      - `step_count == len(steps)`
      - estados de pasos en `{PASS, FAIL}`
      - nombres de pasos no vacíos

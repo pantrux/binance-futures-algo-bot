@@ -97,12 +97,18 @@ jobs:
               echo '```'
             } >> "${GITHUB_STEP_SUMMARY}"
           else
-            echo "⚠️ Reporte Markdown no encontrado o inválido; se omite resumen JSON." >> "${GITHUB_STEP_SUMMARY}"
+            echo "❌ No se pudo generar synology-release-gate.json (reporte Markdown ausente o inválido)." >&2
+            exit 1
           fi
 
       - name: Validate JSON summary structure
         if: always()
         run: |
+          if [[ ! -f artifacts/synology-release-gate.json ]]; then
+            echo "⚠️ JSON summary ausente; se omite validación estructural (la etapa previa ya debió fallar)."
+            exit 0
+          fi
+
           python3 scripts/synology_release_gate_verify.py \
             artifacts/synology-release-gate.json \
             "Preflight,Smoke"

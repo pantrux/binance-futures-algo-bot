@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-ALLOWED_OVERALL = {"PASS", "FAIL", "UNKNOWN"}
+ALLOWED_OVERALL = {"PASS", "FAIL"}
 
 
 def error(msg: str) -> int:
