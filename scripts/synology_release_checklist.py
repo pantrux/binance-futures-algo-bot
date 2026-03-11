@@ -18,6 +18,12 @@ def current_git_sha() -> str:
         return "unknown"
 
 
+def sanitize_markdown_inline(value: str, default: str = "") -> str:
+    sanitized = value.replace("\r", " ").replace("\n", " ").strip()
+    sanitized = sanitized.replace("`", "'")
+    return sanitized if sanitized else default
+
+
 def build_content(output_path: Path) -> str:
     now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     api_base_url = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
@@ -26,6 +32,8 @@ def build_content(output_path: Path) -> str:
     strict_external = os.getenv("STRICT_EXTERNAL_CHECKS", "true")
     require_secrets = os.getenv("REQUIRE_SECRETS", "false")
     release_ref = os.getenv("RELEASE_REF", current_git_sha())
+    signoff_owner = sanitize_markdown_inline(os.getenv("SIGNOFF_OWNER", "pending"), default="pending")
+    signoff_notes = sanitize_markdown_inline(os.getenv("SIGNOFF_NOTES", ""), default="")
 
     return f"""# Synology Release Checklist
 
@@ -37,6 +45,7 @@ def build_content(output_path: Path) -> str:
 - REQUIRE_SECRETS: `{require_secrets}`
 - STRICT_EXTERNAL_CHECKS: `{strict_external}`
 - Output file: `{output_path}`
+- Sign-off owner (preload): `{signoff_owner}`
 
 ## 1) Preflight (configuración)
 - [ ] `make synology-preflight ENV_FILE={env_file} REQUIRE_SECRETS={require_secrets}` ejecutado sin errores.
@@ -66,9 +75,9 @@ def build_content(output_path: Path) -> str:
 - [ ] Responsable de aprobación registrado.
 
 ### Registro de aprobación
-- Aprobado por:
+- Aprobado por: {signoff_owner}
 - Fecha/hora:
-- Observaciones:
+- Observaciones: {signoff_notes}
 """
 
 

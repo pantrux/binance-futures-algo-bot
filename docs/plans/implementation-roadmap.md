@@ -6,8 +6,8 @@
 ## Resumen ejecutivo
 
 - **Estado global actual:** Fase 5 en ejecución controlada (despliegue NAS con gates operativos)
-- **Último hito consolidado:** checklist de aprobación operacional mergeada (`PR-15`)
-- **Trabajo activo:** `PR-16` — paquete consolidado de sign-off
+- **Último hito consolidado:** paquete consolidado de sign-off mergeado (`PR-16`)
+- **Trabajo activo:** `PR-17` — workflow completo de sign-off
 
 ## Gantt textual de avance
 
@@ -18,7 +18,7 @@
 | Fase 2 — Señales | ✅ Completada | 100% | Indicadores + señales derivadas + worker híbrido market-driven entregados |
 | Fase 3 — Planeación y riesgo | 🟡 En progreso | 80% | Risk engine operativo, hardening continuo de score/gating pendiente fino |
 | Fase 4 — Ejecución | ✅ Completada | 100% | Worker market-driven + despliegue Synology base + smoke operativo (PR-9) |
-| Fase 5 — Operación controlada | 🟡 En progreso | 99% | Observabilidad + smoke + preflight + release gate + verificación JSON + Make targets + checklist completados; en curso empaquetado final de evidencia |
+| Fase 5 — Operación controlada | 🟡 En progreso | 99% | Observabilidad + smoke + preflight + release gate + verificación JSON + Make + checklist + paquete consolidados; en curso automatización final del workflow de sign-off |
 
 ---
 
@@ -133,10 +133,10 @@ Fase cerrada con PR-9; mejoras futuras pasan a Fase 5 (operación controlada).
 - endpoint de métricas con auth opcional
 - hardening de configuración/errores en worker y API
 
-### Alcance activo (PR-16)
-- consolidación final de evidencia (`gate md + gate json + checklist`) en un solo paquete
-- artefacto final orientado a auditoría y handoff
-- cierre de fase con bundle operativo completo para operación controlada
+### Alcance activo (PR-17)
+- workflow CI con pipeline completo de sign-off (`gate -> summary -> verify -> checklist -> package`)
+- parámetros de sign-off en workflow_dispatch para trazabilidad humana
+- cierre final de fase 5 con evidencia automatizada + manual integrada
 
 ### Guardrails
 - live trading sigue deshabilitado

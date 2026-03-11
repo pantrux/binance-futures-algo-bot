@@ -97,6 +97,11 @@ make synology-signoff-package \
   JSON_PATH=artifacts/synology-release-gate.json \
   CHECKLIST_PATH=artifacts/synology-release-checklist.md \
   PACKAGE_PATH=artifacts/synology-signoff-package.md
+make synology-signoff-all \
+  ENV_FILE=infra/docker/synology/.env \
+  API_BASE_URL="http://IP_NAS:API_PORT" \
+  WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
+  SIGNOFF_OWNER="<responsable>"
 ```
 
 ## Smoke test automático (PR-9)
