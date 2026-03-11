@@ -33,7 +33,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-8 | Observabilidad y hardening operativo | ✅ Mergeado | métricas, logs estructurados y controles de hardening operativo |
 | PR-9 | Despliegue real en Synology con smoke tests | ✅ Mergeado | gate de smoke en Synology + workflow manual + ADR-013 |
 | PR-10 | Preflight de configuración Synology | ✅ Mergeado | validación previa de `.env` + compose config + ADR-014 |
-| PR-11 | Release gate unificado Synology | 🟡 En progreso | preflight + smoke + reporte auditable en una sola corrida |
+| PR-11 | Release gate unificado Synology | ✅ Mergeado | preflight + smoke + reporte auditable en una sola corrida |
+| PR-12 | Resumen JSON y evidencia máquina-legible del gate | 🟡 En progreso | parser y artifacts JSON para auditoría automatizable |
 
 ## Secuencia de PRs actualizada
 
@@ -190,7 +191,7 @@ Mantener `PAPER_TRADING=true` y no habilitar live trading.
 ---
 
 ### PR-11 — Release gate unificado Synology
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Unificar en una sola corrida auditable el gate `preflight -> smoke`, con reporte formal para trazabilidad de operación.
@@ -203,6 +204,22 @@ Unificar en una sola corrida auditable el gate `preflight -> smoke`, con reporte
 
 **Gate extra**
 Sin live trading; solo operación controlada y validación de salud/despliegue.
+
+---
+
+### PR-12 — Resumen JSON y evidencia máquina-legible del gate
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Transformar la salida del release gate en evidencia estructurada (JSON) para auditoría automática y trazabilidad en CI.
+
+**Entregables**
+- parser `scripts/synology_release_gate_summary.py`
+- workflow `synology-release-gate.yml` con artifact JSON + job summary
+- docs/runbook actualizados
+
+**Gate extra**
+Mantener `PAPER_TRADING=true` y no habilitar live trading.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

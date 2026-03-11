@@ -83,9 +83,24 @@ jobs:
         run: |
           ./scripts/synology_release_gate.sh
 
-      - name: Upload gate report
+      - name: Build JSON summary
+        if: always()
+        run: |
+          python3 scripts/synology_release_gate_summary.py \
+            artifacts/synology-release-gate.md \
+            artifacts/synology-release-gate.json
+
+          {
+            echo "## Synology Release Gate Summary"
+            echo
+            cat artifacts/synology-release-gate.json
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload gate artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: synology-release-gate-report
-          path: artifacts/synology-release-gate.md
+          path: |
+            artifacts/synology-release-gate.md
+            artifacts/synology-release-gate.json

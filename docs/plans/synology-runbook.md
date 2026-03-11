@@ -61,6 +61,14 @@ WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
 
 Genera reporte Markdown en `artifacts/synology-release-gate.md`.
 
+Para resumen máquina-legible:
+
+```bash
+python3 scripts/synology_release_gate_summary.py \
+  artifacts/synology-release-gate.md \
+  artifacts/synology-release-gate.json
+```
+
 ## Smoke test automático (PR-9)
 
 Desde la raíz del repositorio:
