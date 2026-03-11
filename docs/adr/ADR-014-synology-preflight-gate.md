@@ -32,6 +32,7 @@ Agregar un gate de preflight reproducible para Synology:
 ### Trade-offs
 - El preflight no valida conectividad real contra servicios externos ni credenciales reales (eso se cubre en despliegue/smoke reales).
 - Modo estricto de secretos debe habilitarse explícitamente para entornos productivos.
+- El script carga `ENV_FILE` con `source`, por lo que el archivo debe ser de confianza (operador/controlado).
 
 ## Guardrail
 - Este gate no autoriza live trading.

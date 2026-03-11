@@ -62,8 +62,9 @@ for key in DATA_ROOT POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD API_PORT WEB_PO
   require_var "${key}"
 done
 
-if [[ "${PAPER_TRADING}" != "true" ]]; then
-  warn "PAPER_TRADING=${PAPER_TRADING}. Recuerda que live trading no está autorizado en este gate."
+paper_trading_normalized="$(printf '%s' "${PAPER_TRADING}" | tr '[:upper:]' '[:lower:]')"
+if [[ "${paper_trading_normalized}" != "true" ]]; then
+  fail "PAPER_TRADING=${PAPER_TRADING}. Live trading no está autorizado en este gate. Establece PAPER_TRADING=true."
 fi
 
 if [[ -n "${OUTLINE_API_URL:-}" && -z "${OUTLINE_API_TOKEN:-}" ]]; then
@@ -84,6 +85,7 @@ if [[ "${SKIP_COMPOSE_VALIDATION}" == "true" ]]; then
 elif [[ ${#COMPOSE_CMD[@]} -eq 0 ]]; then
   fail "No se encontró docker compose (docker compose / docker-compose)"
 else
+  [[ -d "${COMPOSE_DIR}" ]] || fail "No existe COMPOSE_DIR: ${COMPOSE_DIR}"
   pushd "${COMPOSE_DIR}" >/dev/null
   "${COMPOSE_CMD[@]}" --env-file "${ENV_FILE}" config -q
   popd >/dev/null

@@ -48,6 +48,8 @@ SKIP_COMPOSE_VALIDATION=true \
 
 También disponible por GitHub Actions (`Synology Preflight`, `workflow_dispatch`).
 
+> Seguridad: `synology_preflight_check.sh` carga `ENV_FILE` con `source`; úsalo solo con archivos de entorno confiables.
+
 ## Smoke test automático (PR-9)
 
 Desde la raíz del repositorio:
