@@ -104,6 +104,11 @@ make synology-signoff-all \
   SIGNOFF_OWNER="<responsable>"
 ```
 
+## Cierre formal de fase 5
+
+El cierre operativo formal de esta fase está documentado en:
+- [`docs/plans/phase5-operational-closure.md`](./phase5-operational-closure.md)
+
 ## Smoke test automático (PR-9)
 
 Desde la raíz del repositorio:

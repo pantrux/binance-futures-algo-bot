@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 5 en ejecución controlada (despliegue NAS con gates operativos)
-- **Último hito consolidado:** paquete consolidado de sign-off mergeado (`PR-16`)
-- **Trabajo activo:** `PR-17` — workflow completo de sign-off
+- **Estado global actual:** Fase 5 en cierre documental formal (operación controlada consolidada en NAS)
+- **Último hito consolidado:** workflow completo de sign-off mergeado (`PR-17`)
+- **Trabajo activo:** `PR-18` — cierre formal de fase operativa
 
 ## Gantt textual de avance
 
