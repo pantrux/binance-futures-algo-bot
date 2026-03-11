@@ -13,45 +13,60 @@ from apps.api.app.observability.metrics import api_metrics
 
 logger = logging.getLogger("apps.api.observability")
 
-app = FastAPI(title=settings.app_name, version="0.1.0")
 
+def create_app() -> FastAPI:
+    app = FastAPI(title=settings.app_name, version="0.1.0")
 
-@app.middleware("http")
-async def request_observability_middleware(request: Request, call_next):
-    request_id = request.headers.get("x-request-id") or str(uuid4())
-    start = perf_counter()
+    @app.middleware("http")
+    async def request_observability_middleware(request: Request, call_next):
+        request_id = request.headers.get("x-request-id") or str(uuid4())
+        start = perf_counter()
 
-    try:
-        response = await call_next(request)
-        status_code = response.status_code
-    except Exception:  # noqa: BLE001
-        status_code = 500
-        response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
-    finally:
-        duration_ms = (perf_counter() - start) * 1000.0
-        await asyncio.to_thread(
-            api_metrics.record,
-            method=request.method,
-            path=request.url.path,
-            status_code=status_code,
-            latency_ms=duration_ms,
-        )
-        logger.info(
-            json.dumps(
-                {
-                    "event": "api_request",
-                    "request_id": request_id,
-                    "method": request.method,
-                    "path": request.url.path,
-                    "status_code": status_code,
-                    "duration_ms": round(duration_ms, 4),
-                },
-                ensure_ascii=False,
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+        except Exception:  # noqa: BLE001
+            status_code = 500
+            response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
+            logger.exception(
+                json.dumps(
+                    {
+                        "event": "unhandled_request_error",
+                        "request_id": request_id,
+                        "path": request.url.path,
+                        "method": request.method,
+                    },
+                    ensure_ascii=False,
+                )
             )
-        )
+        finally:
+            duration_ms = (perf_counter() - start) * 1000.0
+            await asyncio.to_thread(
+                api_metrics.record,
+                method=request.method,
+                path=request.url.path,
+                status_code=status_code,
+                latency_ms=duration_ms,
+            )
+            logger.info(
+                json.dumps(
+                    {
+                        "event": "api_request",
+                        "request_id": request_id,
+                        "method": request.method,
+                        "path": request.url.path,
+                        "status_code": status_code,
+                        "duration_ms": round(duration_ms, 4),
+                    },
+                    ensure_ascii=False,
+                )
+            )
 
-    response.headers["x-request-id"] = request_id
-    return response
+        response.headers["x-request-id"] = request_id
+        return response
+
+    app.include_router(router)
+    return app
 
 
-app.include_router(router)
+app = create_app()
