@@ -83,9 +83,29 @@ jobs:
         run: |
           ./scripts/synology_release_gate.sh
 
-      - name: Upload gate report
+      - name: Build JSON summary
+        if: always()
+        run: |
+          if python3 scripts/synology_release_gate_summary.py \
+            artifacts/synology-release-gate.md \
+            artifacts/synology-release-gate.json; then
+            {
+              echo "## Synology Release Gate Summary"
+              echo
+              echo '```json'
+              cat artifacts/synology-release-gate.json
+              echo '```'
+            } >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "⚠️ Reporte Markdown no encontrado o inválido; se omite resumen JSON." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload gate artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: synology-release-gate-report
-          path: artifacts/synology-release-gate.md
+          if-no-files-found: warn
+          path: |
+            artifacts/synology-release-gate.md
+            artifacts/synology-release-gate.json
