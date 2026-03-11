@@ -69,7 +69,7 @@ METRICS_API_KEY="<opcional>" \
 ```
 
 Ejecución remota desde GitHub Actions (`workflow_dispatch`):
-- `Synology Preflight`
+- `Synology Preflight` (modo `require_secrets=true` usa `BINANCE_API_KEY`, `BINANCE_API_SECRET`, `OUTLINE_API_TOKEN` desde GitHub Secrets)
 - `Synology Smoke Test`
 
 Si Binance Testnet está intermitente y solo quieres validar salud interna del stack NAS, puedes correr:
