@@ -20,8 +20,13 @@ Levantar el stack completo en el NAS y poblar un conjunto mínimo de trade plans
 - `trading-bot-redis`
 - `trading-bot-migrate` *(one-shot; debe quedar en `Exited (0)`)*
 - `trading-bot-api`
-- `trading-bot-worker`
+- `trading-bot-worker` *(one-shot; debe quedar en `Exited (0)`)*
 - `trading-bot-web`
+
+## Modelo operativo validado (post PR-20)
+- Servicios persistentes 24/7: `api`, `web`, `postgres`, `redis`.
+- Jobs one-shot: `migrate` y `worker`.
+- En Synology, `worker` se ejecuta sin restart loop (`restart: "no"`) para evitar corridas infinitas.
 
 ## Verificaciones clave
 - `/health`

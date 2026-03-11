@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 5 cerrada en operación controlada (Synology) + PR-19 en cierre documental.
-- **PR activo:** `PR-19` — orden documental + sync Outline idempotente.
-- **Siguiente etapa planificada (sin improvisar):** **Fase 6 — Infraestructura recurrente y continuidad operacional** (`PR-20` a `PR-24`).
+- **Estado global actual:** Fase 5 cerrada en operación controlada (Synology) + `PR-19` y `PR-20` mergeados.
+- **PR activo:** `PR-21` — corrección documental post-merge + arranque de gobierno de artifacts.
+- **Etapa actual:** **Fase 6 — Infraestructura recurrente y continuidad operacional** (`PR-21` a `PR-24`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -16,7 +16,7 @@ La infraestructura base **ya comenzó y quedó levantada** en:
 - `PR-10` (preflight)
 - `PR-11` (release gate unificado)
 
-El **siguiente levantamiento de infraestructura** (continuidad, SRE, retención, DR, hardening) arranca inmediatamente después de PR-19, en **PR-20**.
+El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabilización worker one-shot) y continúa desde `PR-21` con gobierno de evidencia operacional.
 
 ---
 
@@ -30,7 +30,7 @@ El **siguiente levantamiento de infraestructura** (continuidad, SRE, retención,
 | Fase 3 — Planeación y riesgo avanzado | ⏳ Planificada | 0% | PR-25..PR-28 | Scoring/régimen/sizing/correlación/circuit breakers avanzados |
 | Fase 4 — Ejecución | ✅ Completada (baseline) | 100% | PR-7, PR-9 | Ejecución paper market-driven + despliegue base |
 | Fase 5 — Operación controlada | ✅ Completada | 100% | PR-8..PR-18 | Cadena operativa auditable completa |
-| Fase 6 — Infraestructura recurrente | 🔵 Planificada | 0% | PR-20..PR-24 | Operación continua endurecida (SRE + continuidad) |
+| Fase 6 — Infraestructura recurrente | 🟡 En progreso | 20% | PR-21..PR-24 | Operación continua endurecida (SRE + continuidad) |
 | Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
 | Fase 8 — Ejecución exchange robusta | 🔵 Planificada | 0% | PR-29..PR-31 | Router testnet + reconciliación + paridad paper/testnet |
 | Fase 9 — Go-live readiness | 🔵 Planificada | 0% | PR-32..PR-34 | Criterios formales de transición y rampa controlada |
@@ -55,15 +55,16 @@ El **siguiente levantamiento de infraestructura** (continuidad, SRE, retención,
 **PRs:** PR-8 a PR-18  
 **Entregado:** observabilidad, smoke, preflight, release gate, JSON summary, verify, checklist, sign-off package y cierre formal de fase.
 
-## Fase 6 — Infraestructura recurrente y continuidad (próxima)
-**Inicio:** inmediatamente después de cerrar PR-19.
+## Fase 6 — Infraestructura recurrente y continuidad (en progreso)
+**Inicio real:** `PR-20` mergeado (`fd5229d`) y continuación activa en `PR-21`.
 
-### PR-20 — Orquestación recurrente del gate operacional
-- scheduler/cron oficial para preflight/smoke/release health
-- ventanas operativas + política de reintentos
-- reporte automático de estado
+### PR-20 — Estabilización del worker Synology (one-shot)
+- `worker.restart: "no"` para evitar restart loop
+- operación base definida: servicios persistentes (`api/web/postgres/redis`) + jobs one-shot (`migrate/worker`)
+- verificación operativa en NAS con healthchecks en verde
 
 ### PR-21 — Retención y gobierno de artifacts
+- actualización documental correctiva post-merge (`PR-19`/`PR-20`)
 - política 30/60/90 días
 - limpieza automática de artifacts antiguos
 - índice de evidencias por corrida (auditoría)

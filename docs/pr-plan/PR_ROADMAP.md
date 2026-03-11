@@ -41,9 +41,9 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-16 | Paquete consolidado de sign-off | ✅ Mergeado | consolidación de evidencia final en un solo artefacto |
 | PR-17 | Workflow completo de sign-off | ✅ Mergeado | orquestación CI de checklist+paquete junto al release gate |
 | PR-18 | Cierre formal de fase operativa | ✅ Mergeado | cierre documental de fase 5 completado con criterios consolidados |
-| PR-19 | Orden documental y sync Outline idempotente | 🟡 En progreso | dedupe de Outline + estructura documental ordenada + script anti-duplicados |
-| PR-20 | Orquestación recurrente del gate operacional | 🔵 Planificado | cron/scheduler operacional para preflight/smoke/gate |
-| PR-21 | Retención y gobierno de artifacts | 🔵 Planificado | políticas 30/60/90 días + limpieza automática + trazabilidad |
+| PR-19 | Orden documental y sync Outline idempotente | ✅ Mergeado | dedupe de Outline + estructura documental ordenada + script anti-duplicados |
+| PR-20 | Estabilizar worker Synology (one-shot sin restart loop) | ✅ Mergeado | `worker.restart="no"` + operación Synology estable sin loop |
+| PR-21 | Retención y gobierno de artifacts | 🟡 En progreso | política 30/60/90 días + limpieza automática + trazabilidad |
 | PR-22 | Observabilidad y alerting de infraestructura | 🔵 Planificado | alertas operacionales + SLO de pipeline |
 | PR-23 | Resiliencia y recuperación (DR) | 🔵 Planificado | backup/restore validado y playbook de recuperación |
 | PR-24 | Hardening de seguridad operacional | 🔵 Planificado | rotación de secretos, permisos y superficie de exposición |
@@ -344,7 +344,7 @@ Mantener guardrails de paper trading y no habilitar live trading.
 ---
 
 ### PR-19 — Orden documental y sync Outline idempotente
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Eliminar duplicados en Outline, ordenar la navegación documental y dejar automatizado un sync idempotente para evitar reincidencias.
@@ -360,26 +360,26 @@ No modifica lógica de trading; sólo gobernanza y orden documental.
 
 ---
 
-### PR-20 — Orquestación recurrente del gate operacional
-**Estado:** 🔵 Planificado
+### PR-20 — Estabilizar worker Synology (one-shot sin restart loop)
+**Estado:** ✅ Mergeado
 
 **Objetivo**
-Automatizar validaciones operativas periódicas para que la salud de despliegue no dependa de ejecución manual ad-hoc.
+Eliminar reinicios infinitos del worker en Synology y alinear operación con su naturaleza one-shot.
 
 **Entregables**
-- programación recurrente de preflight/smoke/release health
-- política de reintentos y notificación
-- reporte de estado por ventana operacional
+- `infra/docker/synology/docker-compose.yml` con `worker.restart: "no"`
+- confirmación operativa en NAS: servicios persistentes (`api/web/postgres/redis`) + jobs one-shot (`migrate/worker`)
 
 ---
 
 ### PR-21 — Retención y gobierno de artifacts
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Controlar crecimiento de evidencia operativa y conservar sólo la historia útil para auditoría.
 
 **Entregables**
+- corrección documental post-merge de `PR-19` y `PR-20` (roadmap + PR roadmap + runbook)
 - política de retención (30/60/90 días)
 - cleanup automático de artifacts obsoletos
 - índice de evidencia por corrida
