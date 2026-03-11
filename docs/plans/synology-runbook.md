@@ -142,8 +142,8 @@ make synology-artifact-retention \
   RETENTION_DRY_RUN=false
 ```
 
-Reporte JSON generado por defecto:
-- `artifacts/synology-artifact-retention.json`
+Reporte JSON generado por defecto (fuera de `artifacts/` para conservar historial):
+- `artifacts-retention/synology-artifact-retention.json`
 
 También disponible workflow de GitHub Actions:
 - `Synology Artifact Retention` (`workflow_dispatch` + `schedule` diario, siempre en dry-run)

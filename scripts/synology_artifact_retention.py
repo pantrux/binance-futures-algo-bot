@@ -5,7 +5,7 @@ Ejemplo:
   python3 scripts/synology_artifact_retention.py \
     --artifacts-dir artifacts \
     --keep-days 45 \
-    --report-path artifacts/synology-artifact-retention.json
+    --report-path artifacts-retention/synology-artifact-retention.json
 """
 
 from __future__ import annotations
@@ -45,12 +45,23 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="No elimina, sólo reporta")
     parser.add_argument(
         "--report-path",
-        default="artifacts/synology-artifact-retention.json",
-        help="Ruta de salida del reporte JSON",
+        default="artifacts-retention/synology-artifact-retention.json",
+        help="Ruta de salida del reporte JSON (fuera de artifacts)",
     )
     args = parser.parse_args()
 
+    if args.keep_days < 1:
+        parser.error(f"--keep-days debe ser al menos 1, recibido: {args.keep_days}")
+
     artifacts_dir = Path(args.artifacts_dir)
+    report_path = Path(args.report_path)
+
+    artifacts_abs = artifacts_dir.resolve()
+    report_abs = report_path.resolve()
+    if report_abs == artifacts_abs or artifacts_abs in report_abs.parents:
+        parser.error(
+            "--report-path debe quedar fuera de --artifacts-dir para preservar trazabilidad histórica"
+        )
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=args.keep_days)
 
@@ -72,10 +83,9 @@ def main() -> None:
 
     if not artifacts_dir.exists():
         print(f"ℹ️ No existe directorio de artifacts: {artifacts_dir}")
-        out = Path(args.report_path)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        print(f"report_path={out}")
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"report_path={report_path}")
         return
 
     for path in sorted(p for p in artifacts_dir.rglob("*") if p.is_file()):
@@ -110,9 +120,8 @@ def main() -> None:
             d.rmdir()
             report["cleaned_empty_dirs_count"] += 1
 
-    out = Path(args.report_path)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     action = "DRY-RUN" if args.dry_run else "APPLIED"
     print(f"retention={action}")
@@ -121,7 +130,7 @@ def main() -> None:
     print(f"kept_count={report['kept_count']}")
     print(f"kept_bytes={report['kept_bytes']} ({human_bytes(report['kept_bytes'])})")
     print(f"cleaned_empty_dirs_count={report['cleaned_empty_dirs_count']}")
-    print(f"report_path={out}")
+    print(f"report_path={report_path}")
 
 
 if __name__ == "__main__":

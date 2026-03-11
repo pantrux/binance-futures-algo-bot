@@ -9,6 +9,7 @@ coverage
 .pytest_cache
 *.pyc
 artifacts/
+artifacts-retention/
 
 !.env.example
 !infra/docker/synology/.env.example

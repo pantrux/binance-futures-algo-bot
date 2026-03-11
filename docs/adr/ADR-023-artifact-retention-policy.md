@@ -13,7 +13,7 @@ Se adopta una política de retención con base en días y ejecución automatizab
 
 1. Script oficial: `scripts/synology_artifact_retention.py`
 2. Ejecución estándar por Make: `make synology-artifact-retention`
-3. Reporte JSON por corrida: `artifacts/synology-artifact-retention.json`
+3. Reporte JSON por corrida: `artifacts-retention/synology-artifact-retention.json`
 4. Modo de operación:
    - `RETENTION_DRY_RUN=true` para validación no destructiva
    - `RETENTION_DRY_RUN=false` para aplicar eliminación real
