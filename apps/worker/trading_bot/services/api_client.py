@@ -31,7 +31,7 @@ class TradingBotApiClient:
     async def get_market_snapshot(self, symbol: str) -> dict | None:
         async with httpx.AsyncClient(timeout=20.0) as client:
             response = await client.get(f"{self.base_url}/market/snapshot/{symbol}")
-            if response.status_code == 404:
+            if response.status_code in (400, 404):
                 return None
             response.raise_for_status()
             return response.json()

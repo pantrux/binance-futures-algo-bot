@@ -145,7 +145,8 @@ class HybridSignalService:
         vol = market.get("volume_24h")
         if vol is None:
             return 50.0
-        score = math.log10(float(vol) + 1.0) * 20.0
+        # Escala más gradual para diferenciar volúmenes reales de crypto sin saturar demasiado rápido.
+        score = (math.log10(float(vol) + 1.0) - 3.0) * 12.5
         return max(0.0, min(100.0, score))
 
     @staticmethod
