@@ -29,7 +29,7 @@ Implementar una capa baseline de observabilidad con tres componentes:
    - Worker: eventos estructurados para creación de plan, ejecución paper, fallos por símbolo y resumen de ejecución.
 
 3. **Hardening de fallos parciales**
-   - Nuevo setting `strict_symbol_failures` en `WorkerSettings`.
+   - Nuevo setting `strict_symbol_failures` en `WorkerSettings` (expuesto como `STRICT_SYMBOL_FAILURES` en `.env`).
    - Política por defecto:
      - si fallan todos los símbolos, el worker termina con error.
      - si hay fallos parciales, se registran explícitamente; el fail-fast parcial es configurable con `strict_symbol_failures=True`.

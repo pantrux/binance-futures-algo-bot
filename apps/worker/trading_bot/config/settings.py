@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-@dataclass
-class WorkerSettings:
+class WorkerSettings(BaseSettings):
     symbols: tuple[str, ...] = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
     timeframes: tuple[str, ...] = ("5m", "15m", "1h")
     paper_trading: bool = True
@@ -12,3 +11,5 @@ class WorkerSettings:
     default_signal_timeframe: str = "15m"
     signal_snapshot_limit: int = 200
     strict_symbol_failures: bool = False
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

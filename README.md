@@ -40,7 +40,7 @@ El worker market-driven usa `asyncio.TaskGroup`; si se intenta ejecutar con Pyth
 - Endpoint API `GET /metrics` con métricas runtime (requests, errores, latencia, rutas, status codes).
 - Protección opcional para `/metrics` vía header `x-metrics-key` cuando `metrics_api_key` está configurada.
 - Logs estructurados JSON en API (`api_request`) y worker (`trade_plan_created`, `paper_trade_executed`, etc.).
-- Política de fallos parciales del worker configurable con `strict_symbol_failures`.
+- Política de fallos parciales del worker configurable con `strict_symbol_failures` (`STRICT_SYMBOL_FAILURES` en `.env`).
 
 Este repositorio contiene la **fundación del proyecto**:
 
