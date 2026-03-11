@@ -1,3 +1,6 @@
+import json
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,5 +14,21 @@ class WorkerSettings(BaseSettings):
     default_signal_timeframe: str = "15m"
     signal_snapshot_limit: int = 200
     strict_symbol_failures: bool = False
+
+    @field_validator("symbols", "timeframes", mode="before")
+    @classmethod
+    def parse_tuple_env(cls, value: object):
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw:
+                return tuple()
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, (list, tuple)):
+                    return tuple(str(item).strip() for item in parsed if str(item).strip())
+            except json.JSONDecodeError:
+                pass
+            return tuple(item.strip() for item in raw.split(",") if item.strip())
+        return value
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

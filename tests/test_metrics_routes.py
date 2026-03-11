@@ -36,6 +36,7 @@ def test_metrics_endpoint_requires_key_when_configured(monkeypatch):
 
 
 def test_request_id_header_present_on_unhandled_error_response():
+    api_metrics.reset()
     test_app = create_app()
 
     @test_app.get('/__boom')
