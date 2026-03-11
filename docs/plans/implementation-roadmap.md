@@ -5,7 +5,7 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 5 en cierre documental formal (operación controlada consolidada en NAS)
+- **Estado global actual:** Fase 5 completada en modo de operación controlada (NAS)
 - **Último hito consolidado:** workflow completo de sign-off mergeado (`PR-17`)
 - **Trabajo activo:** `PR-18` — cierre formal de fase operativa
 
@@ -18,7 +18,7 @@
 | Fase 2 — Señales | ✅ Completada | 100% | Indicadores + señales derivadas + worker híbrido market-driven entregados |
 | Fase 3 — Planeación y riesgo | 🟡 En progreso | 80% | Risk engine operativo, hardening continuo de score/gating pendiente fino |
 | Fase 4 — Ejecución | ✅ Completada | 100% | Worker market-driven + despliegue Synology base + smoke operativo (PR-9) |
-| Fase 5 — Operación controlada | 🟡 En progreso | 100% | Cadena operativa completa implementada (preflight/smoke/release/summary/verify/checklist/package); en curso cierre documental formal |
+| Fase 5 — Operación controlada | ✅ Completada | 100% | Cadena operativa completa implementada (preflight/smoke/release/summary/verify/checklist/package); cierre documental formal completado en PR-18 |
 
 ---
 
@@ -126,21 +126,21 @@ Fase cerrada con PR-9; mejoras futuras pasan a Fase 5 (operación controlada).
 ---
 
 ## Fase 5 — Operación controlada
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Completada
 
-### Alcance entregado/parcial
+### Alcance entregado
 - observabilidad baseline (métricas + logs estructurados)
 - endpoint de métricas con auth opcional
 - hardening de configuración/errores en worker y API
 
-### Alcance activo (PR-18)
+### Cierre formal (PR-18)
 - documento formal de cierre de fase 5
 - consolidación de criterios de aceptación cumplidos
 - recomendaciones para continuidad de operación controlada
 
 ### Guardrails
 - live trading sigue deshabilitado
-- mantener `PAPER_TRADING=true` hasta cerrar gate operativo final
+- mantener `PAPER_TRADING=true` como condición vigente
 
 ---
 
