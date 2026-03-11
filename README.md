@@ -42,7 +42,24 @@ El worker market-driven usa `asyncio.TaskGroup`; si se intenta ejecutar con Pyth
 - Logs estructurados JSON en API (`api_request`) y worker (`trade_plan_created`, `paper_trade_executed`, etc.).
 - Política de fallos parciales del worker configurable con `strict_symbol_failures` (`STRICT_SYMBOL_FAILURES` en `.env`).
 
-## Smoke test de despliegue Synology (PR-9)
+## Preflight + smoke de despliegue Synology (PR-9/PR-10)
+
+Preflight de configuración (antes de levantar compose):
+
+```bash
+ENV_FILE=infra/docker/synology/.env \
+./scripts/synology_preflight_check.sh
+```
+
+Si estás en un entorno sin Docker local, puedes ejecutar solo validación de variables:
+
+```bash
+ENV_FILE=infra/docker/synology/.env \
+SKIP_COMPOSE_VALIDATION=true \
+./scripts/synology_preflight_check.sh
+```
+
+Smoke funcional de endpoints:
 
 ```bash
 API_BASE_URL="http://IP_NAS:API_PORT" \
@@ -51,7 +68,9 @@ METRICS_API_KEY="<opcional>" \
 ./scripts/synology_smoke_test.sh
 ```
 
-También se puede ejecutar remotamente desde GitHub Actions (`Synology Smoke Test` vía `workflow_dispatch`, ingresando manualmente las URLs de API/Web y opcionalmente `strict_external_checks`).
+Ejecución remota desde GitHub Actions (`workflow_dispatch`):
+- `Synology Preflight` (modo `require_secrets=true` usa `BINANCE_API_KEY`, `BINANCE_API_SECRET`, `OUTLINE_API_TOKEN` desde GitHub Secrets)
+- `Synology Smoke Test`
 
 Si Binance Testnet está intermitente y solo quieres validar salud interna del stack NAS, puedes correr:
 `STRICT_EXTERNAL_CHECKS=false ./scripts/synology_smoke_test.sh`.

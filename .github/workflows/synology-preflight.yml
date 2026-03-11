@@ -1,0 +1,53 @@
+name: Synology Preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      require_secrets:
+        description: "Si es true, exige BINANCE/OUTLINE secrets no vacíos"
+        required: false
+        type: choice
+        options:
+          - "false"
+          - "true"
+        default: "false"
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare env file
+        env:
+          REQUIRE_SECRETS_INPUT: ${{ inputs.require_secrets }}
+          BINANCE_API_KEY_SECRET: ${{ secrets.BINANCE_API_KEY }}
+          BINANCE_API_SECRET_SECRET: ${{ secrets.BINANCE_API_SECRET }}
+          OUTLINE_API_TOKEN_SECRET: ${{ secrets.OUTLINE_API_TOKEN }}
+        run: |
+          cp infra/docker/synology/.env.example /tmp/synology.env
+
+          if [[ "${REQUIRE_SECRETS_INPUT}" == "true" ]]; then
+            if [[ -z "${BINANCE_API_KEY_SECRET}" || -z "${BINANCE_API_SECRET_SECRET}" || -z "${OUTLINE_API_TOKEN_SECRET}" ]]; then
+              echo "❌ REQUIRE_SECRETS=true requiere secrets BINANCE_API_KEY, BINANCE_API_SECRET y OUTLINE_API_TOKEN" >&2
+              exit 1
+            fi
+
+            {
+              echo "BINANCE_API_KEY=${BINANCE_API_KEY_SECRET}"
+              echo "BINANCE_API_SECRET=${BINANCE_API_SECRET_SECRET}"
+              echo "OUTLINE_API_TOKEN=${OUTLINE_API_TOKEN_SECRET}"
+            } >> /tmp/synology.env
+          fi
+
+          # docker-compose.yml usa `env_file: .env`; lo replicamos para validar compose en CI.
+          cp /tmp/synology.env infra/docker/synology/.env
+
+      - name: Run preflight
+        env:
+          ENV_FILE: /tmp/synology.env
+          REQUIRE_SECRETS: ${{ inputs.require_secrets }}
+        run: |
+          ./scripts/synology_preflight_check.sh
