@@ -56,6 +56,8 @@ def test_parse_report_fail_with_failed_step(parser_module):
 """
     parsed = parser_module.parse_report(text)
     assert parsed["overall"] == "FAIL"
+    assert parsed["step_count"] == 2
+    assert parsed["steps"][0] == {"name": "Preflight", "status": "PASS"}
     assert parsed["steps"][1] == {"name": "Smoke", "status": "FAIL"}
 
 
