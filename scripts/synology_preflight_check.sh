@@ -76,6 +76,7 @@ auto_create_data_dirs_normalized="$(printf '%s' "${AUTO_CREATE_DATA_DIRS}" | tr 
 
 echo "REQUIRE_SECRETS=${require_secrets_normalized} (raw=${REQUIRE_SECRETS})"
 echo "SKIP_COMPOSE_VALIDATION=${skip_compose_validation_normalized} (raw=${SKIP_COMPOSE_VALIDATION})"
+echo "AUTO_CREATE_DATA_DIRS=${auto_create_data_dirs_normalized} (raw=${AUTO_CREATE_DATA_DIRS})"
 
 # Variables mínimas para levantar compose
 for key in DATA_ROOT POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD API_PORT WEB_PORT PAPER_TRADING API_BASE_URL; do
