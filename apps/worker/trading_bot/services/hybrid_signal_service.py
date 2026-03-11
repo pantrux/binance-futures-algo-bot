@@ -167,13 +167,11 @@ class HybridSignalService:
     def _bias_score(bias: str) -> float:
         return {"bullish": 80.0, "neutral": 55.0, "bearish": 30.0}.get(bias, 50.0)
 
-    def _technical_score(self, trend_bias: str, momentum_bias: str, rsi_14: float | None, momentum_10: float | None) -> float:
+    def _technical_score(self, trend_bias: str, momentum_bias: str, rsi_14: float, momentum_10: float) -> float:
         base = 0.6 * self._bias_score(trend_bias) + 0.4 * self._bias_score(momentum_bias)
-        if rsi_14 is not None:
-            # Ajuste deliberadamente simétrico: penaliza extremos de RSI sin asumir dirección adicional del trade.
-            base += max(-8.0, min(8.0, (50.0 - abs(rsi_14 - 50.0)) / 6.0 - 4.0))
-        if momentum_10 is not None:
-            base += max(-6.0, min(6.0, float(momentum_10) / 2.0))
+        # Ajuste deliberadamente simétrico: penaliza extremos de RSI sin asumir dirección adicional del trade.
+        base += max(-8.0, min(8.0, (50.0 - abs(rsi_14 - 50.0)) / 6.0 - 4.0))
+        base += max(-6.0, min(6.0, momentum_10 / 2.0))
         return max(0.0, min(100.0, base))
 
     def _confidence_score(self, vol_regime: str, atr_pct: float) -> float:

@@ -22,7 +22,7 @@ class FakeApiClient:
     async def get_market_snapshot(self, symbol: str) -> dict | None:
         self._raise_error()
         assert symbol
-        return self._market
+        return None if self._market is None else dict(self._market)
 
 
 def test_hybrid_uses_market_when_snapshot_is_usable():
