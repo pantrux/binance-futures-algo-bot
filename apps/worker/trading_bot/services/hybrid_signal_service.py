@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import math
 from dataclasses import dataclass
 
@@ -11,6 +12,8 @@ class HybridSignalResult:
     source: str
     reason: str
     side: str
+
+logger = logging.getLogger(__name__)
 
 
 class HybridSignalService:
@@ -106,12 +109,13 @@ class HybridSignalService:
     @staticmethod
     def _entry_price(market: dict | None) -> float:
         if not market:
-            return 1.0
+            raise ValueError("market_snapshot_missing")
         for key in ("mark_price", "last_price", "index_price"):
             value = market.get(key)
             if value is not None:
                 return float(value)
-        return 1.0
+        logger.warning("market snapshot sin precio reconocible; claves disponibles: %s", sorted(market.keys()))
+        raise ValueError("market_snapshot_missing_price")
 
     @staticmethod
     def _normalize_atr_fraction(atr_pct: float) -> float:

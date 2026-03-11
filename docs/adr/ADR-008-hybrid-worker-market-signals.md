@@ -45,6 +45,12 @@ Implementar un **worker híbrido** que:
   - `apps/worker/main.py`: usa `HybridSignalService`
   - `apps/worker/trading_bot/services/api_client.py`: agrega `get_signal_snapshot` y `get_market_snapshot`
 
+## Requisitos de runtime
+
+- El worker requiere **Python 3.11+** porque usa `asyncio.TaskGroup`.
+- En el runtime productivo Synology esto queda cubierto por las imágenes Docker basadas en `python:3.12-slim`.
+- Si se intenta ejecutar el worker con Python < 3.11, debe fallar explícitamente al arranque en lugar de degradar silenciosamente al path demo.
+
 ## Testing
 
 - Tests unitarios mínimos verifican:

@@ -1,11 +1,20 @@
 import asyncio
+import sys
 
 from apps.worker.trading_bot.config.settings import WorkerSettings
 from apps.worker.trading_bot.services.api_client import TradingBotApiClient
 from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalService
 
 
+def ensure_supported_python() -> None:
+    if sys.version_info < (3, 11):
+        raise RuntimeError(
+            f"apps/worker requiere Python 3.11+ para usar asyncio.TaskGroup; versión actual: {sys.version.split()[0]}"
+        )
+
+
 async def main() -> None:
+    ensure_supported_python()
     settings = WorkerSettings()
     api_client = TradingBotApiClient(settings.api_base_url)
     signal_service = HybridSignalService(

@@ -87,6 +87,28 @@ def test_hybrid_falls_back_when_market_snapshot_missing():
     assert meta.reason == "market_snapshot_missing"
 
 
+def test_hybrid_falls_back_when_market_snapshot_has_no_price_keys():
+    snapshot = {
+        "symbol": "BTCUSDT",
+        "timeframe": "15m",
+        "last_candle_close_ms": 123,
+        "trend_bias": "bullish",
+        "momentum_bias": "bullish",
+        "volatility_regime": "medium",
+        "ema_spread_pct": 0.12,
+        "atr_pct": 2.0,
+        "rsi_14": 55.0,
+        "momentum_10": 2.0,
+    }
+    market = {"volume_24h": 1_000_000.0}
+    service = HybridSignalService(api_client=FakeApiClient(snapshot=snapshot, market=market), demo_service=DemoSignalService())
+
+    _, _, _, _, meta = asyncio.run(service.build_signal_pack("BTCUSDT"))
+
+    assert meta.source == "demo"
+    assert meta.reason == "market_snapshot_missing_price"
+
+
 def test_levels_from_atr_accepts_percentage_values():
     service = HybridSignalService(api_client=FakeApiClient(snapshot=None, market=None), demo_service=DemoSignalService())
     levels = service._levels_from_atr(100.0, 2.5)
