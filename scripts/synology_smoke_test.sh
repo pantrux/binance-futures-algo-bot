@@ -81,6 +81,7 @@ if [[ -n "${METRICS_API_KEY}" ]]; then
   check_status "API /metrics (auth)" "${API_BASE_URL}/metrics" 200 "x-metrics-key" "${METRICS_API_KEY}"
 else
   metrics_tmpfile="$(mktemp)"
+  trap 'rm -f "${metrics_tmpfile}"' EXIT
   metrics_status="$(curl "${CURL_OPTS[@]}" -o "${metrics_tmpfile}" -w "%{http_code}" "${API_BASE_URL}/metrics" || true)"
   case "${metrics_status}" in
     200)
@@ -93,11 +94,9 @@ else
       echo "--- body ---"
       cat "${metrics_tmpfile}" || true
       echo "------------"
-      rm -f "${metrics_tmpfile}"
       fail "API /metrics respondió estado inesperado (${metrics_status}) sin METRICS_API_KEY"
       ;;
   esac
-  rm -f "${metrics_tmpfile}"
 fi
 
 check_contains "WEB /" "${WEB_BASE_URL}/" "Trading Bot"
