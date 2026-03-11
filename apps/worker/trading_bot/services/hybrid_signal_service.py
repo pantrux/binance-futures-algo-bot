@@ -73,7 +73,7 @@ class HybridSignalService:
         required_fields = ["trend_bias", "momentum_bias", "volatility_regime"]
         if any(snapshot.get(field) in (None, "unknown") for field in required_fields):
             return False
-        if snapshot.get("last_candle_close_ms") is None:
+        if snapshot.get("last_candle_close_ms") in (None, "unknown"):
             return False
 
         atr_pct = snapshot.get("atr_pct")
@@ -90,7 +90,7 @@ class HybridSignalService:
         momentum_bias = snapshot.get("momentum_bias", "unknown")
         vol_regime = snapshot.get("volatility_regime", "unknown")
         ema_spread_pct = self._coerce_optional_number(snapshot.get("ema_spread_pct"), default=None)
-        atr_pct = float(snapshot.get("atr_pct") or 0.0)
+        atr_pct = float(snapshot["atr_pct"])
         rsi_14 = self._coerce_optional_number(snapshot.get("rsi_14"), default=50.0)
         momentum_10 = self._coerce_optional_number(snapshot.get("momentum_10"), default=0.0)
 
