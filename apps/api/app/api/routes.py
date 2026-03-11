@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+import hmac
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from apps.api.app.api.deps import get_db
+from apps.api.app.core.settings import settings
 from apps.api.app.schemas.dashboard import DashboardSummary
 from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.market_data import MarketCandleRead, MarketIngestionResponse, MarketSnapshotRead
@@ -11,6 +14,7 @@ from apps.api.app.schemas.signals import SignalSnapshot
 from apps.api.app.schemas.trade_plan import TradePlanCreateRequest, TradePlanCreateResponse
 from apps.api.app.schemas.trade_plan_read import TradePlanRead
 from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
+from apps.api.app.observability.metrics import api_metrics
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.dashboard_service import DashboardService
 from apps.api.app.services.indicator_service import IndicatorService
@@ -24,9 +28,20 @@ router = APIRouter()
 risk_engine = RiskEngine()
 
 
+def require_metrics_auth(x_metrics_key: str | None = Header(default=None, alias="x-metrics-key")) -> None:
+    configured_metrics_key = settings.metrics_api_key.get_secret_value()
+    if configured_metrics_key and not hmac.compare_digest(x_metrics_key or "", configured_metrics_key):
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+
 @router.get("/health")
 def healthcheck() -> dict:
     return {"status": "ok", "service": "api"}
+
+
+@router.get("/metrics")
+def metrics_snapshot(_: None = Depends(require_metrics_auth)) -> dict:
+    return api_metrics.snapshot()
 
 
 @router.get("/integrations/binance/testnet/ping")

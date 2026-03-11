@@ -29,6 +29,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-4 | Hardening post-merge de ingesta | ✅ Mergeado | idempotencia/concurrencia afinadas |
 | PR-5 | Indicadores técnicos base | ✅ Mergeado | capa EMA/RSI/ATR/Momentum disponible |
 | PR-6 | Señales y features técnicos base | ✅ Mergeado | señales derivadas iniciales listas para preparar el worker |
+| PR-7 | Worker híbrido market-driven con fallback demo | ✅ Mergeado | worker market-driven operativo con fallback controlado |
 
 ## Secuencia de PRs actualizada
 
@@ -120,7 +121,7 @@ Construir la primera capa de señales derivadas sobre indicadores para preparar 
 ---
 
 ### PR-7 — Worker market-driven
-**Estado:** 🟡 Siguiente
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Reemplazar el loop demo estático por generación de trade plans basada en señales de mercado reales, manteniendo fallback demo cuando corresponda.
@@ -134,7 +135,7 @@ Reemplazar el loop demo estático por generación de trade plans basada en seña
 ---
 
 ### PR-8 — Observabilidad y hardening operativo
-**Estado:** ⏳ Pendiente
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Agregar salud operativa, métricas y controles de incidente.

@@ -14,7 +14,7 @@ Bot de trading algorítmico para **Binance USDⓈ-M Futures** orientado a operat
 
 ## Arquitectura del monorepo
 
-- `apps/api`: API FastAPI + endpoints de salud, mercado, riesgo y planes.
+- `apps/api`: API FastAPI + endpoints de salud, mercado, riesgo, métricas operativas y planes.
 - `apps/worker`: motor de análisis/estrategias/riesgo y sincronización documental.
 - `apps/web`: dashboard web en Next.js.
 - `packages/shared`: contratos compartidos y documentación de payloads.
@@ -34,6 +34,13 @@ Todo el runtime productivo del proyecto debe desplegarse en el **NAS Synology** 
 - `apps/web`: Node.js 22
 
 El worker market-driven usa `asyncio.TaskGroup`; si se intenta ejecutar con Python < 3.11 debe fallar explícitamente al iniciar.
+
+## Observabilidad baseline (PR-8)
+
+- Endpoint API `GET /metrics` con métricas runtime (requests, errores, latencia, rutas, status codes).
+- Protección opcional para `/metrics` vía header `x-metrics-key` cuando `metrics_api_key` está configurada.
+- Logs estructurados JSON en API (`api_request`) y worker (`trade_plan_created`, `paper_trade_executed`, etc.).
+- Política de fallos parciales del worker configurable con `strict_symbol_failures` (`STRICT_SYMBOL_FAILURES` en `.env`).
 
 Este repositorio contiene la **fundación del proyecto**:
 
