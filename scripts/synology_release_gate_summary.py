@@ -13,14 +13,24 @@ RESULT_PATTERN = re.compile(r"^\*\*(PASS|FAIL)\*\*\s*$")
 def parse_report(text: str) -> dict:
     steps: list[dict[str, str]] = []
     overall = "UNKNOWN"
+    in_fence = False
 
     for line in text.splitlines():
-        step_match = STEP_PATTERN.match(line.strip())
+        stripped = line.strip()
+
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+
+        if in_fence:
+            continue
+
+        step_match = STEP_PATTERN.match(stripped)
         if step_match:
             steps.append({"name": step_match.group(1), "status": step_match.group(2)})
             continue
 
-        result_match = RESULT_PATTERN.match(line.strip())
+        result_match = RESULT_PATTERN.match(stripped)
         if result_match:
             overall = result_match.group(1)
 

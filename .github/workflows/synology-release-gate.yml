@@ -93,7 +93,9 @@ jobs:
           {
             echo "## Synology Release Gate Summary"
             echo
+            echo '```json'
             cat artifacts/synology-release-gate.json
+            echo '```'
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload gate artifacts
