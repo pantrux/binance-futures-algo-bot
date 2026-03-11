@@ -146,7 +146,9 @@ Reporte JSON generado por defecto:
 - `artifacts/synology-artifact-retention.json`
 
 También disponible workflow de GitHub Actions:
-- `Synology Artifact Retention` (`workflow_dispatch` + `schedule` diario)
+- `Synology Artifact Retention` (`workflow_dispatch` + `schedule` diario, siempre en dry-run)
+
+> Nota: la eliminación real (`RETENTION_DRY_RUN=false`) debe ejecutarse en Synology, donde existe el directorio real de artifacts.
 
 ## Sync de documentación en Outline (sin duplicados)
 

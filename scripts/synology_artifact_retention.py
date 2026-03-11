@@ -57,6 +57,7 @@ def main() -> None:
     report = {
         "generated_at": now.isoformat(),
         "artifacts_dir": str(artifacts_dir),
+        "artifacts_dir_exists": artifacts_dir.exists(),
         "keep_days": args.keep_days,
         "dry_run": args.dry_run,
         "cutoff_utc": cutoff.isoformat(),
@@ -64,6 +65,7 @@ def main() -> None:
         "deleted_bytes": 0,
         "kept_count": 0,
         "kept_bytes": 0,
+        "cleaned_empty_dirs_count": 0,
         "deleted": [],
         "kept": [],
     }
@@ -99,6 +101,15 @@ def main() -> None:
             report["kept_count"] += 1
             report["kept_bytes"] += stat.st_size
 
+    if not args.dry_run:
+        for d in sorted((p for p in artifacts_dir.rglob("*") if p.is_dir()), reverse=True):
+            if d == artifacts_dir:
+                continue
+            if any(d.iterdir()):
+                continue
+            d.rmdir()
+            report["cleaned_empty_dirs_count"] += 1
+
     out = Path(args.report_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -109,6 +120,7 @@ def main() -> None:
     print(f"deleted_bytes={report['deleted_bytes']} ({human_bytes(report['deleted_bytes'])})")
     print(f"kept_count={report['kept_count']}")
     print(f"kept_bytes={report['kept_bytes']} ({human_bytes(report['kept_bytes'])})")
+    print(f"cleaned_empty_dirs_count={report['cleaned_empty_dirs_count']}")
     print(f"report_path={out}")
 
 

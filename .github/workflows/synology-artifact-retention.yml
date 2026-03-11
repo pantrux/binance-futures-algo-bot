@@ -4,15 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       keep_days:
-        description: "Días a conservar"
+        description: "Días a conservar (modo CI dry-run)"
         required: false
         default: "45"
-      dry_run:
-        description: "No eliminar; sólo reportar"
-        required: false
-        type: choice
-        options: ["true", "false"]
-        default: "true"
   schedule:
     - cron: "15 3 * * *"
 
@@ -24,21 +18,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run artifact retention policy
+      - name: Run artifact retention policy (CI dry-run)
         env:
           KEEP_DAYS: ${{ inputs.keep_days || '45' }}
-          DRY_RUN: ${{ inputs.dry_run || 'true' }}
         run: |
           python3 scripts/synology_artifact_retention.py \
             --artifacts-dir artifacts \
             --keep-days "${KEEP_DAYS}" \
             --report-path artifacts/synology-artifact-retention.json \
-            $( [[ "${DRY_RUN}" == "true" ]] && echo "--dry-run" )
+            --dry-run
 
       - name: Publish summary
         run: |
           {
             echo "## Synology Artifact Retention"
+            echo
+            echo "ℹ️ Este workflow en GitHub corre siempre en modo dry-run (sin borrado)."
+            echo "ℹ️ La eliminación real se ejecuta desde Synology con Make (`RETENTION_DRY_RUN=false`)."
             echo
             echo '```json'
             cat artifacts/synology-artifact-retention.json

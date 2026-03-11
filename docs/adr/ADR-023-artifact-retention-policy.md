@@ -17,7 +17,8 @@ Se adopta una política de retención con base en días y ejecución automatizab
 4. Modo de operación:
    - `RETENTION_DRY_RUN=true` para validación no destructiva
    - `RETENTION_DRY_RUN=false` para aplicar eliminación real
-5. Ventanas recomendadas:
+5. Workflow de GitHub Actions en modo **dry-run solamente** (sin borrado), para validación y trazabilidad.
+6. Ventanas recomendadas:
    - 30 días (agresivo)
    - 45 días (balanceado, default)
    - 90 días (conservador)
