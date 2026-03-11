@@ -29,6 +29,7 @@ check_status() {
   echo "→ ${name}: ${url}"
 
   tmpfile="$(mktemp)"
+  trap 'rm -f "${tmpfile}"' RETURN
 
   if [[ -n "${header_name}" && -n "${header_value}" ]]; then
     status="$(curl "${CURL_OPTS[@]}" -o "${tmpfile}" -w "%{http_code}" -H "${header_name}: ${header_value}" "${url}" || true)"
@@ -41,11 +42,9 @@ check_status() {
     echo "--- body ---"
     cat "${tmpfile}" || true
     echo "------------"
-    rm -f "${tmpfile}"
     fail "${name} no cumple (esperado ${expected_status})"
   fi
 
-  rm -f "${tmpfile}"
   echo "✅ ${name} (${status})"
 }
 

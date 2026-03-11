@@ -20,8 +20,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate workflow inputs
+        env:
+          API_BASE_URL_INPUT: ${{ inputs.api_base_url }}
+          WEB_BASE_URL_INPUT: ${{ inputs.web_base_url }}
         run: |
-          if [[ -z "${{ inputs.api_base_url }}" || -z "${{ inputs.web_base_url }}" ]]; then
+          if [[ -z "${API_BASE_URL_INPUT}" || -z "${WEB_BASE_URL_INPUT}" ]]; then
             echo "❌ Debes informar api_base_url y web_base_url en workflow_dispatch" >&2
             exit 1
           fi
