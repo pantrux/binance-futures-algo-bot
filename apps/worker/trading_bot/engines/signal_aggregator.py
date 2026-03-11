@@ -1,4 +1,4 @@
-from trading_bot.models.signals import SignalPack
+from apps.worker.trading_bot.models.signals import SignalPack
 
 
 class SignalAggregator:

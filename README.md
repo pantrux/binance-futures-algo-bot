@@ -27,6 +27,13 @@ Bot de trading algorítmico para **Binance USDⓈ-M Futures** orientado a operat
 
 Todo el runtime productivo del proyecto debe desplegarse en el **NAS Synology** mediante contenedores. El servidor de OpenClaw **no** es un host válido para producción de este bot.
 
+## Requisitos mínimos de runtime
+
+- `apps/api`: Python 3.12 (Dockerfile basado en `python:3.12-slim`)
+- `apps/worker`: **Python 3.11+** (actualmente desplegado con `python:3.12-slim`)
+- `apps/web`: Node.js 22
+
+El worker market-driven usa `asyncio.TaskGroup`; si se intenta ejecutar con Python < 3.11 debe fallar explícitamente al iniciar.
 
 Este repositorio contiene la **fundación del proyecto**:
 
