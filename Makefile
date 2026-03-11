@@ -14,6 +14,7 @@ EXPECTED_STEPS ?= Preflight,Smoke
 JSON_PATH ?= artifacts/synology-release-gate.json
 CHECKLIST_PATH ?= artifacts/synology-release-checklist.md
 PACKAGE_PATH ?= artifacts/synology-signoff-package.md
+RELEASE_REF ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 PYTHON ?= python3
 
 .PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package
@@ -67,6 +68,12 @@ synology-release-verify:
 		"$(EXPECTED_STEPS)"
 
 synology-release-checklist:
+	API_BASE_URL="$(API_BASE_URL)" \
+	WEB_BASE_URL="$(WEB_BASE_URL)" \
+	ENV_FILE="$(ENV_FILE)" \
+	STRICT_EXTERNAL_CHECKS="$(STRICT_EXTERNAL_CHECKS)" \
+	REQUIRE_SECRETS="$(REQUIRE_SECRETS)" \
+	RELEASE_REF="$(RELEASE_REF)" \
 	$(PYTHON) scripts/synology_release_checklist.py \
 		"$(CHECKLIST_PATH)"
 
