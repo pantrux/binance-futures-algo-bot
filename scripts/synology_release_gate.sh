@@ -23,12 +23,18 @@ step_result() {
   local step_name="$1"
   local log_path="$2"
   local status="$3"
+  local total_lines
+
+  total_lines="$(wc -l < "${log_path}" | tr -d ' ')"
 
   {
     echo "## ${step_name}: ${status}"
     echo
     echo "\`\`\`text"
     sed -n '1,200p' "${log_path}"
+    if [[ "${total_lines}" -gt 200 ]]; then
+      echo "... [truncado: ${total_lines} líneas en total, mostrando primeras 200] ..."
+    fi
     echo "\`\`\`"
     echo
   } >>"${REPORT_PATH}"
@@ -75,15 +81,16 @@ if ! run_step "Preflight" env \
   SKIP_COMPOSE_VALIDATION="${SKIP_COMPOSE_VALIDATION}" \
   "${REPO_ROOT}/scripts/synology_preflight_check.sh"; then
   overall_status="FAIL"
-fi
-
-if ! run_step "Smoke" env \
-  API_BASE_URL="${API_BASE_URL}" \
-  WEB_BASE_URL="${WEB_BASE_URL}" \
-  METRICS_API_KEY="${METRICS_API_KEY}" \
-  STRICT_EXTERNAL_CHECKS="${STRICT_EXTERNAL_CHECKS}" \
-  "${REPO_ROOT}/scripts/synology_smoke_test.sh"; then
-  overall_status="FAIL"
+  echo "⚠️  Preflight fallido — smoke omitido para evitar ruido diagnóstico." >>"${REPORT_PATH}"
+else
+  if ! run_step "Smoke" env \
+    API_BASE_URL="${API_BASE_URL}" \
+    WEB_BASE_URL="${WEB_BASE_URL}" \
+    METRICS_API_KEY="${METRICS_API_KEY}" \
+    STRICT_EXTERNAL_CHECKS="${STRICT_EXTERNAL_CHECKS}" \
+    "${REPO_ROOT}/scripts/synology_smoke_test.sh"; then
+    overall_status="FAIL"
+  fi
 fi
 
 {
