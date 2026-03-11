@@ -43,8 +43,6 @@ load_env() {
 echo "🚦 Synology preflight"
 echo "COMPOSE_DIR=${COMPOSE_DIR}"
 echo "ENV_FILE=${ENV_FILE}"
-echo "REQUIRE_SECRETS=${REQUIRE_SECRETS}"
-echo "SKIP_COMPOSE_VALIDATION=${SKIP_COMPOSE_VALIDATION}"
 
 auto_dirs() {
   local auto_create_dirs_flag="$1"
@@ -61,6 +59,9 @@ load_env
 require_secrets_normalized="$(printf '%s' "${REQUIRE_SECRETS}" | tr '[:upper:]' '[:lower:]')"
 skip_compose_validation_normalized="$(printf '%s' "${SKIP_COMPOSE_VALIDATION}" | tr '[:upper:]' '[:lower:]')"
 auto_create_data_dirs_normalized="$(printf '%s' "${AUTO_CREATE_DATA_DIRS}" | tr '[:upper:]' '[:lower:]')"
+
+echo "REQUIRE_SECRETS=${require_secrets_normalized} (raw=${REQUIRE_SECRETS})"
+echo "SKIP_COMPOSE_VALIDATION=${skip_compose_validation_normalized} (raw=${SKIP_COMPOSE_VALIDATION})"
 
 # Variables mínimas para levantar compose
 for key in DATA_ROOT POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD API_PORT WEB_PORT PAPER_TRADING API_BASE_URL; do
