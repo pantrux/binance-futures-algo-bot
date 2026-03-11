@@ -6,8 +6,8 @@
 ## Resumen ejecutivo
 
 - **Estado global actual:** Fase 5 en ejecución controlada (despliegue NAS con gates operativos)
-- **Último hito consolidado:** resumen JSON del release gate mergeado (`PR-12`)
-- **Trabajo activo:** `PR-13` — verificación automática del JSON del gate
+- **Último hito consolidado:** verificación automática del JSON del gate mergeada (`PR-13`)
+- **Trabajo activo:** `PR-14` — atajos operativos con Makefile
 
 ## Gantt textual de avance
 
@@ -18,7 +18,7 @@
 | Fase 2 — Señales | ✅ Completada | 100% | Indicadores + señales derivadas + worker híbrido market-driven entregados |
 | Fase 3 — Planeación y riesgo | 🟡 En progreso | 80% | Risk engine operativo, hardening continuo de score/gating pendiente fino |
 | Fase 4 — Ejecución | ✅ Completada | 100% | Worker market-driven + despliegue Synology base + smoke operativo (PR-9) |
-| Fase 5 — Operación controlada | 🟡 En progreso | 94% | Observabilidad + smoke + preflight + release gate + evidencia JSON completados; en curso verificación automática final y cierre de auditoría operativa |
+| Fase 5 — Operación controlada | 🟡 En progreso | 96% | Observabilidad + smoke + preflight + release gate + verificación JSON completados; en curso estandarización operativa final |
 
 ---
 
@@ -133,10 +133,10 @@ Fase cerrada con PR-9; mejoras futuras pasan a Fase 5 (operación controlada).
 - endpoint de métricas con auth opcional
 - hardening de configuración/errores en worker y API
 
-### Alcance activo (PR-13)
-- verificador automático de consistencia para `synology-release-gate.json`
-- integración del verificador en workflow para fail-fast de evidencia inválida
-- documentación de criterios de aceptación automática del gate
+### Alcance activo (PR-14)
+- make targets para preflight/smoke/release gate/resumen/verificación
+- reducción de fricción para operación repetible en NAS
+- documentación de uso rápido para operación diaria
 
 ### Guardrails
 - live trading sigue deshabilitado

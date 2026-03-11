@@ -59,6 +59,15 @@ WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
 ./scripts/synology_release_gate.sh
 ```
 
+Equivalente con Make:
+
+```bash
+make synology-release-gate \
+  ENV_FILE=infra/docker/synology/.env \
+  API_BASE_URL="http://IP_NAS:API_PORT" \
+  WEB_BASE_URL="http://IP_NAS:WEB_PORT"
+```
+
 Genera reporte Markdown en `artifacts/synology-release-gate.md`.
 
 Para resumen máquina-legible:
@@ -75,6 +84,13 @@ Para validar consistencia estructural del JSON:
 python3 scripts/synology_release_gate_verify.py \
   artifacts/synology-release-gate.json \
   "Preflight,Smoke"
+```
+
+Atajos Make:
+
+```bash
+make synology-release-summary REPORT_PATH=artifacts/synology-release-gate.md
+make synology-release-verify EXPECTED_STEPS="Preflight,Smoke"
 ```
 
 ## Smoke test automático (PR-9)

@@ -77,6 +77,15 @@ WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
 ./scripts/synology_release_gate.sh
 ```
 
+Atajo equivalente con Make:
+
+```bash
+make synology-release-gate \
+  ENV_FILE=infra/docker/synology/.env \
+  API_BASE_URL="http://IP_NAS:API_PORT" \
+  WEB_BASE_URL="http://IP_NAS:WEB_PORT"
+```
+
 Ejecución remota desde GitHub Actions (`workflow_dispatch`):
 - `Synology Preflight` (modo `require_secrets=true` usa `BINANCE_API_KEY`, `BINANCE_API_SECRET`, `OUTLINE_API_TOKEN` desde GitHub Secrets)
 - `Synology Smoke Test`

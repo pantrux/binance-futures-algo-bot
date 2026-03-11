@@ -35,7 +35,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-10 | Preflight de configuración Synology | ✅ Mergeado | validación previa de `.env` + compose config + ADR-014 |
 | PR-11 | Release gate unificado Synology | ✅ Mergeado | preflight + smoke + reporte auditable en una sola corrida |
 | PR-12 | Resumen JSON y evidencia máquina-legible del gate | ✅ Mergeado | parser y artifacts JSON para auditoría automatizable |
-| PR-13 | Verificación automática del JSON del gate | 🟡 En progreso | validador estructural + checks de consistencia de pasos |
+| PR-13 | Verificación automática del JSON del gate | ✅ Mergeado | validador estructural + checks de consistencia de pasos |
+| PR-14 | Atajos operativos con Makefile | 🟡 En progreso | ejecución estandarizada de preflight/smoke/release gate |
 
 ## Secuencia de PRs actualizada
 
@@ -223,7 +224,7 @@ Transformar la salida del release gate en evidencia estructurada (JSON) para aud
 Mantener `PAPER_TRADING=true` y no habilitar live trading.
 
 ### PR-13 — Verificación automática del JSON del gate
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Validar automáticamente que el resumen JSON del release gate cumpla estructura esperada (`overall`, `steps`, `step_count`) y consistencia mínima.
@@ -236,6 +237,22 @@ Validar automáticamente que el resumen JSON del release gate cumpla estructura 
 
 **Gate extra**
 Sin live trading; validación solo de calidad/evidencia operativa.
+
+---
+
+### PR-14 — Atajos operativos con Makefile
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Reducir fricción operacional con comandos estandarizados para ejecutar preflight/smoke/release gate sin repetir invocaciones largas.
+
+**Entregables**
+- `Makefile` con targets de operación Synology
+- documentación de uso en README/runbook
+- validación de targets en entorno local
+
+**Gate extra**
+Sin live trading; solo ergonomía operativa y consistencia de ejecución.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
