@@ -71,5 +71,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    ensure_supported_python()
     asyncio.run(main())

@@ -128,7 +128,7 @@ def test_hybrid_uses_market_when_optional_fields_are_unknown():
     signals, context, thesis, levels, meta = asyncio.run(service.build_signal_pack("BTCUSDT"))
 
     assert meta.source == "market"
-    assert context.trend_strength >= 0
+    assert context.trend_strength == 50.0
     assert levels["entry"] > 0
     assert signals.confidence >= 0
     assert thesis

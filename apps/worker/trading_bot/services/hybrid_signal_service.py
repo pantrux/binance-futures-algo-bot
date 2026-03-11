@@ -88,10 +88,10 @@ class HybridSignalService:
         trend_bias = snapshot.get("trend_bias", "unknown")
         momentum_bias = snapshot.get("momentum_bias", "unknown")
         vol_regime = snapshot.get("volatility_regime", "unknown")
-        ema_spread_pct = self._coerce_optional_number(snapshot.get("ema_spread_pct"), default=0.0)
+        ema_spread_pct = self._coerce_optional_number(snapshot.get("ema_spread_pct"), default=None)
         atr_pct = float(snapshot.get("atr_pct") or 0.0)
-        rsi_14 = self._coerce_optional_number(snapshot.get("rsi_14"), default=50.0)
-        momentum_10 = self._coerce_optional_number(snapshot.get("momentum_10"), default=0.0)
+        rsi_14 = float(self._coerce_optional_number(snapshot.get("rsi_14"), default=50.0))
+        momentum_10 = float(self._coerce_optional_number(snapshot.get("momentum_10"), default=0.0))
 
         technical = self._technical_score(trend_bias, momentum_bias, rsi_14=rsi_14, momentum_10=momentum_10)
         fundamental = 50.0
@@ -130,7 +130,7 @@ class HybridSignalService:
         raise ValueError("market_snapshot_missing_price")
 
     @staticmethod
-    def _coerce_optional_number(value: object, *, default: float) -> float:
+    def _coerce_optional_number(value: object, *, default: float | None) -> float | None:
         if value in (None, "unknown"):
             return default
         try:
