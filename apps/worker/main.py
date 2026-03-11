@@ -71,17 +71,20 @@ async def main() -> None:
     )
 
     successes = 0
+    failures = 0
     for symbol, result in zip(settings.symbols, results):
         if isinstance(result, BaseException):
+            failures += 1
             print({"symbol": symbol, "error": str(result)})
             continue
         if result is True:
             successes += 1
         else:
+            failures += 1
             print({"symbol": symbol, "error": "symbol_failed_without_exception"})
 
-    if settings.symbols and successes == 0:
-        raise RuntimeError("all_symbols_failed")
+    if settings.symbols and failures > 0:
+        raise RuntimeError(f"symbol_failures={failures};symbol_successes={successes}")
 
 
 if __name__ == "__main__":

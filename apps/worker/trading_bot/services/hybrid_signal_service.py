@@ -98,7 +98,7 @@ class HybridSignalService:
         sentiment = 50.0
         confidence = self._confidence_score(vol_regime, atr_pct)
 
-        volatility_pct = max(0.0, self._normalize_atr_fraction(atr_pct) * 100.0)
+        volatility_pct = max(0.0, atr_pct)
         trend_strength = self._trend_strength(ema_spread_pct)
         liquidity_score = self._liquidity_score(market)
 
@@ -178,7 +178,8 @@ class HybridSignalService:
     def _technical_score(self, trend_bias: str, momentum_bias: str, rsi_14: float, momentum_10: float) -> float:
         base = 0.6 * self._bias_score(trend_bias) + 0.4 * self._bias_score(momentum_bias)
         # Ajuste deliberadamente simétrico: penaliza extremos de RSI sin asumir dirección adicional del trade.
-        base += max(-8.0, min(8.0, (50.0 - abs(rsi_14 - 50.0)) / 6.0 - 4.0))
+        # Escalado para ocupar efectivamente el rango objetivo [-8, +8].
+        base += max(-8.0, min(8.0, (50.0 - abs(rsi_14 - 50.0)) / 3.0 - 8.0))
         base += max(-6.0, min(6.0, momentum_10 / 2.0))
         return max(0.0, min(100.0, base))
 
