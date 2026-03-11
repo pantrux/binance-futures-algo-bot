@@ -56,8 +56,11 @@ check_contains() {
 
   echo "→ ${name}: ${url} contiene '${needle}'"
   local body
-  body="$(curl "${CURL_OPTS[@]}" "${url}")"
-  if ! grep -q "${needle}" <<<"${body}"; then
+  body="$(curl "${CURL_OPTS[@]}" "${url}" || true)"
+  if [[ -z "${body}" ]]; then
+    fail "${name} sin respuesta desde ${url}"
+  fi
+  if ! grep -qF "${needle}" <<<"${body}"; then
     echo "--- body ---"
     echo "${body}"
     echo "------------"

@@ -19,6 +19,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate workflow inputs
+        run: |
+          if [[ -z "${{ inputs.api_base_url }}" || -z "${{ inputs.web_base_url }}" ]]; then
+            echo "❌ Debes informar api_base_url y web_base_url en workflow_dispatch" >&2
+            exit 1
+          fi
+
       - name: Run Synology smoke test
         env:
           API_BASE_URL: ${{ inputs.api_base_url }}
