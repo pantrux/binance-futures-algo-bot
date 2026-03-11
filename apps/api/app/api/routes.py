@@ -29,7 +29,8 @@ risk_engine = RiskEngine()
 
 
 def require_metrics_auth(x_metrics_key: str | None = Header(default=None, alias="x-metrics-key")) -> None:
-    if settings.metrics_api_key and not hmac.compare_digest(x_metrics_key or "", settings.metrics_api_key):
+    configured_metrics_key = settings.metrics_api_key.get_secret_value()
+    if configured_metrics_key and not hmac.compare_digest(x_metrics_key or "", configured_metrics_key):
         raise HTTPException(status_code=401, detail="No autorizado")
 
 

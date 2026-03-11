@@ -2,6 +2,7 @@ import apps.api.app.api.routes as api_routes
 import apps.api.app.main as app_main
 import apps.api.app.observability.metrics as metrics_module
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 
 from apps.api.app.core.settings import settings
 from apps.api.app.main import create_app
@@ -36,7 +37,7 @@ def test_metrics_endpoint_exposes_runtime_counters(monkeypatch):
 
 def test_metrics_endpoint_requires_key_when_configured(monkeypatch):
     _isolate_metrics_registry(monkeypatch)
-    monkeypatch.setattr(settings, 'metrics_api_key', 'secret-metrics-key')
+    monkeypatch.setattr(settings, 'metrics_api_key', SecretStr('secret-metrics-key'))
     client = TestClient(create_app())
 
     unauthorized = client.get('/metrics')

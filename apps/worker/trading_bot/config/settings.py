@@ -33,6 +33,10 @@ class WorkerSettings(BaseSettings):
                     return result
                 raise ValueError(f"se esperaba una lista JSON, se recibió {type(parsed).__name__}")
             except json.JSONDecodeError:
+                if raw.startswith("[") or raw.startswith("{"):
+                    raise ValueError(
+                        "valor con apariencia de JSON inválido; usa JSON válido o CSV sin corchetes"
+                    )
                 pass
             result = tuple(item.strip() for item in raw.split(",") if item.strip())
             if not result:
