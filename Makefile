@@ -11,6 +11,7 @@ SKIP_COMPOSE_VALIDATION ?= false
 AUTO_CREATE_DATA_DIRS ?= false
 REPORT_PATH ?= artifacts/synology-release-gate.md
 EXPECTED_STEPS ?= Preflight,Smoke
+JSON_PATH ?= artifacts/synology-release-gate.json
 
 .PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify
 
@@ -19,7 +20,7 @@ help:
 	@echo "  make synology-preflight      # valida .env + compose config"
 	@echo "  make synology-smoke          # smoke funcional API/Web"
 	@echo "  make synology-release-gate   # preflight + smoke + reporte markdown"
-	@echo "  make synology-release-summary# genera resumen JSON desde markdown"
+	@echo "  make synology-release-summary # genera resumen JSON desde markdown"
 	@echo "  make synology-release-verify # valida estructura del JSON del gate"
 
 synology-preflight:
@@ -53,9 +54,9 @@ synology-release-gate:
 synology-release-summary:
 	python3 scripts/synology_release_gate_summary.py \
 		"$(REPORT_PATH)" \
-		artifacts/synology-release-gate.json
+		"$(JSON_PATH)"
 
 synology-release-verify:
 	python3 scripts/synology_release_gate_verify.py \
-		artifacts/synology-release-gate.json \
+		"$(JSON_PATH)" \
 		"$(EXPECTED_STEPS)"
