@@ -42,7 +42,7 @@ El worker market-driven usa `asyncio.TaskGroup`; si se intenta ejecutar con Pyth
 - Logs estructurados JSON en API (`api_request`) y worker (`trade_plan_created`, `paper_trade_executed`, etc.).
 - Política de fallos parciales del worker configurable con `strict_symbol_failures` (`STRICT_SYMBOL_FAILURES` en `.env`).
 
-## Preflight + smoke de despliegue Synology (PR-9/PR-10)
+## Preflight + smoke + release gate Synology (PR-9/PR-10/PR-11)
 
 Preflight de configuración (antes de levantar compose):
 
@@ -68,9 +68,19 @@ METRICS_API_KEY="<opcional>" \
 ./scripts/synology_smoke_test.sh
 ```
 
+Release gate unificado (recomendado):
+
+```bash
+ENV_FILE=infra/docker/synology/.env \
+API_BASE_URL="http://IP_NAS:API_PORT" \
+WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
+./scripts/synology_release_gate.sh
+```
+
 Ejecución remota desde GitHub Actions (`workflow_dispatch`):
 - `Synology Preflight` (modo `require_secrets=true` usa `BINANCE_API_KEY`, `BINANCE_API_SECRET`, `OUTLINE_API_TOKEN` desde GitHub Secrets)
 - `Synology Smoke Test`
+- `Synology Release Gate` (sube reporte Markdown como artifact)
 
 Si Binance Testnet está intermitente y solo quieres validar salud interna del stack NAS, puedes correr:
 `STRICT_EXTERNAL_CHECKS=false ./scripts/synology_smoke_test.sh`.
