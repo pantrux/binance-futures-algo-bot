@@ -11,9 +11,20 @@ def load_json(path: Path) -> dict:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError("JSON root debe ser objeto")
+
     for key in ("overall", "steps", "step_count"):
         if key not in data:
             raise ValueError(f"JSON sin campo requerido: {key}")
+
+    if data["overall"] is None:
+        raise ValueError("overall no puede ser null")
+
+    if not isinstance(data["steps"], list):
+        raise ValueError("steps debe ser una lista")
+
+    if not isinstance(data["step_count"], int) or isinstance(data["step_count"], bool):
+        raise ValueError("step_count debe ser entero")
+
     return data
 
 
@@ -57,9 +68,9 @@ def main() -> int:
 {chr(10).join(steps_lines)}
 
 ## Checklist status
-- Archivo de checklist presente: ✅
-- Archivo de gate markdown presente: ✅
-- Archivo de gate json presente: ✅
+- Archivo de checklist presente: ✅ (contenido no validado por este script)
+- Archivo de gate markdown presente: ✅ (contenido no validado por este script)
+- Archivo de gate json presente: ✅ (estructura validada mínimamente)
 
 ## Referencias
 - `{gate_md}`
