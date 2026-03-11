@@ -39,7 +39,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-14 | Atajos operativos con Makefile | ✅ Mergeado | ejecución estandarizada de preflight/smoke/release gate |
 | PR-15 | Checklist de aprobación operacional | ✅ Mergeado | plantilla y script para sign-off manual controlado |
 | PR-16 | Paquete consolidado de sign-off | ✅ Mergeado | consolidación de evidencia final en un solo artefacto |
-| PR-17 | Workflow completo de sign-off | 🟡 En progreso | orquestación CI de checklist+paquete junto al release gate |
+| PR-17 | Workflow completo de sign-off | ✅ Mergeado | orquestación CI de checklist+paquete junto al release gate |
+| PR-18 | Cierre formal de fase operativa | 🟡 En progreso | documento de cierre fase 5 y criterios de continuidad |
 
 ## Secuencia de PRs actualizada
 
@@ -294,7 +295,7 @@ Sin live trading; consolida evidencia del modo controlado.
 ---
 
 ### PR-17 — Workflow completo de sign-off
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Automatizar en CI la generación de checklist y paquete final de sign-off dentro del workflow de release gate.
@@ -307,6 +308,22 @@ Automatizar en CI la generación de checklist y paquete final de sign-off dentro
 
 **Gate extra**
 Sin live trading; automatización solo de evidencia operativa.
+
+---
+
+### PR-18 — Cierre formal de fase operativa
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Cerrar formalmente la fase 5 con documento de cierre, checklist de criterios cumplidos y recomendaciones de continuidad.
+
+**Entregables**
+- `docs/plans/phase5-operational-closure.md`
+- actualización de roadmap/gantt a estado de fase completada
+- actualización de runbook con referencia al cierre
+
+**Gate extra**
+Mantener guardrails de paper trading y no habilitar live trading.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
