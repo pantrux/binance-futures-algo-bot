@@ -16,9 +16,6 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Validate workflow inputs
         env:
           API_BASE_URL_INPUT: ${{ inputs.api_base_url }}
@@ -28,6 +25,9 @@ jobs:
             echo "❌ Debes informar api_base_url y web_base_url en workflow_dispatch" >&2
             exit 1
           fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Run Synology smoke test
         env:

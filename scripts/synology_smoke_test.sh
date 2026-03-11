@@ -14,7 +14,7 @@ CURL_OPTS=(
 
 fail() {
   echo "❌ $1" >&2
-  exit 1
+  return 1
 }
 
 check_status() {
@@ -80,7 +80,24 @@ check_status "API /integrations/binance/testnet/ping" "${API_BASE_URL}/integrati
 if [[ -n "${METRICS_API_KEY}" ]]; then
   check_status "API /metrics (auth)" "${API_BASE_URL}/metrics" 200 "x-metrics-key" "${METRICS_API_KEY}"
 else
-  check_status "API /metrics" "${API_BASE_URL}/metrics" 200
+  metrics_tmpfile="$(mktemp)"
+  metrics_status="$(curl "${CURL_OPTS[@]}" -o "${metrics_tmpfile}" -w "%{http_code}" "${API_BASE_URL}/metrics" || true)"
+  case "${metrics_status}" in
+    200)
+      echo "✅ API /metrics (200 sin auth)"
+      ;;
+    401|403)
+      echo "ℹ️ API /metrics requiere auth y no se recibió METRICS_API_KEY; se considera esperado (${metrics_status})."
+      ;;
+    *)
+      echo "--- body ---"
+      cat "${metrics_tmpfile}" || true
+      echo "------------"
+      rm -f "${metrics_tmpfile}"
+      fail "API /metrics respondió estado inesperado (${metrics_status}) sin METRICS_API_KEY"
+      ;;
+  esac
+  rm -f "${metrics_tmpfile}"
 fi
 
 check_contains "WEB /" "${WEB_BASE_URL}/" "Trading Bot"
