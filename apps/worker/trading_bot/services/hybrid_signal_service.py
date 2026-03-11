@@ -55,7 +55,7 @@ class HybridSignalService:
 
     @staticmethod
     def _exception_reason(exc: Exception) -> str:
-        if hasattr(exc, "exceptions") and getattr(exc, "exceptions"):
+        if isinstance(exc, BaseExceptionGroup) and exc.exceptions:
             first = exc.exceptions[0]
             return str(first)
         return str(exc)

@@ -10,16 +10,18 @@ class FakeApiClient:
         self._market = market
         self._error = error
 
-    async def get_signal_snapshot(self, symbol: str, timeframe: str = "15m", limit: int = 200) -> dict | None:
+    def _raise_error(self) -> None:
         if self._error:
-            raise self._error
+            raise type(self._error)(str(self._error))
+
+    async def get_signal_snapshot(self, symbol: str, timeframe: str = "15m", limit: int = 200) -> dict | None:
+        self._raise_error()
         assert symbol
         return None if self._snapshot is None else dict(self._snapshot)
 
     async def get_market_snapshot(self, symbol: str) -> dict | None:
+        self._raise_error()
         assert symbol
-        if self._error:
-            raise self._error
         return self._market
 
 
