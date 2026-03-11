@@ -6,6 +6,10 @@ on:
       require_secrets:
         description: "Si es true, exige BINANCE/OUTLINE secrets no vacíos"
         required: false
+        type: choice
+        options:
+          - "false"
+          - "true"
         default: "false"
 
 jobs:
