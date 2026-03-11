@@ -51,7 +51,7 @@ METRICS_API_KEY="<opcional>" \
 ./scripts/synology_smoke_test.sh
 ```
 
-También se puede ejecutar remotamente desde GitHub Actions (`Synology Smoke Test` vía `workflow_dispatch`, ingresando manualmente las URLs de API/Web).
+También se puede ejecutar remotamente desde GitHub Actions (`Synology Smoke Test` vía `workflow_dispatch`, ingresando manualmente las URLs de API/Web y opcionalmente `strict_external_checks`).
 
 Si Binance Testnet está intermitente y solo quieres validar salud interna del stack NAS, puedes correr:
 `STRICT_EXTERNAL_CHECKS=false ./scripts/synology_smoke_test.sh`.

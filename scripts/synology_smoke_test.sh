@@ -43,7 +43,8 @@ check_status() {
     echo "--- body ---"
     cat "${tmpfile}" || true
     echo "------------"
-    fail "${name} no cumple (esperado ${expected_status})"
+    echo "❌ ${name} no cumple (esperado ${expected_status})" >&2
+    return 1
   fi
 
   echo "✅ ${name} (${status})"
