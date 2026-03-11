@@ -1,0 +1,53 @@
+name: Synology Artifact Retention
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep_days:
+        description: "Días a conservar"
+        required: false
+        default: "45"
+      dry_run:
+        description: "No eliminar; sólo reportar"
+        required: false
+        type: choice
+        options: ["true", "false"]
+        default: "true"
+  schedule:
+    - cron: "15 3 * * *"
+
+jobs:
+  retention:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run artifact retention policy
+        env:
+          KEEP_DAYS: ${{ inputs.keep_days || '45' }}
+          DRY_RUN: ${{ inputs.dry_run || 'true' }}
+        run: |
+          python3 scripts/synology_artifact_retention.py \
+            --artifacts-dir artifacts \
+            --keep-days "${KEEP_DAYS}" \
+            --report-path artifacts/synology-artifact-retention.json \
+            $( [[ "${DRY_RUN}" == "true" ]] && echo "--dry-run" )
+
+      - name: Publish summary
+        run: |
+          {
+            echo "## Synology Artifact Retention"
+            echo
+            echo '```json'
+            cat artifacts/synology-artifact-retention.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload retention report
+        uses: actions/upload-artifact@v4
+        with:
+          name: synology-artifact-retention-report
+          if-no-files-found: error
+          path: artifacts/synology-artifact-retention.json

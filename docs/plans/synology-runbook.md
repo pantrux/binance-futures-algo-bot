@@ -122,6 +122,32 @@ make synology-signoff-all \
 El cierre operativo formal de esta fase está documentado en:
 - [`docs/plans/phase5-operational-closure.md`](./phase5-operational-closure.md)
 
+## Retención de artifacts operacionales (PR-22)
+
+Ejecución manual (dry-run):
+
+```bash
+make synology-artifact-retention \
+  ARTIFACTS_DIR=artifacts \
+  KEEP_DAYS=45 \
+  RETENTION_DRY_RUN=true
+```
+
+Aplicar eliminación real:
+
+```bash
+make synology-artifact-retention \
+  ARTIFACTS_DIR=artifacts \
+  KEEP_DAYS=45 \
+  RETENTION_DRY_RUN=false
+```
+
+Reporte JSON generado por defecto:
+- `artifacts/synology-artifact-retention.json`
+
+También disponible workflow de GitHub Actions:
+- `Synology Artifact Retention` (`workflow_dispatch` + `schedule` diario)
+
 ## Sync de documentación en Outline (sin duplicados)
 
 ```bash

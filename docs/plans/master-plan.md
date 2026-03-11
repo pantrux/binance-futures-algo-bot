@@ -34,7 +34,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Entrega: estructura documental ordenada + sync idempotente sin duplicados en Outline + estabilización de operación one-shot del worker en Synology.
 
 ### Etapa D — Infraestructura recurrente (en progreso)
-- PR-21 a PR-24.
+- PR-22 a PR-24 (con PR-21 como ajuste documental de alineación).
 - Entrega: gobierno de artifacts, cron operativo, alerting, DR y hardening de seguridad.
 
 ### Etapa E — Riesgo cuantitativo avanzado

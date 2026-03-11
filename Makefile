@@ -14,12 +14,16 @@ EXPECTED_STEPS ?= Preflight,Smoke
 JSON_PATH ?= artifacts/synology-release-gate.json
 CHECKLIST_PATH ?= artifacts/synology-release-checklist.md
 PACKAGE_PATH ?= artifacts/synology-signoff-package.md
+RETENTION_REPORT_PATH ?= artifacts/synology-artifact-retention.json
+ARTIFACTS_DIR ?= artifacts
+KEEP_DAYS ?= 45
+RETENTION_DRY_RUN ?= true
 RELEASE_REF ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 SIGNOFF_OWNER ?= pending
 SIGNOFF_NOTES ?=
 PYTHON ?= python3
 
-.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package synology-signoff-all
+.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package synology-signoff-all synology-artifact-retention
 
 help:
 	@echo "Targets disponibles:"
@@ -31,6 +35,7 @@ help:
 	@echo "  make synology-release-checklist # genera checklist Markdown de aprobación"
 	@echo "  make synology-signoff-package # consolida evidencia final de sign-off"
 	@echo "  make synology-signoff-all # ejecuta gate + summary + verify + checklist + package"
+	@echo "  make synology-artifact-retention # aplica política de retención de artifacts (30/60/90 etc)"
 
 synology-preflight:
 	ENV_FILE="$(ENV_FILE)" \
@@ -91,3 +96,10 @@ synology-signoff-package:
 
 synology-signoff-all: synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package
 	@echo "✅ Sign-off pipeline completado"
+
+synology-artifact-retention:
+	$(PYTHON) scripts/synology_artifact_retention.py \
+		--artifacts-dir "$(ARTIFACTS_DIR)" \
+		--keep-days "$(KEEP_DAYS)" \
+		--report-path "$(RETENTION_REPORT_PATH)" \
+		$(if $(filter true,$(RETENTION_DRY_RUN)),--dry-run,)

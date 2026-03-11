@@ -171,6 +171,12 @@ OUTLINE_API_TOKEN="..." python3 scripts/sync_outline_docs.py
 OUTLINE_API_TOKEN="..." python3 scripts/sync_outline_docs.py --archive-unknown
 ```
 
+- Política de retención de artifacts operacionales:
+
+```bash
+make synology-artifact-retention KEEP_DAYS=45 RETENTION_DRY_RUN=true
+```
+
 ## Workflow GitHub
 
 A partir de la fase actual, el proyecto opera con **branches + Pull Requests**.

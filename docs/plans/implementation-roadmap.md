@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 5 cerrada en operación controlada (Synology) + `PR-19` y `PR-20` mergeados.
-- **PR activo:** `PR-21` — corrección documental post-merge + arranque de gobierno de artifacts.
-- **Etapa actual:** **Fase 6 — Infraestructura recurrente y continuidad operacional** (`PR-21` a `PR-24`).
+- **Estado global actual:** Fase 5 cerrada en operación controlada (Synology) + `PR-19`, `PR-20` y `PR-21` mergeados.
+- **PR activo:** `PR-22` — retención y gobierno de artifacts operacionales.
+- **Etapa actual:** **Fase 6 — Infraestructura recurrente y continuidad operacional** (`PR-22` a `PR-24`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -16,7 +16,7 @@ La infraestructura base **ya comenzó y quedó levantada** en:
 - `PR-10` (preflight)
 - `PR-11` (release gate unificado)
 
-El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabilización worker one-shot) y continúa desde `PR-21` con gobierno de evidencia operacional.
+El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabilización worker one-shot), `PR-21` (corrección documental) y continúa en `PR-22` con gobierno de evidencia operacional.
 
 ---
 
@@ -30,7 +30,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 3 — Planeación y riesgo avanzado | ⏳ Planificada | 0% | PR-25..PR-28 | Scoring/régimen/sizing/correlación/circuit breakers avanzados |
 | Fase 4 — Ejecución | ✅ Completada (baseline) | 100% | PR-7, PR-9 | Ejecución paper market-driven + despliegue base |
 | Fase 5 — Operación controlada | ✅ Completada | 100% | PR-8..PR-18 | Cadena operativa auditable completa |
-| Fase 6 — Infraestructura recurrente | 🟡 En progreso | 20% | PR-21..PR-24 | Operación continua endurecida (SRE + continuidad) |
+| Fase 6 — Infraestructura recurrente | 🟡 En progreso | 35% | PR-22..PR-24 | Operación continua endurecida (SRE + continuidad) |
 | Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
 | Fase 8 — Ejecución exchange robusta | 🔵 Planificada | 0% | PR-29..PR-31 | Router testnet + reconciliación + paridad paper/testnet |
 | Fase 9 — Go-live readiness | 🔵 Planificada | 0% | PR-32..PR-34 | Criterios formales de transición y rampa controlada |
@@ -56,31 +56,30 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 **Entregado:** observabilidad, smoke, preflight, release gate, JSON summary, verify, checklist, sign-off package y cierre formal de fase.
 
 ## Fase 6 — Infraestructura recurrente y continuidad (en progreso)
-**Inicio real:** `PR-20` mergeado (`fd5229d`) y continuación activa en `PR-21`.
+**Inicio real:** `PR-20` mergeado (`fd5229d`), `PR-21` mergeado (`bd40a5f`) y continuación activa en `PR-22`.
 
-### PR-20 — Estabilización del worker Synology (one-shot)
+### PR-20 — Estabilización del worker Synology (one-shot) ✅
 - `worker.restart: "no"` para evitar restart loop
 - operación base definida: servicios persistentes (`api/web/postgres/redis`) + jobs one-shot (`migrate/worker`)
 - verificación operativa en NAS con healthchecks en verde
 
-### PR-21 — Retención y gobierno de artifacts
-- actualización documental correctiva post-merge (`PR-19`/`PR-20`)
+### PR-21 — Corrección documental post-merge ✅
+- alineación de roadmap/master-plan/runbook con estado real post `PR-19`/`PR-20`
+- sync de Outline validado (`docs_synced=42`)
+
+### PR-22 — Retención y gobierno de artifacts 🟡
 - política 30/60/90 días
 - limpieza automática de artifacts antiguos
-- índice de evidencias por corrida (auditoría)
+- índice/reporte JSON por corrida (`synology-artifact-retention.json`)
 
-### PR-22 — Observabilidad/alerting de infraestructura
+### PR-23 — Observabilidad/alerting de infraestructura
 - alertas por fallos de gate, degradación de health y drift operativo
 - tablero de SLO operativo (disponibilidad de pipeline)
 
-### PR-23 — Resiliencia y recuperación
+### PR-24 — Resiliencia, recuperación y hardening operacional
 - respaldo/restauración de configuración crítica
 - playbook de disaster recovery probado con evidencia
-
-### PR-24 — Hardening de seguridad operacional
-- revisión de secretos/tokens/rotación
-- hardening de permisos y exposición de servicios
-- checklist de seguridad de operación continua
+- revisión de secretos/tokens/rotación + permisos/superficie de exposición
 
 ## Fase 7 — Planeación y riesgo avanzado
 
