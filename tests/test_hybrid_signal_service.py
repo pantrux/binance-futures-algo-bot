@@ -121,3 +121,11 @@ def test_hybrid_uses_short_side_and_inverted_levels_for_bearish_market():
 def test_normalize_atr_fraction_accepts_sub_one_percent_values():
     service = HybridSignalService(api_client=FakeApiClient(snapshot=None, market=None), demo_service=DemoSignalService())
     assert service._normalize_atr_fraction(0.8) == 0.008
+
+
+def test_worker_settings_expose_signal_snapshot_config():
+    from apps.worker.trading_bot.config.settings import WorkerSettings
+
+    settings = WorkerSettings()
+    assert settings.default_signal_timeframe == "15m"
+    assert settings.signal_snapshot_limit == 200

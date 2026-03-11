@@ -8,7 +8,11 @@ from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalS
 async def main() -> None:
     settings = WorkerSettings()
     api_client = TradingBotApiClient(settings.api_base_url)
-    signal_service = HybridSignalService(api_client=api_client, timeframe="15m", limit=200)
+    signal_service = HybridSignalService(
+        api_client=api_client,
+        timeframe=settings.default_signal_timeframe,
+        limit=settings.signal_snapshot_limit,
+    )
 
     for symbol in settings.symbols:
         signals, context, thesis, levels, meta = await signal_service.build_signal_pack(symbol)
