@@ -65,7 +65,16 @@ async def process_symbol(
     }
     created = await api_client.create_trade_plan(payload)
     log_event("trade_plan_created", symbol=symbol, source=meta.source, reason=meta.reason, trade_plan=created)
-    if settings.paper_trading and created.get("status") == "approved":
+    if settings.paper_trading:
+        if created.get("status") != "approved":
+            log_event(
+                "paper_trade_skipped_not_approved",
+                symbol=symbol,
+                status=created.get("status"),
+                trade_plan_id=created.get("id"),
+            )
+            return True
+
         trade_plan_id = created.get("id")
         if not trade_plan_id:
             log_event("paper_trade_skip_missing_id", symbol=symbol, trade_plan=created)
