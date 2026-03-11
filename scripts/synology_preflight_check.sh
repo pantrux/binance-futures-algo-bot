@@ -47,9 +47,10 @@ echo "REQUIRE_SECRETS=${REQUIRE_SECRETS}"
 echo "SKIP_COMPOSE_VALIDATION=${SKIP_COMPOSE_VALIDATION}"
 
 auto_dirs() {
+  local auto_create_dirs_flag="$1"
   local data_root="${DATA_ROOT:-}"
   [[ -n "${data_root}" ]] || return 0
-  if [[ "${auto_create_data_dirs_normalized}" == "true" ]]; then
+  if [[ "${auto_create_dirs_flag}" == "true" ]]; then
     mkdir -p "${data_root}/postgres" "${data_root}/redis"
     echo "✅ Directorios de datos asegurados en ${data_root}"
   fi
@@ -71,7 +72,7 @@ if [[ "${paper_trading_normalized}" != "true" ]]; then
   fail "PAPER_TRADING=${PAPER_TRADING}. Live trading no está autorizado en este gate. Establece PAPER_TRADING=true."
 fi
 
-if [[ -n "${OUTLINE_API_URL:-}" && -z "${OUTLINE_API_TOKEN:-}" ]]; then
+if [[ -n "${OUTLINE_API_URL:-}" && -z "${OUTLINE_API_TOKEN:-}" && "${require_secrets_normalized}" != "true" ]]; then
   warn "OUTLINE_API_URL está definido pero OUTLINE_API_TOKEN está vacío."
 fi
 
@@ -93,6 +94,6 @@ else
   popd >/dev/null
 fi
 
-auto_dirs
+auto_dirs "${auto_create_data_dirs_normalized}"
 
 echo "✅ Preflight Synology OK"
