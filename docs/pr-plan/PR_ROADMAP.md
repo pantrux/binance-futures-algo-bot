@@ -32,7 +32,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-7 | Worker híbrido market-driven con fallback demo | ✅ Mergeado | worker market-driven operativo con fallback controlado |
 | PR-8 | Observabilidad y hardening operativo | ✅ Mergeado | métricas, logs estructurados y controles de hardening operativo |
 | PR-9 | Despliegue real en Synology con smoke tests | ✅ Mergeado | gate de smoke en Synology + workflow manual + ADR-013 |
-| PR-10 | Preflight de configuración Synology | 🟡 En progreso | validación previa de `.env` + compose config + ADR-014 |
+| PR-10 | Preflight de configuración Synology | ✅ Mergeado | validación previa de `.env` + compose config + ADR-014 |
+| PR-11 | Release gate unificado Synology | 🟡 En progreso | preflight + smoke + reporte auditable en una sola corrida |
 
 ## Secuencia de PRs actualizada
 
@@ -172,7 +173,7 @@ No activar live trading. Solo deploy + smoke tests + paper/testnet.
 ---
 
 ### PR-10 — Preflight de configuración Synology
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Agregar un gate previo al despliegue que valide configuración (`.env`) y resolución de `docker compose` antes de ejecutar build/up en NAS.
@@ -185,6 +186,23 @@ Agregar un gate previo al despliegue que valide configuración (`.env`) y resolu
 
 **Gate extra**
 Mantener `PAPER_TRADING=true` y no habilitar live trading.
+
+---
+
+### PR-11 — Release gate unificado Synology
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Unificar en una sola corrida auditable el gate `preflight -> smoke`, con reporte formal para trazabilidad de operación.
+
+**Entregables**
+- script `scripts/synology_release_gate.sh`
+- workflow manual `synology-release-gate.yml`
+- reporte Markdown de resultados como artefacto
+- docs/runbook actualizados para ejecución única
+
+**Gate extra**
+Sin live trading; solo operación controlada y validación de salud/despliegue.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

@@ -1,0 +1,91 @@
+name: Synology Release Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "Base URL API Synology (ej: https://TU_NAS/bot-api)"
+        required: true
+        default: ""
+      web_base_url:
+        description: "Base URL Web Synology (ej: https://TU_NAS/bot-web)"
+        required: true
+        default: ""
+      strict_external_checks:
+        description: "Si es false, no bloquea por caída externa de Binance testnet"
+        required: false
+        type: choice
+        options:
+          - "true"
+          - "false"
+        default: "true"
+      require_secrets:
+        description: "Si es true, exige BINANCE/OUTLINE secrets no vacíos en preflight"
+        required: false
+        type: choice
+        options:
+          - "false"
+          - "true"
+        default: "false"
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Validate workflow inputs
+        env:
+          API_BASE_URL_INPUT: ${{ inputs.api_base_url }}
+          WEB_BASE_URL_INPUT: ${{ inputs.web_base_url }}
+        run: |
+          if [[ -z "${API_BASE_URL_INPUT}" || -z "${WEB_BASE_URL_INPUT}" ]]; then
+            echo "❌ Debes informar api_base_url y web_base_url" >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare env file for preflight
+        env:
+          REQUIRE_SECRETS_INPUT: ${{ inputs.require_secrets }}
+          BINANCE_API_KEY_SECRET: ${{ secrets.BINANCE_API_KEY }}
+          BINANCE_API_SECRET_SECRET: ${{ secrets.BINANCE_API_SECRET }}
+          OUTLINE_API_TOKEN_SECRET: ${{ secrets.OUTLINE_API_TOKEN }}
+        run: |
+          cp infra/docker/synology/.env.example /tmp/synology.env
+
+          if [[ "${REQUIRE_SECRETS_INPUT}" == "true" ]]; then
+            if [[ -z "${BINANCE_API_KEY_SECRET}" || -z "${BINANCE_API_SECRET_SECRET}" || -z "${OUTLINE_API_TOKEN_SECRET}" ]]; then
+              echo "❌ REQUIRE_SECRETS=true requiere secrets BINANCE_API_KEY, BINANCE_API_SECRET y OUTLINE_API_TOKEN" >&2
+              exit 1
+            fi
+
+            {
+              echo "BINANCE_API_KEY=${BINANCE_API_KEY_SECRET}"
+              echo "BINANCE_API_SECRET=${BINANCE_API_SECRET_SECRET}"
+              echo "OUTLINE_API_TOKEN=${OUTLINE_API_TOKEN_SECRET}"
+            } >> /tmp/synology.env
+          fi
+
+          cp /tmp/synology.env infra/docker/synology/.env
+
+      - name: Run release gate
+        env:
+          REPORT_PATH: artifacts/synology-release-gate.md
+          COMPOSE_DIR: infra/docker/synology
+          ENV_FILE: /tmp/synology.env
+          REQUIRE_SECRETS: ${{ inputs.require_secrets }}
+          API_BASE_URL: ${{ inputs.api_base_url }}
+          WEB_BASE_URL: ${{ inputs.web_base_url }}
+          STRICT_EXTERNAL_CHECKS: ${{ inputs.strict_external_checks }}
+          METRICS_API_KEY: ${{ secrets.METRICS_API_KEY }}
+        run: |
+          ./scripts/synology_release_gate.sh
+
+      - name: Upload gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synology-release-gate-report
+          path: artifacts/synology-release-gate.md

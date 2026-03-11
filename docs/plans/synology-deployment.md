@@ -34,9 +34,12 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
 7. Ejecutar smoke test:
    - `API_BASE_URL=... WEB_BASE_URL=... ./scripts/synology_smoke_test.sh`
 8. Configurar reverse proxy del NAS o Nginx Proxy Manager.
-9. Ejecutar validaciones remotas opcionales por GitHub Actions:
+9. Ejecutar release gate unificado (recomendado):
+   - `ENV_FILE=... API_BASE_URL=... WEB_BASE_URL=... ./scripts/synology_release_gate.sh`
+10. Ejecutar validaciones remotas opcionales por GitHub Actions:
    - `Synology Preflight` (`workflow_dispatch`)
    - `Synology Smoke Test` (`workflow_dispatch`)
+   - `Synology Release Gate` (`workflow_dispatch`)
 
 ## Prohibiciones
 - No desplegar API/worker/web en OpenClaw.

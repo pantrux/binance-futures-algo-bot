@@ -50,6 +50,17 @@ También disponible por GitHub Actions (`Synology Preflight`, `workflow_dispatch
 
 > Seguridad: `synology_preflight_check.sh` carga `ENV_FILE` con `source`; úsalo solo con archivos de entorno confiables.
 
+## Release gate unificado (PR-11)
+
+```bash
+ENV_FILE=infra/docker/synology/.env \
+API_BASE_URL="http://IP_NAS:API_PORT" \
+WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
+./scripts/synology_release_gate.sh
+```
+
+Genera reporte Markdown en `artifacts/synology-release-gate.md`.
+
 ## Smoke test automático (PR-9)
 
 Desde la raíz del repositorio:
