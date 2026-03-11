@@ -1,0 +1,28 @@
+name: Synology Preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      require_secrets:
+        description: "Si es true, exige BINANCE/OUTLINE secrets no vacíos"
+        required: false
+        default: "false"
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare env file
+        run: |
+          cp infra/docker/synology/.env.example /tmp/synology.env
+
+      - name: Run preflight
+        env:
+          ENV_FILE: /tmp/synology.env
+          REQUIRE_SECRETS: ${{ inputs.require_secrets }}
+        run: |
+          ./scripts/synology_preflight_check.sh

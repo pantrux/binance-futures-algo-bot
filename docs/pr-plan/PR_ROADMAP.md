@@ -31,6 +31,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-6 | Señales y features técnicos base | ✅ Mergeado | señales derivadas iniciales listas para preparar el worker |
 | PR-7 | Worker híbrido market-driven con fallback demo | ✅ Mergeado | worker market-driven operativo con fallback controlado |
 | PR-8 | Observabilidad y hardening operativo | ✅ Mergeado | métricas, logs estructurados y controles de hardening operativo |
+| PR-9 | Despliegue real en Synology con smoke tests | ✅ Mergeado | gate de smoke en Synology + workflow manual + ADR-013 |
+| PR-10 | Preflight de configuración Synology | 🟡 En progreso | validación previa de `.env` + compose config + ADR-014 |
 
 ## Secuencia de PRs actualizada
 
@@ -151,7 +153,7 @@ Agregar salud operativa, métricas y controles de incidente.
 ---
 
 ### PR-9 — Despliegue real en Synology
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Llevar el stack a contenedores reales dentro del NAS con smoke tests y runbook final.
@@ -166,6 +168,23 @@ Llevar el stack a contenedores reales dentro del NAS con smoke tests y runbook f
 
 **Gate extra**
 No activar live trading. Solo deploy + smoke tests + paper/testnet.
+
+---
+
+### PR-10 — Preflight de configuración Synology
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Agregar un gate previo al despliegue que valide configuración (`.env`) y resolución de `docker compose` antes de ejecutar build/up en NAS.
+
+**Entregables**
+- script `scripts/synology_preflight_check.sh`
+- workflow manual `synology-preflight.yml`
+- actualización de runbook/deployment/README
+- ADR-014
+
+**Gate extra**
+Mantener `PAPER_TRADING=true` y no habilitar live trading.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

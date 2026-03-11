@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 5 en ejecución controlada (pre-despliegue real)
-- **Último hito consolidado:** observabilidad y hardening operativo mergeado (`PR-8`)
-- **Trabajo activo:** `PR-9` — despliegue real en Synology con smoke tests y runbook final
+- **Estado global actual:** Fase 5 en ejecución controlada (despliegue NAS con gates operativos)
+- **Último hito consolidado:** despliegue Synology con smoke tests mergeado (`PR-9`)
+- **Trabajo activo:** `PR-10` — preflight de configuración Synology antes de `compose up`
 
 ## Gantt textual de avance
 
@@ -17,8 +17,8 @@
 | Fase 1 — Integración de mercado | ✅ Completada | 100% | Ingesta OHLCV/snapshots, hardening de mercado, base persistida para análisis |
 | Fase 2 — Señales | ✅ Completada | 100% | Indicadores + señales derivadas + worker híbrido market-driven entregados |
 | Fase 3 — Planeación y riesgo | 🟡 En progreso | 80% | Risk engine operativo, hardening continuo de score/gating pendiente fino |
-| Fase 4 — Ejecución | 🟡 En progreso | 70% | Worker market-driven + paper/testnet listos; falta cierre de despliegue operativo en NAS |
-| Fase 5 — Operación controlada | 🟡 En progreso | 65% | Observabilidad baseline completada (PR-8); en curso deploy real Synology + smoke/runbook final |
+| Fase 4 — Ejecución | ✅ Completada | 100% | Worker market-driven + despliegue Synology base + smoke operativo (PR-9) |
+| Fase 5 — Operación controlada | 🟡 En progreso | 78% | Observabilidad + smoke completados; en curso preflight de configuración y gate final de operación NAS |
 
 ---
 
@@ -118,11 +118,10 @@ Requiere cerrar la capa de señales base de la Fase 2.
 - sincronización de estado base para dashboard
 
 ### Alcance pendiente
-- validación extendida de ejecución sobre testnet con smoke operativo post-deploy
-- hardening de manejo de errores de ejecución en entorno NAS real
+- mejoras incrementales de resiliencia bajo carga y observabilidad avanzada
 
 ### Dependencia
-Se completa con el cierre del despliegue real controlado de PR-9.
+Fase cerrada con PR-9; mejoras futuras pasan a Fase 5 (operación controlada).
 
 ---
 
@@ -134,10 +133,10 @@ Se completa con el cierre del despliegue real controlado de PR-9.
 - endpoint de métricas con auth opcional
 - hardening de configuración/errores en worker y API
 
-### Alcance activo (PR-9)
-- despliegue real del stack en Synology con smoke tests formales
-- validación operativa de endpoints y dashboard en entorno NAS
-- runbook final de operación controlada
+### Alcance activo (PR-10)
+- preflight de configuración (`.env` + compose config) previo al despliegue
+- workflow manual de preflight en GitHub Actions
+- ajuste final de runbooks para secuencia preflight → deploy → smoke
 
 ### Guardrails
 - live trading sigue deshabilitado

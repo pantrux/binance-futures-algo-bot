@@ -27,12 +27,16 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
 1. Copiar repositorio al NAS.
 2. Copiar `infra/docker/synology/.env.example` a `.env`.
 3. Ajustar credenciales y puertos.
-4. Ejecutar `docker compose up -d --build` desde `infra/docker/synology`.
-5. Validar salud de `postgres`, `redis`, `api`, `worker` y `web`.
-6. Ejecutar smoke test:
+4. Ejecutar preflight:
+   - `ENV_FILE=infra/docker/synology/.env ./scripts/synology_preflight_check.sh`
+5. Ejecutar `docker compose up -d --build` desde `infra/docker/synology`.
+6. Validar salud de `postgres`, `redis`, `api`, `worker` y `web`.
+7. Ejecutar smoke test:
    - `API_BASE_URL=... WEB_BASE_URL=... ./scripts/synology_smoke_test.sh`
-7. Configurar reverse proxy del NAS o Nginx Proxy Manager.
-8. Ejecutar smoke remoto opcional por GitHub Actions (`Synology Smoke Test`, `workflow_dispatch`).
+8. Configurar reverse proxy del NAS o Nginx Proxy Manager.
+9. Ejecutar validaciones remotas opcionales por GitHub Actions:
+   - `Synology Preflight` (`workflow_dispatch`)
+   - `Synology Smoke Test` (`workflow_dispatch`)
 
 ## Prohibiciones
 - No desplegar API/worker/web en OpenClaw.
