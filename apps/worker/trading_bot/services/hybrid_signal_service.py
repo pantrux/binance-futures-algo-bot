@@ -90,7 +90,7 @@ class HybridSignalService:
         vol_regime = snapshot.get("volatility_regime", "unknown")
         ema_spread_pct = self._coerce_optional_number(snapshot.get("ema_spread_pct"), default=None)
         atr_pct = float(snapshot["atr_pct"])
-        rsi_14 = self._coerce_optional_number(snapshot.get("rsi_14"), default=50.0)
+        rsi_14 = self._coerce_optional_number(snapshot.get("rsi_14"), default=None)
         momentum_10 = self._coerce_optional_number(snapshot.get("momentum_10"), default=0.0)
 
         technical = self._technical_score(trend_bias, momentum_bias, rsi_14=rsi_14, momentum_10=momentum_10)
@@ -175,11 +175,12 @@ class HybridSignalService:
     def _bias_score(bias: str) -> float:
         return {"bullish": 80.0, "neutral": 55.0, "bearish": 30.0}.get(bias, 50.0)
 
-    def _technical_score(self, trend_bias: str, momentum_bias: str, rsi_14: float, momentum_10: float) -> float:
+    def _technical_score(self, trend_bias: str, momentum_bias: str, rsi_14: float | None, momentum_10: float) -> float:
         base = 0.6 * self._bias_score(trend_bias) + 0.4 * self._bias_score(momentum_bias)
         # Ajuste deliberadamente simétrico: penaliza extremos de RSI sin asumir dirección adicional del trade.
         # Escalado para ocupar efectivamente el rango objetivo [-8, +8].
-        base += max(-8.0, min(8.0, (50.0 - abs(rsi_14 - 50.0)) / 3.0 - 8.0))
+        if rsi_14 is not None:
+            base += max(-8.0, min(8.0, (50.0 - abs(rsi_14 - 50.0)) / 3.0 - 8.0))
         base += max(-6.0, min(6.0, momentum_10 / 2.0))
         return max(0.0, min(100.0, base))
 
