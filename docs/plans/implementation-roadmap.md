@@ -18,7 +18,7 @@
 | Fase 2 — Señales | ✅ Completada | 100% | Indicadores + señales derivadas + worker híbrido market-driven entregados |
 | Fase 3 — Planeación y riesgo | 🟡 En progreso | 80% | Risk engine operativo, hardening continuo de score/gating pendiente fino |
 | Fase 4 — Ejecución | ✅ Completada | 100% | Worker market-driven + despliegue Synology base + smoke operativo (PR-9) |
-| Fase 5 — Operación controlada | 🟡 En progreso | 99% | Observabilidad + smoke + preflight + release gate + verificación JSON + Make + checklist + paquete consolidados; en curso automatización final del workflow de sign-off |
+| Fase 5 — Operación controlada | 🟡 En progreso | 100% | Cadena operativa completa implementada (preflight/smoke/release/summary/verify/checklist/package); en curso cierre documental formal |
 
 ---
 
@@ -133,10 +133,10 @@ Fase cerrada con PR-9; mejoras futuras pasan a Fase 5 (operación controlada).
 - endpoint de métricas con auth opcional
 - hardening de configuración/errores en worker y API
 
-### Alcance activo (PR-17)
-- workflow CI con pipeline completo de sign-off (`gate -> summary -> verify -> checklist -> package`)
-- parámetros de sign-off en workflow_dispatch para trazabilidad humana
-- cierre final de fase 5 con evidencia automatizada + manual integrada
+### Alcance activo (PR-18)
+- documento formal de cierre de fase 5
+- consolidación de criterios de aceptación cumplidos
+- recomendaciones para continuidad de operación controlada
 
 ### Guardrails
 - live trading sigue deshabilitado

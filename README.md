@@ -90,6 +90,7 @@ Ejecución remota desde GitHub Actions (`workflow_dispatch`):
 - `Synology Preflight` (modo `require_secrets=true` usa `BINANCE_API_KEY`, `BINANCE_API_SECRET`, `OUTLINE_API_TOKEN` desde GitHub Secrets)
 - `Synology Smoke Test`
 - `Synology Release Gate` (sube reporte Markdown + resumen JSON + checklist + paquete de sign-off, y valida estructura del JSON)
+- Cierre formal de fase operativa documentado en `docs/plans/phase5-operational-closure.md`
 
 Checklist de aprobación manual:
 
