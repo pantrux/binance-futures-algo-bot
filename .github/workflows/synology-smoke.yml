@@ -1,0 +1,44 @@
+name: Synology Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "Base URL de API en Synology (ej: https://TU_NAS/bot-api)"
+        required: true
+        default: ""
+      web_base_url:
+        description: "Base URL de web en Synology (ej: https://TU_NAS/bot-web)"
+        required: true
+        default: ""
+      strict_external_checks:
+        description: "Si es false, no bloquea por caída externa de Binance testnet"
+        required: false
+        default: "true"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate workflow inputs
+        env:
+          API_BASE_URL_INPUT: ${{ inputs.api_base_url }}
+          WEB_BASE_URL_INPUT: ${{ inputs.web_base_url }}
+        run: |
+          if [[ -z "${API_BASE_URL_INPUT}" || -z "${WEB_BASE_URL_INPUT}" ]]; then
+            echo "❌ Debes informar api_base_url y web_base_url en workflow_dispatch" >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Synology smoke test
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url }}
+          WEB_BASE_URL: ${{ inputs.web_base_url }}
+          STRICT_EXTERNAL_CHECKS: ${{ inputs.strict_external_checks }}
+          METRICS_API_KEY: ${{ secrets.METRICS_API_KEY }}
+        run: |
+          ./scripts/synology_smoke_test.sh

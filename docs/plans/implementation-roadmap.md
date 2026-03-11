@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 2 en ejecución
-- **Último hito consolidado:** capa base de señales y feature engineering inicial mergeada (`PR-6`)
-- **Trabajo activo:** preparación de `PR-7` — worker market-driven
+- **Estado global actual:** Fase 5 en ejecución controlada (pre-despliegue real)
+- **Último hito consolidado:** observabilidad y hardening operativo mergeado (`PR-8`)
+- **Trabajo activo:** `PR-9` — despliegue real en Synology con smoke tests y runbook final
 
 ## Gantt textual de avance
 
@@ -15,10 +15,10 @@
 |---|---|---:|---|
 | Fase 0 — Fundación | ✅ Completada | 100% | Monorepo, ADRs, CI, dashboard base, RiskEngine, baseline Synology-first |
 | Fase 1 — Integración de mercado | ✅ Completada | 100% | Ingesta OHLCV/snapshots, hardening de mercado, base persistida para análisis |
-| Fase 2 — Señales | 🟡 En progreso | 60% | Indicadores técnicos base y señales derivadas iniciales listos; faltan patrones, sentimiento y señales más avanzadas |
-| Fase 3 — Planeación y riesgo | ⏳ Pendiente | 0% | Régimen, sizing dinámico, circuit breakers, correlación |
-| Fase 4 — Ejecución | ⏳ Pendiente | 0% | Binance Futures Testnet, órdenes, fills, sincronización de estado |
-| Fase 5 — Operación controlada | ⏳ Pendiente | 0% | Alertas, reportes, despliegue progresivo, operación controlada |
+| Fase 2 — Señales | ✅ Completada | 100% | Indicadores + señales derivadas + worker híbrido market-driven entregados |
+| Fase 3 — Planeación y riesgo | 🟡 En progreso | 80% | Risk engine operativo, hardening continuo de score/gating pendiente fino |
+| Fase 4 — Ejecución | 🟡 En progreso | 70% | Worker market-driven + paper/testnet listos; falta cierre de despliegue operativo en NAS |
+| Fase 5 — Operación controlada | 🟡 En progreso | 65% | Observabilidad baseline completada (PR-8); en curso deploy real Synology + smoke/runbook final |
 
 ---
 
@@ -64,7 +64,7 @@
 ---
 
 ## Fase 2 — Señales
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Completada
 
 ### Entregado
 - indicadores técnicos base:
@@ -74,24 +74,23 @@
   - momentum
 - endpoint de snapshot técnico
 - metadata de frescura (`last_candle_close_ms`)
-
-### En progreso
-- señales derivadas / feature engineering inicial:
+- señales derivadas / feature engineering:
   - `trend_bias`
   - `momentum_bias`
   - `volatility_regime`
   - `ema_spread_pct`
   - `atr_pct`
+- consumo operativo desde worker híbrido market-driven con fallback demo controlado
 
-### Pendiente
-- patrones de velas
-- sentimiento
-- señales/fundamental crypto-native
-- consolidación de features para consumo del worker
+### Pendiente (mejora continua)
+- patrones de velas avanzados
+- sentimiento/fundamental crypto-native adicional
+- features experimentales para modelos posteriores
 
 ### PRs / hitos relacionados
 - `PR-5` — indicadores técnicos base ✅
 - `PR-6` — señales y features técnicos base ✅
+- `PR-7` — worker híbrido market-driven ✅
 
 ---
 
@@ -111,28 +110,38 @@ Requiere cerrar la capa de señales base de la Fase 2.
 ---
 
 ## Fase 4 — Ejecución
-**Estado:** ⏳ Pendiente
+**Estado:** 🟡 En progreso
 
-### Alcance esperado
-- Binance Futures Testnet
-- órdenes y fills
-- sincronización de estado
+### Alcance entregado/parcial
 - worker market-driven operativo
+- flujo paper trading con órdenes/fills simulados
+- sincronización de estado base para dashboard
+
+### Alcance pendiente
+- validación extendida de ejecución sobre testnet con smoke operativo post-deploy
+- hardening de manejo de errores de ejecución en entorno NAS real
 
 ### Dependencia
-Requiere planeación/riesgo suficientemente estable.
+Se completa con el cierre del despliegue real controlado de PR-9.
 
 ---
 
 ## Fase 5 — Operación controlada
-**Estado:** ⏳ Pendiente
+**Estado:** 🟡 En progreso
 
-### Alcance esperado
-- alertas
-- reportes
-- despliegue progresivo
-- operación controlada
-- guardrails finales antes de cualquier trading real
+### Alcance entregado/parcial
+- observabilidad baseline (métricas + logs estructurados)
+- endpoint de métricas con auth opcional
+- hardening de configuración/errores en worker y API
+
+### Alcance activo (PR-9)
+- despliegue real del stack en Synology con smoke tests formales
+- validación operativa de endpoints y dashboard en entorno NAS
+- runbook final de operación controlada
+
+### Guardrails
+- live trading sigue deshabilitado
+- mantener `PAPER_TRADING=true` hasta cerrar gate operativo final
 
 ---
 

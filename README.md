@@ -42,6 +42,20 @@ El worker market-driven usa `asyncio.TaskGroup`; si se intenta ejecutar con Pyth
 - Logs estructurados JSON en API (`api_request`) y worker (`trade_plan_created`, `paper_trade_executed`, etc.).
 - Política de fallos parciales del worker configurable con `strict_symbol_failures` (`STRICT_SYMBOL_FAILURES` en `.env`).
 
+## Smoke test de despliegue Synology (PR-9)
+
+```bash
+API_BASE_URL="http://IP_NAS:API_PORT" \
+WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
+METRICS_API_KEY="<opcional>" \
+./scripts/synology_smoke_test.sh
+```
+
+También se puede ejecutar remotamente desde GitHub Actions (`Synology Smoke Test` vía `workflow_dispatch`, ingresando manualmente las URLs de API/Web y opcionalmente `strict_external_checks`).
+
+Si Binance Testnet está intermitente y solo quieres validar salud interna del stack NAS, puedes correr:
+`STRICT_EXTERNAL_CHECKS=false ./scripts/synology_smoke_test.sh`.
+
 Este repositorio contiene la **fundación del proyecto**:
 
 - blueprint de arquitectura
