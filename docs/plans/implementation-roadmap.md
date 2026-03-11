@@ -6,8 +6,8 @@
 ## Resumen ejecutivo
 
 - **Estado global actual:** Fase 5 en ejecución controlada (despliegue NAS con gates operativos)
-- **Último hito consolidado:** estandarización operativa con Makefile mergeada (`PR-14`)
-- **Trabajo activo:** `PR-15` — checklist de aprobación operacional
+- **Último hito consolidado:** checklist de aprobación operacional mergeada (`PR-15`)
+- **Trabajo activo:** `PR-16` — paquete consolidado de sign-off
 
 ## Gantt textual de avance
 
@@ -18,7 +18,7 @@
 | Fase 2 — Señales | ✅ Completada | 100% | Indicadores + señales derivadas + worker híbrido market-driven entregados |
 | Fase 3 — Planeación y riesgo | 🟡 En progreso | 80% | Risk engine operativo, hardening continuo de score/gating pendiente fino |
 | Fase 4 — Ejecución | ✅ Completada | 100% | Worker market-driven + despliegue Synology base + smoke operativo (PR-9) |
-| Fase 5 — Operación controlada | 🟡 En progreso | 98% | Observabilidad + smoke + preflight + release gate + verificación JSON + Make targets completados; en curso formalización de sign-off manual |
+| Fase 5 — Operación controlada | 🟡 En progreso | 99% | Observabilidad + smoke + preflight + release gate + verificación JSON + Make targets + checklist completados; en curso empaquetado final de evidencia |
 
 ---
 
@@ -133,10 +133,10 @@ Fase cerrada con PR-9; mejoras futuras pasan a Fase 5 (operación controlada).
 - endpoint de métricas con auth opcional
 - hardening de configuración/errores en worker y API
 
-### Alcance activo (PR-15)
-- checklist operacional para sign-off humano posterior al gate automático
-- generación reproducible de evidencia de aprobación manual
-- cierre de fase con paquete completo: preflight + smoke + release gate + verify + sign-off
+### Alcance activo (PR-16)
+- consolidación final de evidencia (`gate md + gate json + checklist`) en un solo paquete
+- artefacto final orientado a auditoría y handoff
+- cierre de fase con bundle operativo completo para operación controlada
 
 ### Guardrails
 - live trading sigue deshabilitado
