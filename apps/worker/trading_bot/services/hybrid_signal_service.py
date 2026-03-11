@@ -30,10 +30,14 @@ class HybridSignalService:
         self, symbol: str
     ) -> tuple[SignalPack, MarketContext, str, dict[str, float], HybridSignalResult]:
         try:
-            snapshot, market = await asyncio.gather(
-                self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit),
-                self.api_client.get_market_snapshot(symbol),
-            )
+            async with asyncio.TaskGroup() as task_group:
+                snapshot_task = task_group.create_task(
+                    self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
+                )
+                market_task = task_group.create_task(self.api_client.get_market_snapshot(symbol))
+
+            snapshot = snapshot_task.result()
+            market = market_task.result()
             if not self._is_snapshot_usable(snapshot):
                 raise ValueError("snapshot_incompleto")
             if market is None:
@@ -44,14 +48,24 @@ class HybridSignalService:
         except Exception as exc:  # noqa: BLE001
             pack, context, thesis, levels = self.demo_service.build_signal_pack(symbol)
             side = "short" if pack.technical < 50 and pack.sentiment < 50 else "long"
-            return pack, context, thesis, levels, HybridSignalResult(source="demo", reason=str(exc), side=side)
+            return pack, context, thesis, levels, HybridSignalResult(
+                source="demo", reason=self._exception_reason(exc), side=side
+            )
+
+
+    @staticmethod
+    def _exception_reason(exc: Exception) -> str:
+        if hasattr(exc, "exceptions") and getattr(exc, "exceptions"):
+            first = exc.exceptions[0]
+            return str(first)
+        return str(exc)
 
     @staticmethod
     def _is_snapshot_usable(snapshot: dict | None) -> bool:
         if not snapshot:
             return False
-        required_any = ["trend_bias", "momentum_bias", "volatility_regime"]
-        if any(snapshot.get(k) in (None, "unknown") for k in required_any):
+        required_fields = ["trend_bias", "momentum_bias", "volatility_regime"]
+        if any(snapshot.get(field) in (None, "unknown") for field in required_fields):
             return False
         return snapshot.get("last_candle_close_ms") is not None and snapshot.get("atr_pct") is not None
 
@@ -123,6 +137,7 @@ class HybridSignalService:
     def _technical_score(self, trend_bias: str, momentum_bias: str, rsi_14: float | None, momentum_10: float | None) -> float:
         base = 0.6 * self._bias_score(trend_bias) + 0.4 * self._bias_score(momentum_bias)
         if rsi_14 is not None:
+            # Ajuste deliberadamente simétrico: penaliza extremos de RSI sin asumir dirección adicional del trade.
             base += max(-8.0, min(8.0, (50.0 - abs(rsi_14 - 50.0)) / 6.0 - 4.0))
         if momentum_10 is not None:
             base += max(-6.0, min(6.0, float(momentum_10) / 2.0))
