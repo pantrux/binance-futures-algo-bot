@@ -46,13 +46,16 @@ def create_app() -> FastAPI:
             )
         finally:
             duration_ms = (perf_counter() - start) * 1000.0
-            await asyncio.to_thread(
-                api_metrics.record,
-                method=request.method,
-                path=request.url.path,
-                status_code=status_code,
-                latency_ms=duration_ms,
-            )
+            try:
+                await asyncio.to_thread(
+                    api_metrics.record,
+                    method=request.method,
+                    path=request.url.path,
+                    status_code=status_code,
+                    latency_ms=duration_ms,
+                )
+            except Exception:  # noqa: BLE001
+                pass
             logger.info(
                 json.dumps(
                     {

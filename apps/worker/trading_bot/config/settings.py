@@ -25,10 +25,13 @@ class WorkerSettings(BaseSettings):
             try:
                 parsed = json.loads(raw)
                 if isinstance(parsed, (list, tuple)):
-                    result = tuple(str(item).strip() for item in parsed if str(item).strip())
+                    if not all(isinstance(item, str) for item in parsed):
+                        raise ValueError("todos los elementos de la lista deben ser strings")
+                    result = tuple(item.strip() for item in parsed if item.strip())
                     if not result:
                         raise ValueError("lista de símbolos/timeframes no puede estar vacía")
                     return result
+                raise ValueError(f"se esperaba una lista JSON, se recibió {type(parsed).__name__}")
             except json.JSONDecodeError:
                 pass
             result = tuple(item.strip() for item in raw.split(",") if item.strip())

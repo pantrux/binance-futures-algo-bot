@@ -11,8 +11,15 @@ logger = logging.getLogger("apps.worker.observability")
 
 
 def ensure_logging_configured() -> None:
-    if not logging.getLogger().handlers:
-        logging.basicConfig(level=logging.INFO, format="%(message)s")
+    worker_logger = logging.getLogger("apps.worker")
+    if worker_logger.handlers:
+        return
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    worker_logger.addHandler(handler)
+    worker_logger.setLevel(logging.INFO)
+    worker_logger.propagate = False
 
 
 def log_event(event: str, **payload: object) -> None:
