@@ -19,7 +19,7 @@ services:
     image: redis:7-alpine
     container_name: trading-bot-redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "no"]
     volumes:
       - ${DATA_ROOT}/redis:/data
     healthcheck:
@@ -30,7 +30,7 @@ services:
 
   migrate:
     build:
-      context: ../../
+      context: ../../../
       dockerfile: apps/api/Dockerfile
     container_name: trading-bot-migrate
     env_file:
@@ -46,7 +46,7 @@ services:
 
   api:
     build:
-      context: ../../
+      context: ../../../
       dockerfile: apps/api/Dockerfile
     container_name: trading-bot-api
     restart: unless-stopped
@@ -72,7 +72,7 @@ services:
 
   worker:
     build:
-      context: ../../
+      context: ../../../
       dockerfile: apps/worker/Dockerfile
     container_name: trading-bot-worker
     restart: unless-stopped
@@ -92,7 +92,7 @@ services:
 
   web:
     build:
-      context: ../../
+      context: ../../../
       dockerfile: apps/web/Dockerfile
     container_name: trading-bot-web
     restart: unless-stopped

@@ -1,48 +1,56 @@
-# Plan maestro de diseño e implementación
+# Plan maestro de diseño e implementación (end-to-end)
 
-## Visión
-Construir un bot algorítmico de Binance Futures con decisiones explicables, ejecución controlada y trazabilidad documental completa.
+## Propósito
+Definir un plan cerrado de principio a fin para construir, operar y endurecer el bot de Binance Futures sin improvisación de etapas.
 
-## Capacidades obligatorias
-- análisis técnico
-- análisis fundamental crypto-native
-- análisis de sentimiento
-- scalping e intradía
-- indicadores principales
-- patrones de velas y estructura
-- sizing dinámico
-- gestión de riesgo estricta
-- dashboard web
-- documentación automática en Outline
+## Resultado final objetivo
+Un sistema de trading algorítmico **auditable, resiliente y operable** en Synology, con:
+- pipeline completo: datos → señales → riesgo → ejecución → observabilidad,
+- operación continua con evidencias automáticas y políticas de continuidad,
+- criterios formales de transición (paper → testnet → eventual live),
+- documentación sincronizada y ordenada en repo + Outline.
 
-## Arquitectura lógica
-1. Ingesta de datos
-2. Normalización de señales
-3. Clasificador de régimen
-4. Estrategias
-5. Risk Engine
-6. Executor
-7. Persistencia
-8. Dashboard
-9. Sync documental
+## Arquitectura objetivo
+1. **Ingesta de datos** (OHLCV, snapshots, funding/open interest).
+2. **Capa técnica de señales** (indicadores + features).
+3. **Capa de decisión de riesgo** (régimen, sizing, correlación, gate).
+4. **Capa de ejecución** (paper + testnet + reconciliación).
+5. **Capa operativa** (preflight/smoke/release gate/sign-off).
+6. **Observabilidad y continuidad** (métricas, alertas, DR, retención).
+7. **Gobernanza documental** (ADRs, roadmaps, sync idempotente a Outline).
 
-## Estrategias de la primera ola
-- scalping de continuación
-- scalping de reversión controlada
-- breakout intradía
-- mean reversion intradía
+## Etapas oficiales del programa
 
-## Reglas de producción
-- nunca exceder 5% de riesgo total agregado
-- operar primero en paper trading
-- luego testnet
-- luego capital real mínimo
-- cualquier cambio de riesgo requiere tests y documentación
+### Etapa A — Fundaciones (completada)
+- PR-1 a PR-7.
+- Entrega: repo gobernado por PR, ingesta robusta, señales y worker market-driven.
 
-## Definition of Done del MVP
-- API operativa
-- worker con score compuesto y blueprint de trade
-- dashboard base
-- CI verde
-- documentos principales en Outline
-- repositorio público/privado creado en GitHub
+### Etapa B — Operación controlada (completada)
+- PR-8 a PR-18.
+- Entrega: observabilidad baseline, gates operativos, sign-off y cierre formal de fase.
+
+### Etapa C — Gobernanza documental (en cierre)
+- PR-19.
+- Entrega: estructura documental ordenada + sync idempotente sin duplicados en Outline.
+
+### Etapa D — Infraestructura recurrente (próxima)
+- PR-20 a PR-24.
+- Entrega: cron operativo, retención de artifacts, alerting, DR, hardening de seguridad.
+
+### Etapa E — Riesgo cuantitativo avanzado
+- PR-25 a PR-28.
+- Entrega: régimen de mercado, sizing dinámico, correlación de portafolio, gate final avanzado.
+
+### Etapa F — Ejecución robusta en exchange
+- PR-29 a PR-31.
+- Entrega: router testnet, reconciliación/state machine, paridad paper-vs-testnet.
+
+### Etapa G — Go-live readiness
+- PR-32 a PR-34.
+- Entrega: backtesting/walk-forward, checklist de transición, cutover controlado.
+
+## Reglas inmutables del plan
+- `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G.
+- Ningún PR se cierra con comentarios/reviews abiertos.
+- Cada PR debe cerrar con evidencia: checks + docs + roadmap + sync Outline.
+- Cambios fuera del plan requieren ADR y actualización explícita del roadmap.

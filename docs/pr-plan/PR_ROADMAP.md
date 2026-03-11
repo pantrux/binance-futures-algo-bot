@@ -40,7 +40,23 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-15 | Checklist de aprobación operacional | ✅ Mergeado | plantilla y script para sign-off manual controlado |
 | PR-16 | Paquete consolidado de sign-off | ✅ Mergeado | consolidación de evidencia final en un solo artefacto |
 | PR-17 | Workflow completo de sign-off | ✅ Mergeado | orquestación CI de checklist+paquete junto al release gate |
-| PR-18 | Cierre formal de fase operativa | 🟡 En progreso | documento de cierre fase 5 y criterios de continuidad |
+| PR-18 | Cierre formal de fase operativa | ✅ Mergeado | cierre documental de fase 5 completado con criterios consolidados |
+| PR-19 | Orden documental y sync Outline idempotente | 🟡 En progreso | dedupe de Outline + estructura documental ordenada + script anti-duplicados |
+| PR-20 | Orquestación recurrente del gate operacional | 🔵 Planificado | cron/scheduler operacional para preflight/smoke/gate |
+| PR-21 | Retención y gobierno de artifacts | 🔵 Planificado | políticas 30/60/90 días + limpieza automática + trazabilidad |
+| PR-22 | Observabilidad y alerting de infraestructura | 🔵 Planificado | alertas operacionales + SLO de pipeline |
+| PR-23 | Resiliencia y recuperación (DR) | 🔵 Planificado | backup/restore validado y playbook de recuperación |
+| PR-24 | Hardening de seguridad operacional | 🔵 Planificado | rotación de secretos, permisos y superficie de exposición |
+| PR-25 | Clasificador de régimen de mercado | 🔵 Planificado | clasificación de contexto de mercado para gating |
+| PR-26 | Sizing dinámico por volatilidad/riesgo | 🔵 Planificado | position sizing adaptativo por riesgo cuantitativo |
+| PR-27 | Riesgo de portafolio y correlación | 🔵 Planificado | límites de exposición multi-símbolo y correlación |
+| PR-28 | Gate de decisión final y circuit breakers avanzados | 🔵 Planificado | capa final de decisión y apagado seguro |
+| PR-29 | Router Binance Testnet | 🔵 Planificado | ejecución real en testnet con trazabilidad de órdenes |
+| PR-30 | Reconciliación y máquina de estados de ejecución | 🔵 Planificado | consistencia entre órdenes/posiciones/eventos |
+| PR-31 | Paridad paper vs testnet (shadow run) | 🔵 Planificado | reporte comparativo y brechas de comportamiento |
+| PR-32 | Backtesting y walk-forward | 🔵 Planificado | validación cuantitativa de estrategias y robustez |
+| PR-33 | Checklist de transición y rampa de capital | 🔵 Planificado | criterios formales para eventual salida de paper |
+| PR-34 | Cutover controlado y monitoreo post-cutover | 🔵 Planificado | transición asistida con gates y rollback explícito |
 
 ## Secuencia de PRs actualizada
 
@@ -312,7 +328,7 @@ Sin live trading; automatización solo de evidencia operativa.
 ---
 
 ### PR-18 — Cierre formal de fase operativa
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Cerrar formalmente la fase 5 con documento de cierre, checklist de criterios cumplidos y recomendaciones de continuidad.
@@ -324,6 +340,218 @@ Cerrar formalmente la fase 5 con documento de cierre, checklist de criterios cum
 
 **Gate extra**
 Mantener guardrails de paper trading y no habilitar live trading.
+
+---
+
+### PR-19 — Orden documental y sync Outline idempotente
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Eliminar duplicados en Outline, ordenar la navegación documental y dejar automatizado un sync idempotente para evitar reincidencias.
+
+**Entregables**
+- `scripts/sync_outline_docs.py` (upsert + dedupe + estructura por categorías)
+- `docs/README.md` e índices por carpeta (`docs/adr|plans|diagrams|pr-plan/README.md`)
+- resolución del conflicto de numeración moviendo `ADR-008-market-ingestion-foundation.md` a `docs/adr/archive/`
+- runbook/README actualizados con proceso de sync sin duplicados
+
+**Gate extra**
+No modifica lógica de trading; sólo gobernanza y orden documental.
+
+---
+
+### PR-20 — Orquestación recurrente del gate operacional
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Automatizar validaciones operativas periódicas para que la salud de despliegue no dependa de ejecución manual ad-hoc.
+
+**Entregables**
+- programación recurrente de preflight/smoke/release health
+- política de reintentos y notificación
+- reporte de estado por ventana operacional
+
+---
+
+### PR-21 — Retención y gobierno de artifacts
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Controlar crecimiento de evidencia operativa y conservar sólo la historia útil para auditoría.
+
+**Entregables**
+- política de retención (30/60/90 días)
+- cleanup automático de artifacts obsoletos
+- índice de evidencia por corrida
+
+---
+
+### PR-22 — Observabilidad y alerting de infraestructura
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Convertir fallos operativos en señales accionables antes de que impacten continuidad.
+
+**Entregables**
+- alertas por fallo de gate/degradación
+- SLO del pipeline operacional
+- panel resumido de salud de operación
+
+---
+
+### PR-23 — Resiliencia y recuperación (DR)
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Asegurar continuidad ante incidentes de infraestructura o corrupción operativa.
+
+**Entregables**
+- backup/restore verificado
+- runbook de recuperación con pruebas
+- criterios de RTO/RPO documentados
+
+---
+
+### PR-24 — Hardening de seguridad operacional
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Reducir riesgo operacional por exposición de secretos o configuración insegura.
+
+**Entregables**
+- inventario y rotación de secretos
+- revisión de permisos/superficie expuesta
+- checklist de hardening continuo
+
+---
+
+### PR-25 — Clasificador de régimen de mercado
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Diferenciar contexto de mercado para ajustar reglas de entrada/salida y riesgo.
+
+**Entregables**
+- clasificador de régimen
+- señales de contexto integradas al gating
+- tests y ADR de criterio de clasificación
+
+---
+
+### PR-26 — Sizing dinámico por volatilidad/riesgo
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Escalar tamaño de posición según volatilidad y presupuesto de riesgo.
+
+**Entregables**
+- módulo de sizing dinámico
+- límites por símbolo/escenario
+- evidencia de sensibilidad en tests
+
+---
+
+### PR-27 — Riesgo de portafolio y correlación
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Evitar sobreexposición agregada por posiciones correlacionadas.
+
+**Entregables**
+- matriz/cálculo de correlación operativa
+- límites agregados multi-símbolo
+- eventos de riesgo enriquecidos
+
+---
+
+### PR-28 — Gate de decisión final y circuit breakers avanzados
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Consolidar una capa final de autorización/rechazo de trade plan.
+
+**Entregables**
+- gate final con score compuesto
+- circuit breakers avanzados
+- trazabilidad de razones de bloqueo
+
+---
+
+### PR-29 — Router Binance Testnet
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Conectar ejecución a Binance Testnet manteniendo control y trazabilidad completos.
+
+**Entregables**
+- router de órdenes testnet
+- manejo de errores/reintentos/idempotencia base
+- pruebas de integración en testnet
+
+---
+
+### PR-30 — Reconciliación y máquina de estados de ejecución
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Alinear estado interno del bot con estado real de órdenes/posiciones del exchange.
+
+**Entregables**
+- state machine de ejecución
+- reconciliación periódica de órdenes/posiciones
+- reporte de drift operacional
+
+---
+
+### PR-31 — Paridad paper vs testnet (shadow run)
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Medir brecha entre comportamiento esperado (paper) y real (testnet) antes de cualquier transición.
+
+**Entregables**
+- corrida shadow comparativa
+- reporte de desvíos por estrategia
+- criterios de aceptación mínimos para avanzar
+
+---
+
+### PR-32 — Backtesting y walk-forward
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Validar robustez estadística de estrategias bajo distintos periodos y condiciones.
+
+**Entregables**
+- framework de backtest/walk-forward
+- métricas de rendimiento y riesgo
+- informe técnico reproducible
+
+---
+
+### PR-33 — Checklist de transición y rampa de capital
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Definir formalmente condiciones para eventual transición fuera de paper.
+
+**Entregables**
+- checklist de transición go/no-go
+- política de rampa de capital por etapas
+- plan de rollback por umbrales de pérdida
+
+---
+
+### PR-34 — Cutover controlado y monitoreo post-cutover
+**Estado:** 🔵 Planificado
+
+**Objetivo**
+Ejecutar transición asistida únicamente si todos los gates anteriores se cumplen.
+
+**Entregables**
+- plan de cutover con pasos verificables
+- monitoreo intensivo post-cutover
+- criterio de rollback inmediato y comunicación de incidente
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

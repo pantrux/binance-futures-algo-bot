@@ -1,154 +1,118 @@
 # Roadmap de diseño e implementación
 
-> Este documento debe mantenerse actualizado después de **cada PR**.
-> Regla del proyecto: cada PR debe reflejar su avance en este roadmap y en la documentación asociada.
+> Este documento se actualiza después de **cada PR**.
+> Regla: ningún PR se considera cerrado sin actualizar roadmap + PR roadmap + docs/ADR + sync en Outline.
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 5 completada en modo de operación controlada (NAS)
-- **Último hito consolidado:** workflow completo de sign-off mergeado (`PR-17`)
-- **Trabajo activo:** `PR-18` — cierre formal de fase operativa
+- **Estado global actual:** Fase 5 cerrada en operación controlada (Synology) + PR-19 en cierre documental.
+- **PR activo:** `PR-19` — orden documental + sync Outline idempotente.
+- **Siguiente etapa planificada (sin improvisar):** **Fase 6 — Infraestructura recurrente y continuidad operacional** (`PR-20` a `PR-24`).
 
-## Gantt textual de avance
+## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
-| Fase | Estado | Avance estimado | Observaciones |
-|---|---|---:|---|
-| Fase 0 — Fundación | ✅ Completada | 100% | Monorepo, ADRs, CI, dashboard base, RiskEngine, baseline Synology-first |
-| Fase 1 — Integración de mercado | ✅ Completada | 100% | Ingesta OHLCV/snapshots, hardening de mercado, base persistida para análisis |
-| Fase 2 — Señales | ✅ Completada | 100% | Indicadores + señales derivadas + worker híbrido market-driven entregados |
-| Fase 3 — Planeación y riesgo | 🟡 En progreso | 80% | Risk engine operativo, hardening continuo de score/gating pendiente fino |
-| Fase 4 — Ejecución | ✅ Completada | 100% | Worker market-driven + despliegue Synology base + smoke operativo (PR-9) |
-| Fase 5 — Operación controlada | ✅ Completada | 100% | Cadena operativa completa implementada (preflight/smoke/release/summary/verify/checklist/package); cierre documental formal completado en PR-18 |
+La infraestructura base **ya comenzó y quedó levantada** en:
+- `PR-9` (despliegue real en Synology + smoke)
+- `PR-10` (preflight)
+- `PR-11` (release gate unificado)
+
+El **siguiente levantamiento de infraestructura** (continuidad, SRE, retención, DR, hardening) arranca inmediatamente después de PR-19, en **PR-20**.
 
 ---
 
-## Fase 0 — Fundación
-**Estado:** ✅ Completada
+## Gantt textual de avance (plan cerrado)
 
-### Entregado
-- Monorepo
-- ADRs y diagramas base
-- CI inicial
-- dashboard base
-- motor de riesgo inicial
-- baseline Synology-first (Dockerfiles + compose objetivo)
-- workflow formal por PR
-- paper trading y dominio operativo base
-
-### PRs / hitos relacionados
-- bootstrap inicial en `main`
-- `PR-1` — workflow por PR
+| Fase | Estado | Avance | PRs | Resultado esperado |
+|---|---|---:|---|---|
+| Fase 0 — Fundación | ✅ Completada | 100% | PR-1 | Gobierno de repo, workflow por PR, base técnica y documental |
+| Fase 1 — Integración de mercado | ✅ Completada | 100% | PR-2, PR-3, PR-4 | Ingesta OHLCV/snapshots robusta e idempotente |
+| Fase 2 — Señales | ✅ Completada | 100% | PR-5, PR-6, PR-7 | Indicadores + señales + worker market-driven |
+| Fase 3 — Planeación y riesgo avanzado | ⏳ Planificada | 0% | PR-25..PR-28 | Scoring/régimen/sizing/correlación/circuit breakers avanzados |
+| Fase 4 — Ejecución | ✅ Completada (baseline) | 100% | PR-7, PR-9 | Ejecución paper market-driven + despliegue base |
+| Fase 5 — Operación controlada | ✅ Completada | 100% | PR-8..PR-18 | Cadena operativa auditable completa |
+| Fase 6 — Infraestructura recurrente | 🔵 Planificada | 0% | PR-20..PR-24 | Operación continua endurecida (SRE + continuidad) |
+| Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
+| Fase 8 — Ejecución exchange robusta | 🔵 Planificada | 0% | PR-29..PR-31 | Router testnet + reconciliación + paridad paper/testnet |
+| Fase 9 — Go-live readiness | 🔵 Planificada | 0% | PR-32..PR-34 | Criterios formales de transición y rampa controlada |
 
 ---
 
-## Fase 1 — Integración de mercado
-**Estado:** ✅ Completada
+## Plan detallado por etapa (de principio a fin)
 
-### Entregado
-- OHLCV persistido
-- snapshots de mercado
-- funding / open interest base
-- hardening de ingesta Binance
-- deduplicación/idempotencia de candles
-- base sólida para cálculo técnico
+## Fase 0 — Fundación (cerrada)
+**PRs:** PR-1  
+**Entregado:** estructura de repo, reglas de PR, base ADR/docs, baseline CI.
 
-### PRs / hitos relacionados
-- `PR-2` — ingesta inicial de mercado Binance
-- `PR-3` — hardening de ingesta de mercado
-- `PR-4` — hardening post-merge de ingesta
+## Fase 1 — Integración de mercado (cerrada)
+**PRs:** PR-2, PR-3, PR-4  
+**Entregado:** ingesta Binance endurecida, deduplicación, estabilidad de datos.
 
-### Pendiente de esta fase
-- websockets en tiempo real (se puede tratar como subfase futura si aporta a ejecución)
-- snapshots de liquidez más profundos si la estrategia los requiere
+## Fase 2 — Señales (cerrada)
+**PRs:** PR-5, PR-6, PR-7  
+**Entregado:** indicadores, señales derivadas, worker híbrido market-driven con fallback controlado.
 
----
+## Fase 4/5 — Ejecución + operación controlada (cerrada)
+**PRs:** PR-8 a PR-18  
+**Entregado:** observabilidad, smoke, preflight, release gate, JSON summary, verify, checklist, sign-off package y cierre formal de fase.
 
-## Fase 2 — Señales
-**Estado:** ✅ Completada
+## Fase 6 — Infraestructura recurrente y continuidad (próxima)
+**Inicio:** inmediatamente después de cerrar PR-19.
 
-### Entregado
-- indicadores técnicos base:
-  - EMA
-  - RSI
-  - ATR
-  - momentum
-- endpoint de snapshot técnico
-- metadata de frescura (`last_candle_close_ms`)
-- señales derivadas / feature engineering:
-  - `trend_bias`
-  - `momentum_bias`
-  - `volatility_regime`
-  - `ema_spread_pct`
-  - `atr_pct`
-- consumo operativo desde worker híbrido market-driven con fallback demo controlado
+### PR-20 — Orquestación recurrente del gate operacional
+- scheduler/cron oficial para preflight/smoke/release health
+- ventanas operativas + política de reintentos
+- reporte automático de estado
 
-### Pendiente (mejora continua)
-- patrones de velas avanzados
-- sentimiento/fundamental crypto-native adicional
-- features experimentales para modelos posteriores
+### PR-21 — Retención y gobierno de artifacts
+- política 30/60/90 días
+- limpieza automática de artifacts antiguos
+- índice de evidencias por corrida (auditoría)
 
-### PRs / hitos relacionados
-- `PR-5` — indicadores técnicos base ✅
-- `PR-6` — señales y features técnicos base ✅
-- `PR-7` — worker híbrido market-driven ✅
+### PR-22 — Observabilidad/alerting de infraestructura
+- alertas por fallos de gate, degradación de health y drift operativo
+- tablero de SLO operativo (disponibilidad de pipeline)
 
----
+### PR-23 — Resiliencia y recuperación
+- respaldo/restauración de configuración crítica
+- playbook de disaster recovery probado con evidencia
 
-## Fase 3 — Planeación y riesgo
-**Estado:** ⏳ Pendiente
+### PR-24 — Hardening de seguridad operacional
+- revisión de secretos/tokens/rotación
+- hardening de permisos y exposición de servicios
+- checklist de seguridad de operación continua
 
-### Alcance esperado
-- clasificador de régimen
-- sizing dinámico
-- circuit breakers
-- correlación entre exposiciones
-- scoring/gating previo al trade plan
+## Fase 7 — Planeación y riesgo avanzado
 
-### Dependencia
-Requiere cerrar la capa de señales base de la Fase 2.
+### PR-25 — Clasificador de régimen de mercado
+### PR-26 — Sizing dinámico por volatilidad/riesgo
+### PR-27 — Riesgo de portafolio y correlación multi-símbolo
+### PR-28 — Gate de decisión final + circuit breakers avanzados
+
+## Fase 8 — Ejecución exchange robusta
+
+### PR-29 — Router Binance Testnet (orden real en entorno seguro)
+### PR-30 — Reconciliación de órdenes/posiciones y máquina de estados
+### PR-31 — Paridad paper vs testnet + shadow run
+
+## Fase 9 — Go-live readiness
+
+### PR-32 — Backtesting/walk-forward y benchmark de estrategia
+### PR-33 — Checklist formal de transición y política de rampa de capital
+### PR-34 — Cutover controlado (si y solo si todos los gates pasan)
 
 ---
 
-## Fase 4 — Ejecución
-**Estado:** 🟡 En progreso
+## Resultado final esperado
 
-### Alcance entregado/parcial
-- worker market-driven operativo
-- flujo paper trading con órdenes/fills simulados
-- sincronización de estado base para dashboard
+Un sistema de trading **auditable, operable y seguro**, con:
+1. pipeline completo de datos→señales→riesgo→ejecución,
+2. operación recurrente endurecida en Synology,
+3. evidencia automática de cada release/gate,
+4. criterio formal y medible para eventual transición fuera de paper,
+5. documentación sincronizada y ordenada de extremo a extremo (repo + Outline).
 
-### Alcance pendiente
-- mejoras incrementales de resiliencia bajo carga y observabilidad avanzada
+## Guardrails permanentes
 
-### Dependencia
-Fase cerrada con PR-9; mejoras futuras pasan a Fase 5 (operación controlada).
-
----
-
-## Fase 5 — Operación controlada
-**Estado:** ✅ Completada
-
-### Alcance entregado
-- observabilidad baseline (métricas + logs estructurados)
-- endpoint de métricas con auth opcional
-- hardening de configuración/errores en worker y API
-
-### Cierre formal (PR-18)
-- documento formal de cierre de fase 5
-- consolidación de criterios de aceptación cumplidos
-- recomendaciones para continuidad de operación controlada
-
-### Guardrails
-- live trading sigue deshabilitado
-- mantener `PAPER_TRADING=true` como condición vigente
-
----
-
-## Regla operativa permanente
-
-Después de **cada PR** se debe actualizar como mínimo:
-1. este roadmap (`docs/plans/implementation-roadmap.md`)
-2. el roadmap de PRs (`docs/pr-plan/PR_ROADMAP.md`)
-3. la documentación técnica/ADR afectada
-4. Outline, si el endpoint está disponible
-5. memoria operativa del proyecto
+- `PAPER_TRADING=true` obligatorio hasta cumplir criterios de transición definidos en Fase 9.
+- No habilitar live trading por defecto en ninguna fase intermedia.
+- Cada PR debe cerrar con: checks verdes + comentarios/reviews resueltos + roadmap/docs/memoria actualizados.
