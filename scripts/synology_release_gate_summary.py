@@ -34,6 +34,9 @@ def parse_report(text: str) -> dict:
         if result_match:
             overall = result_match.group(1)
 
+    if in_fence:
+        print("Warning: unclosed code fence detected in report; results may be incomplete.", file=sys.stderr)
+
     return {
         "overall": overall,
         "steps": steps,

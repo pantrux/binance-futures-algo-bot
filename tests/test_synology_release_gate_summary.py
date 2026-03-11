@@ -1,4 +1,6 @@
 import importlib.util
+import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -87,3 +89,28 @@ def test_parse_report_ignores_markers_inside_code_fence(parser_module):
     assert parsed["overall"] == "PASS"
     assert parsed["step_count"] == 1
     assert parsed["steps"] == [{"name": "Preflight", "status": "PASS"}]
+
+
+def test_main_missing_args_returns_2(parser_module, monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["script.py"])
+    assert parser_module.main() == 2
+
+
+def test_main_report_not_found_returns_1(parser_module, monkeypatch, tmp_path):
+    missing_report = tmp_path / "missing.md"
+    monkeypatch.setattr(sys, "argv", ["script.py", str(missing_report)])
+    assert parser_module.main() == 1
+
+
+def test_main_writes_json_output(parser_module, monkeypatch, tmp_path):
+    report = tmp_path / "report.md"
+    report.write_text("## Preflight: PASS\n\n**PASS**\n", encoding="utf-8")
+    output = tmp_path / "summary.json"
+
+    monkeypatch.setattr(sys, "argv", ["script.py", str(report), str(output)])
+    assert parser_module.main() == 0
+
+    data = json.loads(output.read_text(encoding="utf-8"))
+    assert data["overall"] == "PASS"
+    assert data["step_count"] == 1
+    assert data["steps"][0] == {"name": "Preflight", "status": "PASS"}
