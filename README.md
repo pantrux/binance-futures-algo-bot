@@ -91,6 +91,12 @@ Ejecución remota desde GitHub Actions (`workflow_dispatch`):
 - `Synology Smoke Test`
 - `Synology Release Gate` (sube reporte Markdown + resumen JSON como artifacts y valida estructura del JSON)
 
+Checklist de aprobación manual:
+
+```bash
+make synology-release-checklist CHECKLIST_PATH=artifacts/synology-release-checklist.md
+```
+
 Si Binance Testnet está intermitente y solo quieres validar salud interna del stack NAS, puedes correr:
 `STRICT_EXTERNAL_CHECKS=false ./scripts/synology_smoke_test.sh`.
 

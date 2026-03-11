@@ -91,6 +91,7 @@ Atajos Make:
 ```bash
 make synology-release-summary REPORT_PATH=artifacts/synology-release-gate.md
 make synology-release-verify EXPECTED_STEPS="Preflight,Smoke"
+make synology-release-checklist CHECKLIST_PATH=artifacts/synology-release-checklist.md
 ```
 
 ## Smoke test automático (PR-9)

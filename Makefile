@@ -12,9 +12,10 @@ AUTO_CREATE_DATA_DIRS ?= false
 REPORT_PATH ?= artifacts/synology-release-gate.md
 EXPECTED_STEPS ?= Preflight,Smoke
 JSON_PATH ?= artifacts/synology-release-gate.json
+CHECKLIST_PATH ?= artifacts/synology-release-checklist.md
 PYTHON ?= python3
 
-.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify
+.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist
 
 help:
 	@echo "Targets disponibles:"
@@ -23,6 +24,7 @@ help:
 	@echo "  make synology-release-gate   # preflight + smoke + reporte markdown"
 	@echo "  make synology-release-summary # genera resumen JSON desde markdown"
 	@echo "  make synology-release-verify # valida estructura del JSON del gate"
+	@echo "  make synology-release-checklist # genera checklist Markdown de aprobación"
 
 synology-preflight:
 	ENV_FILE="$(ENV_FILE)" \
@@ -61,3 +63,7 @@ synology-release-verify:
 	$(PYTHON) scripts/synology_release_gate_verify.py \
 		"$(JSON_PATH)" \
 		"$(EXPECTED_STEPS)"
+
+synology-release-checklist:
+	$(PYTHON) scripts/synology_release_checklist.py \
+		"$(CHECKLIST_PATH)"

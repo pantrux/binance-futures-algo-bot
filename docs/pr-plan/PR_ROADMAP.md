@@ -36,7 +36,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-11 | Release gate unificado Synology | ✅ Mergeado | preflight + smoke + reporte auditable en una sola corrida |
 | PR-12 | Resumen JSON y evidencia máquina-legible del gate | ✅ Mergeado | parser y artifacts JSON para auditoría automatizable |
 | PR-13 | Verificación automática del JSON del gate | ✅ Mergeado | validador estructural + checks de consistencia de pasos |
-| PR-14 | Atajos operativos con Makefile | 🟡 En progreso | ejecución estandarizada de preflight/smoke/release gate |
+| PR-14 | Atajos operativos con Makefile | ✅ Mergeado | ejecución estandarizada de preflight/smoke/release gate |
+| PR-15 | Checklist de aprobación operacional | 🟡 En progreso | plantilla y script para sign-off manual controlado |
 
 ## Secuencia de PRs actualizada
 
@@ -241,7 +242,7 @@ Sin live trading; validación solo de calidad/evidencia operativa.
 ---
 
 ### PR-14 — Atajos operativos con Makefile
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Reducir fricción operacional con comandos estandarizados para ejecutar preflight/smoke/release gate sin repetir invocaciones largas.
@@ -253,6 +254,23 @@ Reducir fricción operacional con comandos estandarizados para ejecutar prefligh
 
 **Gate extra**
 Sin live trading; solo ergonomía operativa y consistencia de ejecución.
+
+---
+
+### PR-15 — Checklist de aprobación operacional
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Estandarizar la evidencia de aprobación humana posterior al gate automático mediante una checklist operacional reproducible.
+
+**Entregables**
+- script `scripts/synology_release_checklist.py`
+- target Make `synology-release-checklist`
+- documentación de uso en README/runbook
+- ADR de criterio de sign-off manual
+
+**Gate extra**
+No habilita live trading; formaliza aprobación manual para operación controlada.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
