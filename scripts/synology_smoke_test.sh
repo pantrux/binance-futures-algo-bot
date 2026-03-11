@@ -54,19 +54,37 @@ check_contains() {
   local name="$1"
   local url="$2"
   local needle="$3"
+  local status
+  local body
+  local tmpfile
 
   echo "→ ${name}: ${url} contiene '${needle}'"
-  local body
-  body="$(curl "${CURL_OPTS[@]}" "${url}" || true)"
+
+  tmpfile="$(mktemp)"
+  trap 'rm -f "${tmpfile}"' RETURN
+
+  status="$(curl "${CURL_OPTS[@]}" -o "${tmpfile}" -w "%{http_code}" "${url}" || true)"
+  body="$(cat "${tmpfile}" || true)"
+
+  if [[ "${status}" != "200" ]]; then
+    echo "--- body ---"
+    echo "${body}"
+    echo "------------"
+    echo "❌ ${name} respondió HTTP ${status} (esperado 200)" >&2
+    return 1
+  fi
+
   if [[ -z "${body}" ]]; then
     fail "${name} sin respuesta desde ${url}"
   fi
+
   if ! grep -qF "${needle}" <<<"${body}"; then
     echo "--- body ---"
     echo "${body}"
     echo "------------"
     fail "${name} no contiene '${needle}'"
   fi
+
   echo "✅ ${name}"
 }
 
