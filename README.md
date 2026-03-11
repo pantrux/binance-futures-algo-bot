@@ -38,6 +38,7 @@ El worker market-driven usa `asyncio.TaskGroup`; si se intenta ejecutar con Pyth
 ## Observabilidad baseline (PR-8)
 
 - Endpoint API `GET /metrics` con métricas runtime (requests, errores, latencia, rutas, status codes).
+- Protección opcional para `/metrics` vía header `x-metrics-key` cuando `metrics_api_key` está configurada.
 - Logs estructurados JSON en API (`api_request`) y worker (`trade_plan_created`, `paper_trade_executed`, etc.).
 - Política de fallos parciales del worker configurable con `strict_symbol_failures`.
 

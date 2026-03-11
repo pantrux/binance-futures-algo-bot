@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from apps.api.app.api.deps import get_db
+from apps.api.app.core.settings import settings
 from apps.api.app.schemas.dashboard import DashboardSummary
 from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.market_data import MarketCandleRead, MarketIngestionResponse, MarketSnapshotRead
@@ -25,13 +26,18 @@ router = APIRouter()
 risk_engine = RiskEngine()
 
 
+def require_metrics_auth(x_metrics_key: str | None = Header(default=None, alias="x-metrics-key")) -> None:
+    if settings.metrics_api_key and x_metrics_key != settings.metrics_api_key:
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+
 @router.get("/health")
 def healthcheck() -> dict:
     return {"status": "ok", "service": "api"}
 
 
 @router.get("/metrics")
-def metrics_snapshot() -> dict:
+def metrics_snapshot(_: None = Depends(require_metrics_auth)) -> dict:
     return api_metrics.snapshot()
 
 

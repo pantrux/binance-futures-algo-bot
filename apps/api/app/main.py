@@ -1,9 +1,11 @@
+import asyncio
 import json
 import logging
 from time import perf_counter
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from apps.api.app.api.routes import router
 from apps.api.app.core.settings import settings
@@ -18,16 +20,17 @@ app = FastAPI(title=settings.app_name, version="0.1.0")
 async def request_observability_middleware(request: Request, call_next):
     request_id = request.headers.get("x-request-id") or str(uuid4())
     start = perf_counter()
-    status_code = 500
 
     try:
         response = await call_next(request)
         status_code = response.status_code
-        response.headers["x-request-id"] = request_id
-        return response
+    except Exception:  # noqa: BLE001
+        status_code = 500
+        response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
     finally:
         duration_ms = (perf_counter() - start) * 1000.0
-        api_metrics.record(
+        await asyncio.to_thread(
+            api_metrics.record,
             method=request.method,
             path=request.url.path,
             status_code=status_code,
@@ -46,6 +49,9 @@ async def request_observability_middleware(request: Request, call_next):
                 ensure_ascii=False,
             )
         )
+
+    response.headers["x-request-id"] = request_id
+    return response
 
 
 app.include_router(router)

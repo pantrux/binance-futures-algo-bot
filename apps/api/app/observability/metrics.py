@@ -7,6 +7,12 @@ from threading import Lock
 
 @dataclass
 class ApiMetricsRegistry:
+    """Registro in-memory de métricas operativas del API.
+
+    Nota: se mantiene una API síncrona para reutilizarla desde rutas FastAPI (`def`) y
+    desde tests. En middleware async se invoca vía `asyncio.to_thread(...)` para evitar
+    bloquear el event loop durante la sección crítica del lock.
+    """
     _lock: Lock = field(default_factory=Lock, init=False, repr=False)
     _total_requests: int = 0
     _total_errors: int = 0

@@ -19,7 +19,7 @@ Implementar una capa baseline de observabilidad con tres componentes:
      - método y path
      - status code
      - latencia
-   - Endpoint `GET /metrics` con snapshot agregado:
+   - Endpoint `GET /metrics` con snapshot agregado (protegible por `x-metrics-key` cuando `metrics_api_key` está configurada):
      - `total_requests`, `total_errors`, `error_rate_pct`
      - `latency_ms_avg`, `latency_ms_max`
      - distribución por `status_codes` y `routes`

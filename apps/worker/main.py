@@ -11,7 +11,7 @@ logger = logging.getLogger("apps.worker.observability")
 
 
 def log_event(event: str, **payload: object) -> None:
-    logger.info(json.dumps({"event": event, **payload}, ensure_ascii=False, sort_keys=True))
+    logger.info(json.dumps({"event": event, **payload}, ensure_ascii=False))
 
 
 def ensure_supported_python() -> None:
