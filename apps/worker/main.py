@@ -95,7 +95,7 @@ async def main() -> None:
             successes += 1
         else:
             failures += 1
-            log_event("symbol_failed_unknown", symbol=symbol)
+            log_event("symbol_failed_without_exception", symbol=symbol)
 
     if failures > 0:
         log_event("symbol_failures_detected", failures=failures, successes=successes)
