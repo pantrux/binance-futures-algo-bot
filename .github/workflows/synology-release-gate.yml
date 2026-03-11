@@ -139,15 +139,16 @@ jobs:
       - name: Build signoff package
         if: always()
         run: |
-          if [[ -f artifacts/synology-release-gate.md && -f artifacts/synology-release-gate.json && -f artifacts/synology-release-checklist.md ]]; then
-            python3 scripts/synology_signoff_package.py \
-              artifacts/synology-release-gate.md \
-              artifacts/synology-release-gate.json \
-              artifacts/synology-release-checklist.md \
-              artifacts/synology-signoff-package.md
-          else
-            echo "⚠️ No se pudo generar paquete de sign-off por artefactos faltantes." >> "${GITHUB_STEP_SUMMARY}"
+          if [[ ! -f artifacts/synology-release-gate.md || ! -f artifacts/synology-release-gate.json || ! -f artifacts/synology-release-checklist.md ]]; then
+            echo "❌ No se pudo generar paquete de sign-off: artefactos requeridos faltantes." >&2
+            exit 1
           fi
+
+          python3 scripts/synology_signoff_package.py \
+            artifacts/synology-release-gate.md \
+            artifacts/synology-release-gate.json \
+            artifacts/synology-release-checklist.md \
+            artifacts/synology-signoff-package.md
 
       - name: Upload gate artifacts
         if: always()

@@ -18,6 +18,12 @@ def current_git_sha() -> str:
         return "unknown"
 
 
+def sanitize_markdown_inline(value: str, default: str = "") -> str:
+    sanitized = value.replace("\r", " ").replace("\n", " ").strip()
+    sanitized = sanitized.replace("`", "'")
+    return sanitized if sanitized else default
+
+
 def build_content(output_path: Path) -> str:
     now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     api_base_url = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
@@ -26,8 +32,8 @@ def build_content(output_path: Path) -> str:
     strict_external = os.getenv("STRICT_EXTERNAL_CHECKS", "true")
     require_secrets = os.getenv("REQUIRE_SECRETS", "false")
     release_ref = os.getenv("RELEASE_REF", current_git_sha())
-    signoff_owner = os.getenv("SIGNOFF_OWNER", "pending")
-    signoff_notes = os.getenv("SIGNOFF_NOTES", "")
+    signoff_owner = sanitize_markdown_inline(os.getenv("SIGNOFF_OWNER", "pending"), default="pending")
+    signoff_notes = sanitize_markdown_inline(os.getenv("SIGNOFF_NOTES", ""), default="")
 
     return f"""# Synology Release Checklist
 

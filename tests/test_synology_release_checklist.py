@@ -18,6 +18,8 @@ def test_build_content_includes_core_sections(monkeypatch):
     monkeypatch.setenv("API_BASE_URL", "https://api.example.com")
     monkeypatch.setenv("WEB_BASE_URL", "https://web.example.com")
     monkeypatch.setenv("RELEASE_REF", "abc1234")
+    monkeypatch.setenv("SIGNOFF_OWNER", "Pantrux\nOps")
+    monkeypatch.setenv("SIGNOFF_NOTES", "note with `code`\nsecond line")
 
     content = module.build_content(Path("artifacts/sample.md"))
 
@@ -29,6 +31,8 @@ def test_build_content_includes_core_sections(monkeypatch):
     assert "## 5) Sign-off final" in content
     assert "`abc1234`" in content
     assert "https://api.example.com" in content
+    assert "Aprobado por: Pantrux Ops" in content
+    assert "Observaciones: note with 'code' second line" in content
 
 
 def test_main_writes_file(tmp_path, monkeypatch):
