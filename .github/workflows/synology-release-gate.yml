@@ -105,6 +105,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: synology-release-gate-report
+          if-no-files-found: warn
           path: |
             artifacts/synology-release-gate.md
             artifacts/synology-release-gate.json
