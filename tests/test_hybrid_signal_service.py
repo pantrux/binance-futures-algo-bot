@@ -201,3 +201,4 @@ def test_worker_settings_expose_signal_snapshot_config():
     settings = WorkerSettings()
     assert settings.default_signal_timeframe == "15m"
     assert settings.signal_snapshot_limit == 200
+    assert settings.strict_symbol_failures is False

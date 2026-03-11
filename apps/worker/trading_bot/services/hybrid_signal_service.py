@@ -194,7 +194,7 @@ class HybridSignalService:
         # (ej. 0.12 = 0.12%), no en fracción decimal.
         if ema_spread_pct is None:
             return 50.0
-        return max(0.0, min(100.0, abs(float(ema_spread_pct)) * 4.0))
+        return max(0.0, min(100.0, abs(float(ema_spread_pct)) * 40.0))
 
     @staticmethod
     def _liquidity_score(market: dict | None) -> float:

@@ -11,3 +11,4 @@ class WorkerSettings:
     seed_capital_usdt: float = 1000.0
     default_signal_timeframe: str = "15m"
     signal_snapshot_limit: int = 200
+    strict_symbol_failures: bool = False

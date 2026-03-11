@@ -83,7 +83,10 @@ async def main() -> None:
             failures += 1
             print({"symbol": symbol, "error": "symbol_failed_without_exception"})
 
-    if settings.symbols and failures > 0:
+    if failures > 0:
+        print({"summary": "symbol_failures_detected", "failures": failures, "successes": successes})
+
+    if settings.symbols and (successes == 0 or (settings.strict_symbol_failures and failures > 0)):
         raise RuntimeError(f"symbol_failures={failures};symbol_successes={successes}")
 
 
