@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
-from urllib import error, request
+from urllib import request
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = REPO_ROOT / "docs"
@@ -127,19 +127,6 @@ class OutlineClient:
     def archive(self, doc_id: str) -> None:
         self.call("documents.archive", {"id": doc_id})
 
-    def move(self, doc_id: str, parent_id: str) -> None:
-        try:
-            self.call("documents.move", {"id": doc_id, "parentDocumentId": parent_id})
-        except error.HTTPError as exc:
-            if exc.code not in {400, 404, 405, 422}:
-                raise
-            print(
-                f"[WARN] documents.move no disponible ({exc.code}); aplicando fallback con documents.update",
-                file=sys.stderr,
-            )
-            info = self.info(doc_id)
-            self.update(doc_id, info.get("title", ""), info.get("text", ""), parent_id=parent_id)
-
 
 def parse_iso(ts: str | None) -> datetime:
     if not ts:
@@ -242,6 +229,9 @@ def main() -> None:
 
     for t in targets:
         path = REPO_ROOT / t.rel_path
+        if not path.exists():
+            print(f"[WARN] Archivo no encontrado, se omite: {t.rel_path}", file=sys.stderr)
+            continue
         text = path.read_text(encoding="utf-8")
         desired_titles.add(t.title)
         ensure_single_doc(client, all_docs, t.title, text, parent_id=hub_ids[t.category])
@@ -277,7 +267,7 @@ def main() -> None:
         )
         if not items:
             return "- (sin documentos)"
-        return "\n".join(f"- [{d['title']}]({d.get('url')})" for d in items)
+        return "\n".join(f"- [{d['title']}]({d.get('url', '')})" for d in items)
 
     def hub_url(key: str) -> str:
         hub = by_id.get(hub_ids[key])
