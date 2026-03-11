@@ -77,6 +77,8 @@ def main() -> None:
         "kept_count": 0,
         "kept_bytes": 0,
         "cleaned_empty_dirs_count": 0,
+        "errors_count": 0,
+        "errors": [],
         "deleted": [],
         "kept": [],
     }
@@ -105,7 +107,11 @@ def main() -> None:
             report["deleted_count"] += 1
             report["deleted_bytes"] += stat.st_size
             if not args.dry_run:
-                path.unlink(missing_ok=True)
+                try:
+                    path.unlink(missing_ok=True)
+                except OSError as exc:
+                    report["errors"].append({"path": str(path), "stage": "unlink", "error": str(exc)})
+                    report["errors_count"] += 1
         else:
             report["kept"].append(asdict(item))
             report["kept_count"] += 1
@@ -117,8 +123,12 @@ def main() -> None:
                 continue
             if any(d.iterdir()):
                 continue
-            d.rmdir()
-            report["cleaned_empty_dirs_count"] += 1
+            try:
+                d.rmdir()
+                report["cleaned_empty_dirs_count"] += 1
+            except OSError as exc:
+                report["errors"].append({"path": str(d), "stage": "rmdir", "error": str(exc)})
+                report["errors_count"] += 1
 
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -130,6 +140,7 @@ def main() -> None:
     print(f"kept_count={report['kept_count']}")
     print(f"kept_bytes={report['kept_bytes']} ({human_bytes(report['kept_bytes'])})")
     print(f"cleaned_empty_dirs_count={report['cleaned_empty_dirs_count']}")
+    print(f"errors_count={report['errors_count']}")
     print(f"report_path={report_path}")
 
 
