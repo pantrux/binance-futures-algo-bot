@@ -18,7 +18,7 @@ async def process_symbol(
     settings: WorkerSettings,
     signal_service: HybridSignalService,
     api_client: TradingBotApiClient,
-) -> None:
+) -> bool:
     signals, context, thesis, levels, meta = await signal_service.build_signal_pack(symbol)
     payload = {
         "symbol": symbol,
@@ -49,9 +49,10 @@ async def process_symbol(
         trade_plan_id = created.get("id")
         if not trade_plan_id:
             print({"symbol": symbol, "error": "approved_plan_missing_id", "trade_plan": created})
-            return
+            return False
         executed = await api_client.execute_paper_trade(trade_plan_id)
         print({"symbol": symbol, "paper_execution": executed})
+    return True
 
 
 async def main() -> None:
@@ -69,9 +70,18 @@ async def main() -> None:
         return_exceptions=True,
     )
 
+    successes = 0
     for symbol, result in zip(settings.symbols, results):
         if isinstance(result, BaseException):
             print({"symbol": symbol, "error": str(result)})
+            continue
+        if result is True:
+            successes += 1
+        else:
+            print({"symbol": symbol, "error": "symbol_failed_without_exception"})
+
+    if settings.symbols and successes == 0:
+        raise RuntimeError("all_symbols_failed")
 
 
 if __name__ == "__main__":

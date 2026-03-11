@@ -51,9 +51,8 @@ class HybridSignalService:
             return pack, context, thesis, levels, HybridSignalResult(source="market", reason="ok", side=side)
         except Exception as exc:  # noqa: BLE001
             pack, context, thesis, levels = self.demo_service.build_signal_pack(symbol)
-            # En presets demo actuales `technical/sentiment` suelen ser alcistas; mantenemos
-            # esta regla defensiva para futuros escenarios demo con sesgo bajista.
-            side = "short" if pack.technical < 50 and pack.sentiment < 50 else "long"
+            # Los presets demo actuales solo representan escenarios alcistas, por diseño.
+            side = "long"
             return pack, context, thesis, levels, HybridSignalResult(
                 source="demo", reason=self._exception_reason(exc), side=side
             )
