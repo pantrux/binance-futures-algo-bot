@@ -13,11 +13,6 @@ CURL_OPTS=(
   --connect-timeout 5
 )
 
-fail() {
-  echo "❌ $1" >&2
-  return 1
-}
-
 check_status() {
   local name="$1"
   local url="$2"
@@ -122,7 +117,8 @@ else
       echo "--- body ---"
       cat "${metrics_tmpfile}" || true
       echo "------------"
-      fail "API /metrics respondió estado inesperado (${metrics_status}) sin METRICS_API_KEY"
+      echo "❌ API /metrics respondió estado inesperado (${metrics_status}) sin METRICS_API_KEY" >&2
+      exit 1
       ;;
   esac
 fi
