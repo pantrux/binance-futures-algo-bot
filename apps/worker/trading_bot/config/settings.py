@@ -25,10 +25,16 @@ class WorkerSettings(BaseSettings):
             try:
                 parsed = json.loads(raw)
                 if isinstance(parsed, (list, tuple)):
-                    return tuple(str(item).strip() for item in parsed if str(item).strip())
+                    result = tuple(str(item).strip() for item in parsed if str(item).strip())
+                    if not result:
+                        raise ValueError("lista de símbolos/timeframes no puede estar vacía")
+                    return result
             except json.JSONDecodeError:
                 pass
-            return tuple(item.strip() for item in raw.split(",") if item.strip())
+            result = tuple(item.strip() for item in raw.split(",") if item.strip())
+            if not result:
+                raise ValueError("lista de símbolos/timeframes no puede estar vacía")
+            return result
         return value
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
