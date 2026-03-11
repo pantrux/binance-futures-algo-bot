@@ -69,6 +69,14 @@ python3 scripts/synology_release_gate_summary.py \
   artifacts/synology-release-gate.json
 ```
 
+Para validar consistencia estructural del JSON:
+
+```bash
+python3 scripts/synology_release_gate_verify.py \
+  artifacts/synology-release-gate.json \
+  "Preflight,Smoke"
+```
+
 ## Smoke test automático (PR-9)
 
 Desde la raíz del repositorio:

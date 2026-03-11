@@ -80,7 +80,7 @@ WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
 Ejecución remota desde GitHub Actions (`workflow_dispatch`):
 - `Synology Preflight` (modo `require_secrets=true` usa `BINANCE_API_KEY`, `BINANCE_API_SECRET`, `OUTLINE_API_TOKEN` desde GitHub Secrets)
 - `Synology Smoke Test`
-- `Synology Release Gate` (sube reporte Markdown + resumen JSON como artifacts)
+- `Synology Release Gate` (sube reporte Markdown + resumen JSON como artifacts y valida estructura del JSON)
 
 Si Binance Testnet está intermitente y solo quieres validar salud interna del stack NAS, puedes correr:
 `STRICT_EXTERNAL_CHECKS=false ./scripts/synology_smoke_test.sh`.
