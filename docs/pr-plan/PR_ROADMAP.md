@@ -34,7 +34,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-9 | Despliegue real en Synology con smoke tests | ✅ Mergeado | gate de smoke en Synology + workflow manual + ADR-013 |
 | PR-10 | Preflight de configuración Synology | ✅ Mergeado | validación previa de `.env` + compose config + ADR-014 |
 | PR-11 | Release gate unificado Synology | ✅ Mergeado | preflight + smoke + reporte auditable en una sola corrida |
-| PR-12 | Resumen JSON y evidencia máquina-legible del gate | 🟡 En progreso | parser y artifacts JSON para auditoría automatizable |
+| PR-12 | Resumen JSON y evidencia máquina-legible del gate | ✅ Mergeado | parser y artifacts JSON para auditoría automatizable |
+| PR-13 | Verificación automática del JSON del gate | 🟡 En progreso | validador estructural + checks de consistencia de pasos |
 
 ## Secuencia de PRs actualizada
 
@@ -208,7 +209,7 @@ Sin live trading; solo operación controlada y validación de salud/despliegue.
 ---
 
 ### PR-12 — Resumen JSON y evidencia máquina-legible del gate
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Transformar la salida del release gate en evidencia estructurada (JSON) para auditoría automática y trazabilidad en CI.
@@ -220,6 +221,21 @@ Transformar la salida del release gate en evidencia estructurada (JSON) para aud
 
 **Gate extra**
 Mantener `PAPER_TRADING=true` y no habilitar live trading.
+
+### PR-13 — Verificación automática del JSON del gate
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Validar automáticamente que el resumen JSON del release gate cumpla estructura esperada (`overall`, `steps`, `step_count`) y consistencia mínima.
+
+**Entregables**
+- script validador de `synology-release-gate.json`
+- integración en workflow `synology-release-gate.yml`
+- tests unitarios del validador
+- ADR de criterio de validación
+
+**Gate extra**
+Sin live trading; validación solo de calidad/evidencia operativa.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
