@@ -29,13 +29,13 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - PR-8 a PR-18.
 - Entrega: observabilidad baseline, gates operativos, sign-off y cierre formal de fase.
 
-### Etapa C — Gobernanza documental (en cierre)
-- PR-19.
-- Entrega: estructura documental ordenada + sync idempotente sin duplicados en Outline.
+### Etapa C — Gobernanza documental (completada)
+- PR-19 y PR-20.
+- Entrega: estructura documental ordenada + sync idempotente sin duplicados en Outline + estabilización de operación one-shot del worker en Synology.
 
-### Etapa D — Infraestructura recurrente (próxima)
-- PR-20 a PR-24.
-- Entrega: cron operativo, retención de artifacts, alerting, DR, hardening de seguridad.
+### Etapa D — Infraestructura recurrente (en progreso)
+- PR-21 a PR-24.
+- Entrega: gobierno de artifacts, cron operativo, alerting, DR y hardening de seguridad.
 
 ### Etapa E — Riesgo cuantitativo avanzado
 - PR-25 a PR-28.
