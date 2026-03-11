@@ -11,6 +11,7 @@ from apps.api.app.schemas.signals import SignalSnapshot
 from apps.api.app.schemas.trade_plan import TradePlanCreateRequest, TradePlanCreateResponse
 from apps.api.app.schemas.trade_plan_read import TradePlanRead
 from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
+from apps.api.app.observability.metrics import api_metrics
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.dashboard_service import DashboardService
 from apps.api.app.services.indicator_service import IndicatorService
@@ -27,6 +28,11 @@ risk_engine = RiskEngine()
 @router.get("/health")
 def healthcheck() -> dict:
     return {"status": "ok", "service": "api"}
+
+
+@router.get("/metrics")
+def metrics_snapshot() -> dict:
+    return api_metrics.snapshot()
 
 
 @router.get("/integrations/binance/testnet/ping")

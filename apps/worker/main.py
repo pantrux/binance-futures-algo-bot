@@ -1,9 +1,17 @@
 import asyncio
+import json
+import logging
 import sys
 
 from apps.worker.trading_bot.config.settings import WorkerSettings
 from apps.worker.trading_bot.services.api_client import TradingBotApiClient
 from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalService
+
+logger = logging.getLogger("apps.worker.observability")
+
+
+def log_event(event: str, **payload: object) -> None:
+    logger.info(json.dumps({"event": event, **payload}, ensure_ascii=False, sort_keys=True))
 
 
 def ensure_supported_python() -> None:
@@ -44,14 +52,14 @@ async def process_symbol(
         },
     }
     created = await api_client.create_trade_plan(payload)
-    print({"symbol": symbol, "source": meta.source, "reason": meta.reason, "trade_plan": created})
+    log_event("trade_plan_created", symbol=symbol, source=meta.source, reason=meta.reason, trade_plan=created)
     if settings.paper_trading and created.get("status") == "approved":
         trade_plan_id = created.get("id")
         if not trade_plan_id:
-            print({"symbol": symbol, "error": "approved_plan_missing_id", "trade_plan": created})
+            log_event("paper_trade_skip_missing_id", symbol=symbol, trade_plan=created)
             return False
         executed = await api_client.execute_paper_trade(trade_plan_id)
-        print({"symbol": symbol, "paper_execution": executed})
+        log_event("paper_trade_executed", symbol=symbol, execution=executed)
     return True
 
 
@@ -75,20 +83,21 @@ async def main() -> None:
     for symbol, result in zip(settings.symbols, results):
         if isinstance(result, BaseException):
             failures += 1
-            print({"symbol": symbol, "error": str(result)})
+            log_event("symbol_failed_exception", symbol=symbol, error=str(result))
             continue
         if result is True:
             successes += 1
         else:
             failures += 1
-            print({"symbol": symbol, "error": "symbol_failed_without_exception"})
+            log_event("symbol_failed_unknown", symbol=symbol)
 
     if failures > 0:
-        print({"summary": "symbol_failures_detected", "failures": failures, "successes": successes})
+        log_event("symbol_failures_detected", failures=failures, successes=successes)
 
     if settings.symbols and (successes == 0 or (settings.strict_symbol_failures and failures > 0)):
         raise RuntimeError(f"symbol_failures={failures};symbol_successes={successes}")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     asyncio.run(main())

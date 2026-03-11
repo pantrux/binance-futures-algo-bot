@@ -1,7 +1,51 @@
-from fastapi import FastAPI
+import json
+import logging
+from time import perf_counter
+from uuid import uuid4
+
+from fastapi import FastAPI, Request
 
 from apps.api.app.api.routes import router
 from apps.api.app.core.settings import settings
+from apps.api.app.observability.metrics import api_metrics
+
+logger = logging.getLogger("apps.api.observability")
 
 app = FastAPI(title=settings.app_name, version="0.1.0")
+
+
+@app.middleware("http")
+async def request_observability_middleware(request: Request, call_next):
+    request_id = request.headers.get("x-request-id") or str(uuid4())
+    start = perf_counter()
+    status_code = 500
+
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        response.headers["x-request-id"] = request_id
+        return response
+    finally:
+        duration_ms = (perf_counter() - start) * 1000.0
+        api_metrics.record(
+            method=request.method,
+            path=request.url.path,
+            status_code=status_code,
+            latency_ms=duration_ms,
+        )
+        logger.info(
+            json.dumps(
+                {
+                    "event": "api_request",
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status_code": status_code,
+                    "duration_ms": round(duration_ms, 4),
+                },
+                ensure_ascii=False,
+            )
+        )
+
+
 app.include_router(router)
