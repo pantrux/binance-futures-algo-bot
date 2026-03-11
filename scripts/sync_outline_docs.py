@@ -151,7 +151,10 @@ def parse_iso(ts: str | None) -> datetime:
 
 
 def derive_adr_title(path: Path) -> str:
-    first = path.read_text(encoding="utf-8").splitlines()[0].lstrip("# ").strip()
+    lines = path.read_text(encoding="utf-8").splitlines()
+    first = lines[0].lstrip("# ").strip() if lines else path.stem
+    if not first:
+        first = path.stem
     return f"{PREFIX} — {first}"
 
 
@@ -241,8 +244,7 @@ def main() -> None:
         path = REPO_ROOT / t.rel_path
         text = path.read_text(encoding="utf-8")
         desired_titles.add(t.title)
-        doc_id = ensure_single_doc(client, all_docs, t.title, text, parent_id=hub_ids[t.category])
-        client.move(doc_id, hub_ids[t.category])
+        ensure_single_doc(client, all_docs, t.title, text, parent_id=hub_ids[t.category])
         synced += 1
 
     # Paso 4: opción de limpiar documentos legacy no mapeados
