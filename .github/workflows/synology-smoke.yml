@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       api_base_url:
-        description: "Base URL de API en Synology"
+        description: "Base URL de API en Synology (ej: https://TU_NAS/bot-api)"
         required: true
-        default: "https://pantrux.duckdns.org/bot-api"
+        default: ""
       web_base_url:
-        description: "Base URL de web en Synology"
+        description: "Base URL de web en Synology (ej: https://TU_NAS/bot-web)"
         required: true
-        default: "https://pantrux.duckdns.org/bot-web"
+        default: ""
 
 jobs:
   smoke:

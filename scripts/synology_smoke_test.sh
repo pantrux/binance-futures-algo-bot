@@ -5,6 +5,13 @@ API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:8000}"
 WEB_BASE_URL="${WEB_BASE_URL:-http://127.0.0.1:3000}"
 METRICS_API_KEY="${METRICS_API_KEY:-}"
 
+CURL_OPTS=(
+  -sS
+  -L
+  --max-time 15
+  --connect-timeout 5
+)
+
 fail() {
   echo "❌ $1" >&2
   exit 1
@@ -16,24 +23,29 @@ check_status() {
   local expected_status="${3:-200}"
   local header_name="${4:-}"
   local header_value="${5:-}"
+  local status
+  local tmpfile
 
   echo "→ ${name}: ${url}"
 
-  local status
+  tmpfile="$(mktemp)"
+
   if [[ -n "${header_name}" && -n "${header_value}" ]]; then
-    status="$(curl -sS -o /tmp/smoke_body.txt -w "%{http_code}" -H "${header_name}: ${header_value}" "${url}" || true)"
+    status="$(curl "${CURL_OPTS[@]}" -o "${tmpfile}" -w "%{http_code}" -H "${header_name}: ${header_value}" "${url}" || true)"
   else
-    status="$(curl -sS -o /tmp/smoke_body.txt -w "%{http_code}" "${url}" || true)"
+    status="$(curl "${CURL_OPTS[@]}" -o "${tmpfile}" -w "%{http_code}" "${url}" || true)"
   fi
 
   if [[ "${status}" != "${expected_status}" ]]; then
     echo "Respuesta inesperada (${status})"
     echo "--- body ---"
-    cat /tmp/smoke_body.txt || true
+    cat "${tmpfile}" || true
     echo "------------"
+    rm -f "${tmpfile}"
     fail "${name} no cumple (esperado ${expected_status})"
   fi
 
+  rm -f "${tmpfile}"
   echo "✅ ${name} (${status})"
 }
 
@@ -44,7 +56,7 @@ check_contains() {
 
   echo "→ ${name}: ${url} contiene '${needle}'"
   local body
-  body="$(curl -sS "${url}")"
+  body="$(curl "${CURL_OPTS[@]}" "${url}")"
   if ! grep -q "${needle}" <<<"${body}"; then
     echo "--- body ---"
     echo "${body}"
