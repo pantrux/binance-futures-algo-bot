@@ -19,7 +19,7 @@ def current_git_sha() -> str:
 
 
 def build_content(output_path: Path) -> str:
-    now = dt.datetime.now(dt.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+    now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     api_base_url = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
     web_base_url = os.getenv("WEB_BASE_URL", "http://127.0.0.1:3000")
     env_file = os.getenv("ENV_FILE", "infra/docker/synology/.env")
