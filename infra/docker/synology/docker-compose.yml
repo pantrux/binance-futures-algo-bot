@@ -75,7 +75,7 @@ services:
       context: ../../../
       dockerfile: apps/worker/Dockerfile
     container_name: trading-bot-worker
-    restart: unless-stopped
+    restart: "no"
     env_file:
       - .env
     environment:
