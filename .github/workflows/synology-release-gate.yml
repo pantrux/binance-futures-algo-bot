@@ -27,6 +27,14 @@ on:
           - "false"
           - "true"
         default: "false"
+      signoff_owner:
+        description: "Responsable del sign-off (opcional)"
+        required: false
+        default: "pending"
+      signoff_notes:
+        description: "Notas iniciales de sign-off (opcional)"
+        required: false
+        default: ""
 
 jobs:
   gate:
@@ -113,6 +121,34 @@ jobs:
             artifacts/synology-release-gate.json \
             "Preflight,Smoke"
 
+      - name: Build signoff checklist
+        if: always()
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url }}
+          WEB_BASE_URL: ${{ inputs.web_base_url }}
+          ENV_FILE: /tmp/synology.env
+          STRICT_EXTERNAL_CHECKS: ${{ inputs.strict_external_checks }}
+          REQUIRE_SECRETS: ${{ inputs.require_secrets }}
+          RELEASE_REF: ${{ github.sha }}
+          SIGNOFF_OWNER: ${{ inputs.signoff_owner }}
+          SIGNOFF_NOTES: ${{ inputs.signoff_notes }}
+        run: |
+          python3 scripts/synology_release_checklist.py \
+            artifacts/synology-release-checklist.md
+
+      - name: Build signoff package
+        if: always()
+        run: |
+          if [[ -f artifacts/synology-release-gate.md && -f artifacts/synology-release-gate.json && -f artifacts/synology-release-checklist.md ]]; then
+            python3 scripts/synology_signoff_package.py \
+              artifacts/synology-release-gate.md \
+              artifacts/synology-release-gate.json \
+              artifacts/synology-release-checklist.md \
+              artifacts/synology-signoff-package.md
+          else
+            echo "⚠️ No se pudo generar paquete de sign-off por artefactos faltantes." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
       - name: Upload gate artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -122,3 +158,5 @@ jobs:
           path: |
             artifacts/synology-release-gate.md
             artifacts/synology-release-gate.json
+            artifacts/synology-release-checklist.md
+            artifacts/synology-signoff-package.md

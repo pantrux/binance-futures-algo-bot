@@ -15,9 +15,11 @@ JSON_PATH ?= artifacts/synology-release-gate.json
 CHECKLIST_PATH ?= artifacts/synology-release-checklist.md
 PACKAGE_PATH ?= artifacts/synology-signoff-package.md
 RELEASE_REF ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+SIGNOFF_OWNER ?= pending
+SIGNOFF_NOTES ?=
 PYTHON ?= python3
 
-.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package
+.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package synology-signoff-all
 
 help:
 	@echo "Targets disponibles:"
@@ -28,6 +30,7 @@ help:
 	@echo "  make synology-release-verify # valida estructura del JSON del gate"
 	@echo "  make synology-release-checklist # genera checklist Markdown de aprobación"
 	@echo "  make synology-signoff-package # consolida evidencia final de sign-off"
+	@echo "  make synology-signoff-all # ejecuta gate + summary + verify + checklist + package"
 
 synology-preflight:
 	ENV_FILE="$(ENV_FILE)" \
@@ -74,6 +77,8 @@ synology-release-checklist:
 	STRICT_EXTERNAL_CHECKS="$(STRICT_EXTERNAL_CHECKS)" \
 	REQUIRE_SECRETS="$(REQUIRE_SECRETS)" \
 	RELEASE_REF="$(RELEASE_REF)" \
+	SIGNOFF_OWNER="$(SIGNOFF_OWNER)" \
+	SIGNOFF_NOTES="$(SIGNOFF_NOTES)" \
 	$(PYTHON) scripts/synology_release_checklist.py \
 		"$(CHECKLIST_PATH)"
 
@@ -83,3 +88,6 @@ synology-signoff-package:
 		"$(JSON_PATH)" \
 		"$(CHECKLIST_PATH)" \
 		"$(PACKAGE_PATH)"
+
+synology-signoff-all: synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package
+	@echo "✅ Sign-off pipeline completado"

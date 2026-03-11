@@ -89,7 +89,7 @@ make synology-release-gate \
 Ejecución remota desde GitHub Actions (`workflow_dispatch`):
 - `Synology Preflight` (modo `require_secrets=true` usa `BINANCE_API_KEY`, `BINANCE_API_SECRET`, `OUTLINE_API_TOKEN` desde GitHub Secrets)
 - `Synology Smoke Test`
-- `Synology Release Gate` (sube reporte Markdown + resumen JSON como artifacts y valida estructura del JSON)
+- `Synology Release Gate` (sube reporte Markdown + resumen JSON + checklist + paquete de sign-off, y valida estructura del JSON)
 
 Checklist de aprobación manual:
 
@@ -105,6 +105,16 @@ make synology-signoff-package \
   JSON_PATH=artifacts/synology-release-gate.json \
   CHECKLIST_PATH=artifacts/synology-release-checklist.md \
   PACKAGE_PATH=artifacts/synology-signoff-package.md
+```
+
+Pipeline completo (recomendado en operación):
+
+```bash
+make synology-signoff-all \
+  ENV_FILE=infra/docker/synology/.env \
+  API_BASE_URL="http://IP_NAS:API_PORT" \
+  WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
+  SIGNOFF_OWNER="<responsable>"
 ```
 
 Si Binance Testnet está intermitente y solo quieres validar salud interna del stack NAS, puedes correr:

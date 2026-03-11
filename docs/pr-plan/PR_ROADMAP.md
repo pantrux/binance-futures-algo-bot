@@ -38,7 +38,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-13 | Verificación automática del JSON del gate | ✅ Mergeado | validador estructural + checks de consistencia de pasos |
 | PR-14 | Atajos operativos con Makefile | ✅ Mergeado | ejecución estandarizada de preflight/smoke/release gate |
 | PR-15 | Checklist de aprobación operacional | ✅ Mergeado | plantilla y script para sign-off manual controlado |
-| PR-16 | Paquete consolidado de sign-off | 🟡 En progreso | consolidación de evidencia final en un solo artefacto |
+| PR-16 | Paquete consolidado de sign-off | ✅ Mergeado | consolidación de evidencia final en un solo artefacto |
+| PR-17 | Workflow completo de sign-off | 🟡 En progreso | orquestación CI de checklist+paquete junto al release gate |
 
 ## Secuencia de PRs actualizada
 
@@ -276,7 +277,7 @@ No habilita live trading; formaliza aprobación manual para operación controlad
 ---
 
 ### PR-16 — Paquete consolidado de sign-off
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Consolidar la evidencia final del ciclo operativo en un solo artefacto Markdown para auditoría/handoff.
@@ -289,6 +290,23 @@ Consolidar la evidencia final del ciclo operativo en un solo artefacto Markdown 
 
 **Gate extra**
 Sin live trading; consolida evidencia del modo controlado.
+
+---
+
+### PR-17 — Workflow completo de sign-off
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Automatizar en CI la generación de checklist y paquete final de sign-off dentro del workflow de release gate.
+
+**Entregables**
+- actualización de `synology-release-gate.yml`
+- parámetros de sign-off (`signoff_owner`, `signoff_notes`)
+- artifacts extendidos (`checklist` + `signoff-package`)
+- docs/runbook de ejecución completa
+
+**Gate extra**
+Sin live trading; automatización solo de evidencia operativa.
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
