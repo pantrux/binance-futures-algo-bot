@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import traceback
 from time import perf_counter
 from uuid import uuid4
 
@@ -21,20 +22,24 @@ def create_app() -> FastAPI:
     async def request_observability_middleware(request: Request, call_next):
         request_id = request.headers.get("x-request-id") or str(uuid4())
         start = perf_counter()
+        status_code = 500
 
         try:
             response = await call_next(request)
             status_code = response.status_code
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             status_code = 500
             response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
-            logger.exception(
+            logger.error(
                 json.dumps(
                     {
                         "event": "unhandled_request_error",
                         "request_id": request_id,
                         "path": request.url.path,
                         "method": request.method,
+                        "error_type": type(exc).__name__,
+                        "error": str(exc),
+                        "traceback": traceback.format_exc(),
                     },
                     ensure_ascii=False,
                 )
