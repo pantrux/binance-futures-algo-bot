@@ -90,6 +90,7 @@ def test_levels_from_atr_accepts_percentage_values():
     levels = service._levels_from_atr(100.0, 2.5)
 
     assert levels["stop"] > 0
+    assert levels["stop"] < levels["entry"]
     assert levels["take_profit"] > 100.0
 
 
@@ -115,3 +116,8 @@ def test_hybrid_uses_short_side_and_inverted_levels_for_bearish_market():
     assert meta.side == "short"
     assert levels["take_profit"] < levels["entry"] < levels["stop"]
     assert signals.technical < 60
+
+
+def test_normalize_atr_fraction_accepts_sub_one_percent_values():
+    service = HybridSignalService(api_client=FakeApiClient(snapshot=None, market=None), demo_service=DemoSignalService())
+    assert service._normalize_atr_fraction(0.8) == 0.008

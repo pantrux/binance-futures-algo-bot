@@ -101,7 +101,8 @@ class HybridSignalService:
 
     @staticmethod
     def _normalize_atr_fraction(atr_pct: float) -> float:
-        return atr_pct / 100.0 if atr_pct > 1 else atr_pct
+        # Si viene como porcentaje entero o decimal porcentual (ej. 2.5 o 0.8), normalizamos a fracción.
+        return atr_pct / 100.0 if atr_pct >= 0.5 else atr_pct
 
     def _levels_from_atr(self, entry: float, atr_pct: float, side: str = "long") -> dict[str, float]:
         atr_fraction = self._normalize_atr_fraction(atr_pct)
@@ -136,7 +137,7 @@ class HybridSignalService:
     def _trend_strength(ema_spread_pct: float | None) -> float:
         if ema_spread_pct is None:
             return 50.0
-        return max(0.0, min(100.0, abs(float(ema_spread_pct)) * 1200.0))
+        return max(0.0, min(100.0, abs(float(ema_spread_pct)) * 400.0))
 
     @staticmethod
     def _liquidity_score(market: dict | None) -> float:
