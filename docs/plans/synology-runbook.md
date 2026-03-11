@@ -15,6 +15,14 @@ Levantar el stack completo en el NAS y poblar un conjunto mínimo de trade plans
    - `docker compose exec worker python /app/scripts/seed_demo_data.py`
 8. Abrir el dashboard web y validar resumen + últimos trade plans.
 
+## Contenedores esperados
+- `trading-bot-postgres`
+- `trading-bot-redis`
+- `trading-bot-migrate` *(one-shot; debe quedar en `Exited (0)`)*
+- `trading-bot-api`
+- `trading-bot-worker`
+- `trading-bot-web`
+
 ## Verificaciones clave
 - `/health`
 - `/dashboard/summary`
@@ -144,3 +152,10 @@ METRICS_API_KEY="<opcional>" \
 > Nota operativa: `/integrations/binance/testnet/ping` depende de disponibilidad externa de Binance Testnet.
 > Si Binance está intermitente, repetir el smoke o ejecutar temporalmente con `STRICT_EXTERNAL_CHECKS=false`
 > para no bloquear validaciones internas del NAS por una caída externa puntual.
+
+## Troubleshooting real validado en Synology
+- Si `docker compose` falla con `build context` inválido desde `infra/docker/synology`, validar que el compose use `context: ../../../`.
+- Si Redis cae con `Can't open or create append-only dir appendonlydir: Permission denied`, usar `--appendonly no` para operación en este entorno NAS.
+- Si `migrate` falla con `No 'script_location' key found`, validar que imagen API incluya `alembic.ini` y carpeta `alembic/`.
+- Si `migrate` intenta `localhost:5432`, validar que `alembic/env.py` lea `POSTGRES_DSN` desde environment.
+- Si build falla leyendo `data/postgres` (`can't stat`), agregar `.dockerignore` excluyendo `data/`.

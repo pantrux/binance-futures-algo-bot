@@ -1,4 +1,6 @@
 from logging.config import fileConfig
+import os
+
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
@@ -6,6 +8,11 @@ from apps.api.app.db.base import Base
 from apps.api.app.db import models  # noqa: F401
 
 config = context.config
+
+postgres_dsn = os.getenv("POSTGRES_DSN")
+if postgres_dsn:
+    config.set_main_option("sqlalchemy.url", postgres_dsn)
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 

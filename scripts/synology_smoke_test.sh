@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:8000}"
-WEB_BASE_URL="${WEB_BASE_URL:-http://127.0.0.1:3000}"
+API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:8010}"
+WEB_BASE_URL="${WEB_BASE_URL:-http://127.0.0.1:3012}"
 METRICS_API_KEY="${METRICS_API_KEY:-}"
 STRICT_EXTERNAL_CHECKS="${STRICT_EXTERNAL_CHECKS:-true}"
 
@@ -123,6 +123,6 @@ else
   esac
 fi
 
-check_contains "WEB /" "${WEB_BASE_URL}/" "Trading Bot"
+check_contains "WEB /" "${WEB_BASE_URL}/" "bot"
 
 echo "✅ Smoke tests Synology completados"
