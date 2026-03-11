@@ -46,7 +46,11 @@ async def process_symbol(
     created = await api_client.create_trade_plan(payload)
     print({"symbol": symbol, "source": meta.source, "reason": meta.reason, "trade_plan": created})
     if settings.paper_trading and created.get("status") == "approved":
-        executed = await api_client.execute_paper_trade(created["id"])
+        trade_plan_id = created.get("id")
+        if not trade_plan_id:
+            print({"symbol": symbol, "error": "approved_plan_missing_id", "trade_plan": created})
+            return
+        executed = await api_client.execute_paper_trade(trade_plan_id)
         print({"symbol": symbol, "paper_execution": executed})
 
 

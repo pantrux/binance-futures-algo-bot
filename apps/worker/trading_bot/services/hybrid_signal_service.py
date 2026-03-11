@@ -2,6 +2,7 @@ import asyncio
 import logging
 import math
 from dataclasses import dataclass
+from typing import overload
 
 from apps.worker.trading_bot.models.signals import MarketContext, SignalPack
 from apps.worker.trading_bot.services.demo_signal_service import DemoSignalService
@@ -90,8 +91,8 @@ class HybridSignalService:
         vol_regime = snapshot.get("volatility_regime", "unknown")
         ema_spread_pct = self._coerce_optional_number(snapshot.get("ema_spread_pct"), default=None)
         atr_pct = float(snapshot.get("atr_pct") or 0.0)
-        rsi_14 = float(self._coerce_optional_number(snapshot.get("rsi_14"), default=50.0))
-        momentum_10 = float(self._coerce_optional_number(snapshot.get("momentum_10"), default=0.0))
+        rsi_14 = self._coerce_optional_number(snapshot.get("rsi_14"), default=50.0)
+        momentum_10 = self._coerce_optional_number(snapshot.get("momentum_10"), default=0.0)
 
         technical = self._technical_score(trend_bias, momentum_bias, rsi_14=rsi_14, momentum_10=momentum_10)
         fundamental = 50.0
@@ -128,6 +129,14 @@ class HybridSignalService:
                 return float(value)
         logger.warning("market snapshot sin precio reconocible; claves disponibles: %s", sorted(market.keys()))
         raise ValueError("market_snapshot_missing_price")
+
+    @staticmethod
+    @overload
+    def _coerce_optional_number(value: object, *, default: None) -> float | None: ...
+
+    @staticmethod
+    @overload
+    def _coerce_optional_number(value: object, *, default: float) -> float: ...
 
     @staticmethod
     def _coerce_optional_number(value: object, *, default: float | None) -> float | None:
