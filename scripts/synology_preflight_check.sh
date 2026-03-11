@@ -8,6 +8,13 @@ REQUIRE_SECRETS="${REQUIRE_SECRETS:-false}"
 AUTO_CREATE_DATA_DIRS="${AUTO_CREATE_DATA_DIRS:-false}"
 SKIP_COMPOSE_VALIDATION="${SKIP_COMPOSE_VALIDATION:-false}"
 
+# Variables de control del script (CLI/entorno de invocación). No deben ser sobreescritas por `source ${ENV_FILE}`.
+CONTROL_COMPOSE_DIR="${COMPOSE_DIR}"
+CONTROL_ENV_FILE="${ENV_FILE}"
+CONTROL_REQUIRE_SECRETS="${REQUIRE_SECRETS}"
+CONTROL_AUTO_CREATE_DATA_DIRS="${AUTO_CREATE_DATA_DIRS}"
+CONTROL_SKIP_COMPOSE_VALIDATION="${SKIP_COMPOSE_VALIDATION}"
+
 COMPOSE_CMD=()
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
   COMPOSE_CMD=(docker compose)
@@ -55,6 +62,13 @@ auto_dirs() {
 }
 
 load_env
+
+# Reaplicar variables de control para evitar que valores del `.env` alteren el comportamiento operativo del preflight.
+COMPOSE_DIR="${CONTROL_COMPOSE_DIR}"
+ENV_FILE="${CONTROL_ENV_FILE}"
+REQUIRE_SECRETS="${CONTROL_REQUIRE_SECRETS}"
+AUTO_CREATE_DATA_DIRS="${CONTROL_AUTO_CREATE_DATA_DIRS}"
+SKIP_COMPOSE_VALIDATION="${CONTROL_SKIP_COMPOSE_VALIDATION}"
 
 require_secrets_normalized="$(printf '%s' "${REQUIRE_SECRETS}" | tr '[:upper:]' '[:lower:]')"
 skip_compose_validation_normalized="$(printf '%s' "${SKIP_COMPOSE_VALIDATION}" | tr '[:upper:]' '[:lower:]')"
