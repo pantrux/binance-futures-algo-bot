@@ -11,12 +11,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
-from urllib import request
+from urllib import error, request
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = REPO_ROOT / "docs"
@@ -84,18 +85,24 @@ class OutlineClient:
 
     def list_collection_docs(self) -> List[dict]:
         docs: List[dict] = []
-        for offset in (0, 100, 200, 300):
+        offset = 0
+        limit = 100
+        while True:
             chunk = self.call(
                 "documents.list",
-                {"collectionId": self.collection_id, "limit": 100, "offset": offset},
+                {"collectionId": self.collection_id, "limit": limit, "offset": offset},
             ).get("data", [])
             docs.extend(chunk)
-            if len(chunk) < 100:
+            if len(chunk) < limit:
                 break
+            offset += limit
         return docs
 
+    def info(self, doc_id: str) -> dict:
+        return self.call("documents.info", {"id": doc_id}).get("data", {})
+
     def get_text(self, doc_id: str) -> str:
-        return self.call("documents.info", {"id": doc_id}).get("data", {}).get("text", "")
+        return self.info(doc_id).get("text", "")
 
     def update(self, doc_id: str, title: str, text: str, parent_id: str | None = None) -> None:
         payload = {"id": doc_id, "title": title, "text": text, "publish": True}
@@ -112,7 +119,10 @@ class OutlineClient:
         }
         if parent_id is not None:
             payload["parentDocumentId"] = parent_id
-        return self.call("documents.create", payload).get("data", {}).get("id")
+        doc_id = self.call("documents.create", payload).get("data", {}).get("id")
+        if not doc_id:
+            raise RuntimeError(f"documents.create no devolvió id para '{title}'")
+        return doc_id
 
     def archive(self, doc_id: str) -> None:
         self.call("documents.archive", {"id": doc_id})
@@ -120,16 +130,24 @@ class OutlineClient:
     def move(self, doc_id: str, parent_id: str) -> None:
         try:
             self.call("documents.move", {"id": doc_id, "parentDocumentId": parent_id})
-        except Exception:
-            text = self.get_text(doc_id)
-            title = self.call("documents.info", {"id": doc_id}).get("data", {}).get("title", "")
-            self.update(doc_id, title, text, parent_id=parent_id)
+        except error.HTTPError as exc:
+            if exc.code not in {400, 404, 405, 422}:
+                raise
+            print(
+                f"[WARN] documents.move no disponible ({exc.code}); aplicando fallback con documents.update",
+                file=sys.stderr,
+            )
+            info = self.info(doc_id)
+            self.update(doc_id, info.get("title", ""), info.get("text", ""), parent_id=parent_id)
 
 
 def parse_iso(ts: str | None) -> datetime:
     if not ts:
-        return datetime.min
-    return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        return datetime.min.replace(tzinfo=timezone.utc)
+    dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 def derive_adr_title(path: Path) -> str:
@@ -164,7 +182,10 @@ def ensure_single_doc(client: OutlineClient, docs: List[dict], title: str, text:
             if extra["id"] != canonical["id"]:
                 client.archive(extra["id"])
         return canonical["id"]
-    return client.create(title, text, parent_id=parent_id)
+
+    new_id = client.create(title, text, parent_id=parent_id)
+    docs.append({"id": new_id, "title": title, "archivedAt": None, "createdAt": None, "updatedAt": None})
+    return new_id
 
 
 def main() -> None:
@@ -208,7 +229,6 @@ def main() -> None:
     # Paso 2: crear índice + hubs
     root_id = ensure_single_doc(client, all_docs, ROOT_TITLE, "# Índice maestro\n")
 
-    all_docs = client.list_collection_docs()
     hub_ids: Dict[str, str] = {}
     for key, title in HUB_TITLES.items():
         hub_ids[key] = ensure_single_doc(client, all_docs, title, f"# {title.split(' — ', 1)[1]}\n", parent_id=root_id)
@@ -217,7 +237,6 @@ def main() -> None:
     synced = 0
     desired_titles = {ROOT_TITLE, *HUB_TITLES.values()}
 
-    all_docs = client.list_collection_docs()
     for t in targets:
         path = REPO_ROOT / t.rel_path
         text = path.read_text(encoding="utf-8")
@@ -225,7 +244,6 @@ def main() -> None:
         doc_id = ensure_single_doc(client, all_docs, t.title, text, parent_id=hub_ids[t.category])
         client.move(doc_id, hub_ids[t.category])
         synced += 1
-        all_docs = client.list_collection_docs()
 
     # Paso 4: opción de limpiar documentos legacy no mapeados
     archived_unknown = 0
@@ -259,6 +277,10 @@ def main() -> None:
             return "- (sin documentos)"
         return "\n".join(f"- [{d['title']}]({d.get('url')})" for d in items)
 
+    def hub_url(key: str) -> str:
+        hub = by_id.get(hub_ids[key])
+        return hub.get("url", "") if hub else ""
+
     client.update(hub_ids["roadmaps"], HUB_TITLES["roadmaps"], "# Roadmaps y planes\n\n" + lines(hub_ids["roadmaps"]))
     client.update(hub_ids["ops"], HUB_TITLES["ops"], "# Operación y despliegue\n\n" + lines(hub_ids["ops"]))
     client.update(hub_ids["adrs"], HUB_TITLES["adrs"], "# ADRs\n\n" + lines(hub_ids["adrs"]))
@@ -270,10 +292,10 @@ def main() -> None:
             "",
             "Documentación oficial activa, ordenada por categoría:",
             "",
-            f"- [{HUB_TITLES['roadmaps']}]({by_id[hub_ids['roadmaps']]['url']})",
-            f"- [{HUB_TITLES['ops']}]({by_id[hub_ids['ops']]['url']})",
-            f"- [{HUB_TITLES['adrs']}]({by_id[hub_ids['adrs']]['url']})",
-            f"- [{HUB_TITLES['diagrams']}]({by_id[hub_ids['diagrams']]['url']})",
+            f"- [{HUB_TITLES['roadmaps']}]({hub_url('roadmaps')})",
+            f"- [{HUB_TITLES['ops']}]({hub_url('ops')})",
+            f"- [{HUB_TITLES['adrs']}]({hub_url('adrs')})",
+            f"- [{HUB_TITLES['diagrams']}]({hub_url('diagrams')})",
         ]
     )
     client.update(root_id, ROOT_TITLE, root_text)
