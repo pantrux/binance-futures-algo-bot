@@ -46,8 +46,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-21 | Corrección documental post PR-19/PR-20 | ✅ Mergeado | roadmap/master-plan/runbook alineados + sync Outline validado |
 | PR-22 | Retención y gobierno de artifacts | ✅ Mergeado | política 30/60/90 días + limpieza automática + trazabilidad auditable |
 | PR-23 | Observabilidad y alerting de infraestructura | ✅ Mergeado | alertas operacionales + SLO de pipeline + workflow horario |
-| PR-24 | Resiliencia, recuperación y hardening operacional | 🟡 En progreso | backup/restore + DR + hardening de secretos/permisos |
-| PR-25 | Clasificador de régimen de mercado | 🔵 Planificado | clasificación de contexto de mercado para gating |
+| PR-24 | Resiliencia, recuperación y hardening operacional | ✅ Mergeado | backup/restore + DR + hardening de secretos/permisos |
+| PR-25 | Clasificador de régimen de mercado | 🟡 En progreso | clasificación de contexto de mercado para gating |
 | PR-26 | Sizing dinámico por volatilidad/riesgo | 🔵 Planificado | position sizing adaptativo por riesgo cuantitativo |
 | PR-27 | Riesgo de portafolio y correlación | 🔵 Planificado | límites de exposición multi-símbolo y correlación |
 | PR-28 | Gate de decisión final y circuit breakers avanzados | 🔵 Planificado | capa final de decisión y apagado seguro |

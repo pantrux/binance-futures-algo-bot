@@ -8,6 +8,7 @@ from apps.api.app.core.settings import settings
 from apps.api.app.schemas.dashboard import DashboardSummary
 from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.market_data import MarketCandleRead, MarketIngestionResponse, MarketSnapshotRead
+from apps.api.app.schemas.market_regime import MarketRegimeSnapshot
 from apps.api.app.services.binance_market_data_service import BinanceMarketDataService
 from apps.api.app.schemas.paper_trading import PaperExecutionResponse
 from apps.api.app.schemas.signals import SignalSnapshot
@@ -18,6 +19,7 @@ from apps.api.app.observability.metrics import api_metrics
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.dashboard_service import DashboardService
 from apps.api.app.services.indicator_service import IndicatorService
+from apps.api.app.services.market_regime_service import MarketRegimeService
 from apps.api.app.services.paper_trading_service import PaperTradingService
 from apps.api.app.services.risk_engine import RiskEngine
 from apps.api.app.services.signal_service import SignalService
@@ -87,6 +89,32 @@ def signal_snapshot(symbol: str, timeframe: str = '15m', limit: int = Query(defa
     if any(value is None for value in (indicator_snapshot.ema_9, indicator_snapshot.ema_21, indicator_snapshot.rsi_14, indicator_snapshot.atr_14, indicator_snapshot.momentum_10)):
         raise HTTPException(status_code=400, detail=f"Candles insuficientes para calcular señales de {symbol} en timeframe {timeframe}")
     return SignalService(db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit, indicator_snapshot=indicator_snapshot)
+
+
+@router.get("/market/regime/{symbol}", response_model=MarketRegimeSnapshot)
+def market_regime_snapshot(symbol: str, timeframe: str = '15m', limit: int = Query(default=200, ge=22, le=1000), db: Session = Depends(get_db)) -> MarketRegimeSnapshot:
+    indicator_snapshot = IndicatorService(db).snapshot(symbol=symbol, timeframe=timeframe, limit=limit)
+    if indicator_snapshot.candles_used == 0:
+        raise HTTPException(status_code=404, detail=f"No hay candles para {symbol} en timeframe {timeframe}")
+    if any(value is None for value in (indicator_snapshot.ema_9, indicator_snapshot.ema_21, indicator_snapshot.rsi_14, indicator_snapshot.atr_14, indicator_snapshot.momentum_10)):
+        raise HTTPException(status_code=400, detail=f"Candles insuficientes para calcular régimen de mercado de {symbol} en timeframe {timeframe}")
+
+    regime_signal_snapshot = SignalService(db).snapshot(
+        symbol=symbol,
+        timeframe=timeframe,
+        limit=limit,
+        indicator_snapshot=indicator_snapshot,
+    )
+    if any(value is None for value in (regime_signal_snapshot.ema_spread_pct, regime_signal_snapshot.atr_pct)):
+        raise HTTPException(status_code=400, detail=f"Candles insuficientes para calcular régimen de mercado de {symbol} en timeframe {timeframe}")
+
+    return MarketRegimeService(db).snapshot(
+        symbol=symbol,
+        timeframe=timeframe,
+        limit=limit,
+        indicator_snapshot=indicator_snapshot,
+        signal_snapshot=regime_signal_snapshot,
+    )
 
 
 @router.get("/trade-plans", response_model=list[TradePlanRead])
