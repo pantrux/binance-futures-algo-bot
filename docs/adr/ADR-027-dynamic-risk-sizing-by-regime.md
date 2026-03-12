@@ -44,6 +44,7 @@ con clamp final a `max_single_trade_pct`.
 
 3. **volatility_multiplier** (presión de volatilidad observada):
    - degradación progresiva por bandas de `volatility_pct`
+   - las bandas se anclan al `high_volatility_threshold_pct` configurable de política
 
 ### Integración de inputs
 - `MarketState` incorpora campos opcionales:
@@ -65,3 +66,4 @@ con clamp final a `max_single_trade_pct`.
 ## Guardrails
 - No se modifica el límite global del 5% ni el tope de 1.25% por trade.
 - Si no hay margen de riesgo disponible o `stop_distance<=0`, se mantiene bloqueo explícito.
+- `high_volatility_threshold_pct` de política se valida con mínimo `>=3.0` para mantener la degradación progresiva completa de buckets de volatilidad.

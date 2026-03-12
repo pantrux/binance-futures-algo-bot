@@ -1,11 +1,13 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
-from apps.api.app.schemas.trading import MarketState, SignalSnapshot
+from apps.api.app.schemas.trading import MarketState, PortfolioState, SignalSnapshot
 
 
 class TradePlanCreateRequest(BaseModel):
     symbol: str
-    side: str
+    side: Literal["long", "short"]
     entry_price: float = Field(gt=0)
     stop_loss: float = Field(gt=0)
     take_profit: float = Field(gt=0)
@@ -14,6 +16,7 @@ class TradePlanCreateRequest(BaseModel):
     thesis: str = Field(min_length=10)
     signals: SignalSnapshot
     market_state: MarketState
+    portfolio_state: PortfolioState | None = None
 
 
 class TradePlanCreateResponse(BaseModel):
