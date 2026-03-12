@@ -8,7 +8,7 @@ from apps.api.app.services.signal_service import SignalService
 
 
 class MarketRegimeService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session | None) -> None:
         self.db = db
 
     @staticmethod
