@@ -5,6 +5,7 @@ def test_trend_strength_scales_with_ema_spread_pct() -> None:
     assert MarketRegimeService._trend_strength(None) == 50.0
     assert MarketRegimeService._trend_strength(0.0) == 0.0
     assert MarketRegimeService._trend_strength(1.0) == 40.0
+    assert MarketRegimeService._trend_strength(-1.0) == 40.0
 
 
 def test_volatility_score_scales_with_atr_pct() -> None:
@@ -143,36 +144,68 @@ def test_regime_confidence_high_volatility_follows_volatility_score() -> None:
     assert confidence_high > confidence_low
 
 
-def test_regime_confidence_bullish_increases_with_trend_and_momentum() -> None:
-    c1 = MarketRegimeService._regime_confidence(
+def test_regime_confidence_bullish_increases_with_momentum_when_others_constant() -> None:
+    c_low_momentum = MarketRegimeService._regime_confidence(
         regime="tendencia_alcista",
-        trend_strength=60.0,
+        trend_strength=70.0,
         volatility_score=40.0,
         momentum_score=55.0,
     )
-    c2 = MarketRegimeService._regime_confidence(
+    c_high_momentum = MarketRegimeService._regime_confidence(
         regime="tendencia_alcista",
-        trend_strength=80.0,
+        trend_strength=70.0,
         volatility_score=40.0,
         momentum_score=70.0,
     )
-    assert c2 > c1
+    assert c_high_momentum > c_low_momentum
 
 
-def test_regime_confidence_range_lateral_increases_when_low_trend_and_low_volatility() -> None:
-    c1 = MarketRegimeService._regime_confidence(
+def test_regime_confidence_bullish_increases_with_trend_when_others_constant() -> None:
+    c_low_trend = MarketRegimeService._regime_confidence(
+        regime="tendencia_alcista",
+        trend_strength=60.0,
+        volatility_score=40.0,
+        momentum_score=65.0,
+    )
+    c_high_trend = MarketRegimeService._regime_confidence(
+        regime="tendencia_alcista",
+        trend_strength=80.0,
+        volatility_score=40.0,
+        momentum_score=65.0,
+    )
+    assert c_high_trend > c_low_trend
+
+
+def test_regime_confidence_range_lateral_increases_when_trend_is_lower() -> None:
+    c_high_trend = MarketRegimeService._regime_confidence(
         regime="rango_lateral",
         trend_strength=30.0,
+        volatility_score=30.0,
+        momentum_score=50.0,
+    )
+    c_low_trend = MarketRegimeService._regime_confidence(
+        regime="rango_lateral",
+        trend_strength=10.0,
+        volatility_score=30.0,
+        momentum_score=50.0,
+    )
+    assert c_low_trend > c_high_trend
+
+
+def test_regime_confidence_range_lateral_increases_when_volatility_is_lower() -> None:
+    c_high_vol = MarketRegimeService._regime_confidence(
+        regime="rango_lateral",
+        trend_strength=20.0,
         volatility_score=40.0,
         momentum_score=50.0,
     )
-    c2 = MarketRegimeService._regime_confidence(
+    c_low_vol = MarketRegimeService._regime_confidence(
         regime="rango_lateral",
-        trend_strength=10.0,
+        trend_strength=20.0,
         volatility_score=20.0,
         momentum_score=50.0,
     )
-    assert c2 > c1
+    assert c_low_vol > c_high_vol
 
 
 def test_regime_confidence_transicion_prefers_neutral_momentum() -> None:
