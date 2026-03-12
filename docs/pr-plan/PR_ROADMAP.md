@@ -48,8 +48,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-23 | Observabilidad y alerting de infraestructura | ✅ Mergeado | alertas operacionales + SLO de pipeline + workflow horario |
 | PR-24 | Resiliencia, recuperación y hardening operacional | ✅ Mergeado | backup/restore + DR + hardening de secretos/permisos |
 | PR-25 | Clasificador de régimen de mercado | ✅ Mergeado | clasificación de contexto de mercado para gating |
-| PR-26 | Sizing dinámico por volatilidad/riesgo | 🟡 En progreso | position sizing adaptativo por riesgo cuantitativo |
-| PR-27 | Riesgo de portafolio y correlación | 🔵 Planificado | límites de exposición multi-símbolo y correlación |
+| PR-26 | Sizing dinámico por volatilidad/riesgo | ✅ Mergeado | position sizing adaptativo por riesgo cuantitativo |
+| PR-27 | Riesgo de portafolio y correlación | 🟡 En progreso | límites de exposición multi-símbolo y correlación |
 | PR-28 | Gate de decisión final y circuit breakers avanzados | 🔵 Planificado | capa final de decisión y apagado seguro |
 | PR-29 | Router Binance Testnet | 🔵 Planificado | ejecución real en testnet con trazabilidad de órdenes |
 | PR-30 | Reconciliación y máquina de estados de ejecución | 🔵 Planificado | consistencia entre órdenes/posiciones/eventos |
@@ -442,7 +442,7 @@ Diferenciar contexto de mercado para ajustar reglas de entrada/salida y riesgo.
 ---
 
 ### PR-26 — Sizing dinámico por volatilidad/riesgo
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Escalar tamaño de posición según volatilidad y presupuesto de riesgo.
@@ -455,7 +455,7 @@ Escalar tamaño de posición según volatilidad y presupuesto de riesgo.
 ---
 
 ### PR-27 — Riesgo de portafolio y correlación
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Evitar sobreexposición agregada por posiciones correlacionadas.
