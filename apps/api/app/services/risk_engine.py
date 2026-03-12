@@ -1,6 +1,9 @@
+import logging
 from dataclasses import dataclass
 
 from apps.api.app.schemas.trading import MarketState, RiskDecision, SignalSnapshot
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -34,7 +37,14 @@ class RiskEngine:
             "alta_volatilidad",
             "unknown",
         }
-        return normalized if normalized in allowed else None
+        if normalized in allowed:
+            return normalized
+
+        logger.warning(
+            "_normalize_regime_alias: régimen no reconocido '%s'; se ignorará y se usará clasificación interna",
+            raw_regime,
+        )
+        return None
 
     def classify_market_regime(self, market_state: MarketState) -> str:
         if market_state.volatility_pct >= 4.0:
@@ -133,6 +143,8 @@ class RiskEngine:
                 return 0.95
             return 1.0
 
+        # Fallback defensivo: solo alcanzable si se agrega un régimen nuevo sin actualizar esta función.
+        logger.warning("_regime_multiplier: régimen no reconocido '%s'; aplicando multiplicador 0.9", regime)
         return 0.9
 
     @staticmethod
