@@ -97,7 +97,13 @@ class MarketRegimeService:
         if regime == "rango_lateral":
             return round(max(0.0, min(100.0, ((100.0 - trend_strength) * 0.5) + (inverse_volatility * 0.5))), 4)
 
-        return round(max(0.0, min(100.0, (trend_strength * 0.35) + (momentum_score * 0.3) + (inverse_volatility * 0.35))), 4)
+        # "transicion" debería tener más confianza cuando el momentum es más neutral (cerca de 50)
+        # y cuando la volatilidad no es excesiva.
+        momentum_neutrality = max(0.0, min(100.0, 100.0 - (abs(momentum_score - 50.0) * 2.0)))
+        return round(
+            max(0.0, min(100.0, (trend_strength * 0.35) + (momentum_neutrality * 0.3) + (inverse_volatility * 0.35))),
+            4,
+        )
 
     def snapshot(
         self,
