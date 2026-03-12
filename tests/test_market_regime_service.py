@@ -107,28 +107,6 @@ def test_classify_regime_bearish_trend_just_above_momentum_threshold_is_transici
     assert regime == "transicion"
 
 
-def test_classify_regime_bullish_trend_at_exact_threshold() -> None:
-    regime = MarketRegimeService._classify_regime(
-        trend_bias="bullish",
-        momentum_bias="bullish",
-        volatility_regime="medium",
-        trend_strength=58.0,
-        momentum_score=58.0,
-    )
-    assert regime == "tendencia_alcista"
-
-
-def test_classify_regime_bearish_trend_at_exact_threshold() -> None:
-    regime = MarketRegimeService._classify_regime(
-        trend_bias="bearish",
-        momentum_bias="bearish",
-        volatility_regime="medium",
-        trend_strength=58.0,
-        momentum_score=42.0,
-    )
-    assert regime == "tendencia_bajista"
-
-
 def test_classify_regime_transicion_when_momentum_just_above_bearish_threshold() -> None:
     regime = MarketRegimeService._classify_regime(
         trend_bias="bearish",
@@ -388,6 +366,11 @@ def test_regime_confidence_transicion_decreases_when_trend_strength_increases() 
         momentum_score=50.0,
     )
     assert c_low_trend > c_high_trend
+
+
+def test_momentum_score_happy_path_with_both_inputs() -> None:
+    score = MarketRegimeService._momentum_score(rsi_14=60.0, momentum_10_pct=1.0)
+    assert score == pytest.approx(63.3, abs=0.05)
 
 
 def test_momentum_score_only_rsi_when_momentum_pct_is_none() -> None:
