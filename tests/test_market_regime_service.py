@@ -52,6 +52,28 @@ def test_classify_regime_bullish_trend() -> None:
     assert regime == "tendencia_alcista"
 
 
+def test_classify_regime_bullish_trend_at_exact_thresholds() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bullish",
+        momentum_bias="bullish",
+        volatility_regime="medium",
+        trend_strength=58.0,
+        momentum_score=58.0,
+    )
+    assert regime == "tendencia_alcista"
+
+
+def test_classify_regime_bullish_trend_just_below_threshold_is_transicion() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bullish",
+        momentum_bias="bullish",
+        volatility_regime="medium",
+        trend_strength=57.99,
+        momentum_score=58.0,
+    )
+    assert regime == "transicion"
+
+
 def test_classify_regime_bearish_trend() -> None:
     regime = MarketRegimeService._classify_regime(
         trend_bias="bearish",
@@ -61,6 +83,28 @@ def test_classify_regime_bearish_trend() -> None:
         momentum_score=40.0,
     )
     assert regime == "tendencia_bajista"
+
+
+def test_classify_regime_bearish_trend_at_exact_thresholds() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bearish",
+        momentum_bias="bearish",
+        volatility_regime="medium",
+        trend_strength=58.0,
+        momentum_score=42.0,
+    )
+    assert regime == "tendencia_bajista"
+
+
+def test_classify_regime_bearish_trend_just_above_momentum_threshold_is_transicion() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bearish",
+        momentum_bias="bearish",
+        volatility_regime="medium",
+        trend_strength=58.0,
+        momentum_score=42.01,
+    )
+    assert regime == "transicion"
 
 
 def test_classify_regime_bullish_trend_at_exact_threshold() -> None:
