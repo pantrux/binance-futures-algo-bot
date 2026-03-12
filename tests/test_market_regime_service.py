@@ -74,6 +74,17 @@ def test_classify_regime_bullish_trend_just_below_threshold_is_transicion() -> N
     assert regime == "transicion"
 
 
+def test_classify_regime_bullish_trend_just_below_momentum_threshold_is_transicion() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bullish",
+        momentum_bias="bullish",
+        volatility_regime="medium",
+        trend_strength=58.0,
+        momentum_score=57.99,
+    )
+    assert regime == "transicion"
+
+
 def test_classify_regime_bearish_trend() -> None:
     regime = MarketRegimeService._classify_regime(
         trend_bias="bearish",
