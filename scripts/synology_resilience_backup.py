@@ -16,6 +16,7 @@ import tempfile
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TypedDict
 
 DEFAULT_PATHS = [
     "infra/docker/synology/docker-compose.yml",
@@ -23,6 +24,12 @@ DEFAULT_PATHS = [
     "Makefile",
     "docs/plans/synology-runbook.md",
 ]
+
+
+class BackupFileEntry(TypedDict):
+    path: str
+    size_bytes: int
+    sha256: str
 
 
 def sha256_file(path: Path) -> str:
@@ -82,7 +89,7 @@ def main() -> int:
     if not requested_paths:
         parser.error("--paths no puede estar vacío")
 
-    included: list[dict[str, str | int]] = []
+    included: list[BackupFileEntry] = []
     missing: list[str] = []
 
     for rel in requested_paths:
