@@ -1,3 +1,5 @@
+import pytest
+
 from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.signals import SignalSnapshot
 from apps.api.app.services.market_regime_service import MarketRegimeService
@@ -42,4 +44,4 @@ def test_market_regime_snapshot_uses_provided_snapshots() -> None:
     assert snapshot.timeframe == "15m"
     assert snapshot.last_candle_close_ms == 123
     assert snapshot.regime == "transicion"
-    assert 0.0 <= snapshot.regime_confidence <= 100.0
+    assert snapshot.regime_confidence == pytest.approx(72.98, abs=0.05)
