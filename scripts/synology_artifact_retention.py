@@ -108,7 +108,16 @@ def main() -> None:
         if path.name == ".gitkeep":
             continue
 
-        stat = path.stat()
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            # Archivo eliminado por otro proceso entre el listado y el stat.
+            continue
+        except OSError as exc:
+            report["errors"].append({"path": str(path), "stage": "stat", "error": str(exc)})
+            report["errors_count"] += 1
+            continue
+
         modified = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
         item = Item(
             path=str(path),
@@ -133,11 +142,22 @@ def main() -> None:
 
     if not args.dry_run:
         for d in sorted((p for p in artifacts_dir.rglob("*") if p.is_dir()), reverse=True):
-            if any(d.iterdir()):
+            try:
+                if any(d.iterdir()):
+                    continue
+            except FileNotFoundError:
+                # Directorio eliminado por otro proceso en carrera.
                 continue
+            except OSError as exc:
+                report["errors"].append({"path": str(d), "stage": "iterdir", "error": str(exc)})
+                report["errors_count"] += 1
+                continue
+
             try:
                 d.rmdir()
                 report["cleaned_empty_dirs_count"] += 1
+            except FileNotFoundError:
+                continue
             except OSError as exc:
                 report["errors"].append({"path": str(d), "stage": "rmdir", "error": str(exc)})
                 report["errors_count"] += 1
