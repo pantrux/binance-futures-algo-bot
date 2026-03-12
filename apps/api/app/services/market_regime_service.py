@@ -77,7 +77,8 @@ class MarketRegimeService:
         inverse_volatility = 100.0 - volatility_score
 
         if regime == "alta_volatilidad":
-            return round(max(0.0, min(100.0, (volatility_score * 0.7) + (trend_strength * 0.3))), 4)
+            # La confianza en alta volatilidad debe depender principalmente de la magnitud de volatilidad.
+            return round(max(0.0, min(100.0, float(volatility_score))), 4)
 
         if regime == "tendencia_alcista":
             return round(
