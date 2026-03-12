@@ -77,8 +77,8 @@ class RiskEngine:
             return "LARGE_ALT"
         return "ALTS"
 
-    @classmethod
-    def _correlation_coefficient(cls, lhs_cluster: str, rhs_cluster: str) -> float:
+    @staticmethod
+    def _correlation_coefficient(lhs_cluster: str, rhs_cluster: str) -> float:
         if lhs_cluster == rhs_cluster:
             return 0.95
 
@@ -421,18 +421,9 @@ class RiskEngine:
                         },
                     )
                 )
-            if not breached:
-                breached.append(
-                    (
-                        "portfolio_risk_limit_breached",
-                        "Sin margen de riesgo disponible dentro del límite global de portafolio",
-                        {
-                            "portfolio_risk_before": portfolio_before,
-                            "max_portfolio_risk_pct": max_portfolio_risk_pct,
-                            "available_policy_risk_pct": round(available_policy, 4),
-                        },
-                    )
-                )
+            # Invariante: si available_risk_pct <= 0, al menos uno de los componentes
+            # disponibles debe estar agotado y por tanto `breached` no puede quedar vacío.
+            assert breached, "invariante violada: available_risk_pct <= 0 sin límites agotados"
 
             for event_type, reason, context in breached:
                 risk_events.append(
