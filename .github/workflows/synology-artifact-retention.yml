@@ -34,7 +34,7 @@ jobs:
             echo "## Synology Artifact Retention"
             echo
             echo "ℹ️ Este workflow en GitHub corre siempre en modo dry-run (sin borrado)."
-            echo "ℹ️ La eliminación real se ejecuta desde Synology con Make (`RETENTION_DRY_RUN=false`)."
+            echo 'ℹ️ La eliminación real se ejecuta desde Synology con Make (`RETENTION_DRY_RUN=false`).'
             echo
             echo '```json'
             cat artifacts-retention/synology-artifact-retention.json
