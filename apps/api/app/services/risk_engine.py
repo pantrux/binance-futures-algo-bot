@@ -384,6 +384,18 @@ class RiskEngine:
         if available_risk_pct <= 0:
             breached: list[tuple[str, str, dict[str, float | str]]] = []
 
+            if available_portfolio <= 0:
+                breached.append(
+                    (
+                        "portfolio_risk_limit_breached",
+                        "Sin margen de riesgo disponible dentro del límite global de portafolio",
+                        {
+                            "portfolio_risk_before": portfolio_before,
+                            "max_portfolio_risk_pct": max_portfolio_risk_pct,
+                            "available_policy_risk_pct": round(available_policy, 4),
+                        },
+                    )
+                )
             if available_symbol <= 0:
                 breached.append(
                     (

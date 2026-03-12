@@ -343,6 +343,43 @@ def test_risk_engine_emits_all_breaches_when_symbol_and_cluster_limits_are_both_
     assert "cluster_risk_limit_breached" in event_types
 
 
+def test_risk_engine_emits_portfolio_breach_alongside_symbol_and_cluster_breaches():
+    engine = RiskEngine()
+    decision = engine.evaluate(
+        capital_usdt=1000,
+        existing_risk_pct=2.2,
+        signals=SignalSnapshot(technical=87, fundamental=78, sentiment=81, confidence=85),
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=2.0,
+            trend_strength=77,
+            liquidity_score=90,
+            market_regime="tendencia_alcista",
+            regime_confidence=79,
+        ),
+        entry_price=50000,
+        stop_loss=49750,
+        symbol="BTCUSDT",
+        side="long",
+        portfolio_state=PortfolioState(
+            positions=[
+                PositionExposure(symbol="BTCUSDT", side="long", notional_usdt=1000, risk_pct=1.6),
+                PositionExposure(symbol="BTCUSDT", side="long", notional_usdt=900, risk_pct=1.4),
+            ],
+            max_symbol_risk_pct=1.6,
+            max_cluster_risk_pct=3.0,
+            max_portfolio_risk_pct=5.0,
+        ),
+    )
+
+    assert decision.approved is False
+    event_types = {event.event_type for event in decision.risk_events}
+    assert "portfolio_risk_limit_breached" in event_types
+    assert "symbol_risk_limit_breached" in event_types
+    assert "cluster_risk_limit_breached" in event_types
+
+
 def test_risk_engine_degrades_sizing_under_correlation_pressure():
     engine = RiskEngine()
     signals = SignalSnapshot(technical=90, fundamental=84, sentiment=86, confidence=89)
