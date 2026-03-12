@@ -119,8 +119,6 @@ def main() -> None:
 
     if not args.dry_run:
         for d in sorted((p for p in artifacts_dir.rglob("*") if p.is_dir()), reverse=True):
-            if d == artifacts_dir:
-                continue
             if any(d.iterdir()):
                 continue
             try:
