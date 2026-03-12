@@ -49,7 +49,7 @@ class MarketRegimeService:
         if trend_bias == "unknown" or momentum_bias == "unknown" or volatility_regime == "unknown":
             return "unknown"
 
-        if volatility_regime == "high" or volatility_score >= 72.0:
+        if volatility_regime == "high":
             return "alta_volatilidad"
 
         if trend_bias == "bullish" and momentum_bias == "bullish" and trend_strength >= 58.0 and momentum_score >= 58.0:
@@ -73,9 +73,18 @@ class MarketRegimeService:
         if regime == "alta_volatilidad":
             return round(max(0.0, min(100.0, (volatility_score * 0.7) + (trend_strength * 0.3))), 4)
 
-        if regime in {"tendencia_alcista", "tendencia_bajista"}:
+        if regime == "tendencia_alcista":
             return round(
                 max(0.0, min(100.0, (trend_strength * 0.45) + (momentum_score * 0.35) + (inverse_volatility * 0.2))),
+                4,
+            )
+
+        if regime == "tendencia_bajista":
+            # `momentum_score` está centrado en 50: valores bajos significan momentum bajista más fuerte.
+            # Para confianza bajista, invertimos el componente de momentum.
+            bearish_momentum = 100.0 - momentum_score
+            return round(
+                max(0.0, min(100.0, (trend_strength * 0.45) + (bearish_momentum * 0.35) + (inverse_volatility * 0.2))),
                 4,
             )
 

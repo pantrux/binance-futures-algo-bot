@@ -73,16 +73,24 @@ def test_classify_regime_unknown_has_priority_over_trend() -> None:
     assert regime == "unknown"
 
 
-def test_classify_regime_high_volatility_triggered_by_score_even_if_regime_not_high() -> None:
-    regime = MarketRegimeService._classify_regime(
-        trend_bias="neutral",
-        momentum_bias="neutral",
-        volatility_regime="medium",
-        trend_strength=40.0,
-        volatility_score=72.0,
-        momentum_score=50.0,
+def test_regime_confidence_bearish_increases_when_momentum_is_more_bearish() -> None:
+    low_momentum_score = 30.0  # más bajista
+    high_momentum_score = 70.0  # más alcista
+
+    confidence_low = MarketRegimeService._regime_confidence(
+        regime="tendencia_bajista",
+        trend_strength=70.0,
+        volatility_score=40.0,
+        momentum_score=low_momentum_score,
     )
-    assert regime == "alta_volatilidad"
+    confidence_high = MarketRegimeService._regime_confidence(
+        regime="tendencia_bajista",
+        trend_strength=70.0,
+        volatility_score=40.0,
+        momentum_score=high_momentum_score,
+    )
+
+    assert confidence_low > confidence_high
 
 
 def test_regime_confidence_unknown_is_zero() -> None:
