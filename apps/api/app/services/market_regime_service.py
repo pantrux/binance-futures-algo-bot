@@ -64,8 +64,9 @@ class MarketRegimeService:
         if trend_bias == "bearish" and momentum_bias == "bearish" and trend_strength >= 58.0 and momentum_score <= 42.0:
             return "tendencia_bajista"
 
-        # Nota: aquí no evaluamos `volatility_score` porque en el flujo normal ya está acotado
-        # por `volatility_regime != "high"` (la rama de alta volatilidad se resuelve antes).
+        # Nota operativa: aquí no evaluamos un score adicional de volatilidad porque en el
+        # flujo normal `volatility_regime != "high"` ya acota este branch (alta volatilidad
+        # se resuelve antes).
         if trend_strength <= 35.0:
             return "rango_lateral"
 
