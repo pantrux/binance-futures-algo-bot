@@ -220,6 +220,22 @@ def test_regime_confidence_range_lateral_increases_when_volatility_is_lower() ->
     assert c_low_vol > c_high_vol
 
 
+def test_regime_confidence_range_lateral_prefers_neutral_momentum() -> None:
+    c_neutral = MarketRegimeService._regime_confidence(
+        regime="rango_lateral",
+        trend_strength=20.0,
+        volatility_score=30.0,
+        momentum_score=50.0,
+    )
+    c_extreme = MarketRegimeService._regime_confidence(
+        regime="rango_lateral",
+        trend_strength=20.0,
+        volatility_score=30.0,
+        momentum_score=90.0,
+    )
+    assert c_neutral > c_extreme
+
+
 def test_regime_confidence_transicion_prefers_neutral_momentum() -> None:
     c_neutral = MarketRegimeService._regime_confidence(
         regime="transicion",
