@@ -28,6 +28,7 @@
 - `ADR-024-operational-observability-alerting.md`
 - `ADR-025-resilience-backup-recovery-hardening.md`
 - `ADR-026-market-regime-classifier.md`
+- `ADR-027-dynamic-risk-sizing-by-regime.md`
 
 ## Archivados
 
