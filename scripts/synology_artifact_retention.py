@@ -15,6 +15,7 @@ import json
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import sys
 
 
 @dataclass
@@ -36,6 +37,19 @@ def human_bytes(n: int) -> str:
         value /= 1024.0
         idx += 1
     return f"{value:.2f} {units[idx]}"
+
+
+def write_report(report_path: Path, report: dict) -> bool:
+    try:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        return True
+    except OSError as exc:
+        print(
+            f"⚠️ No se pudo escribir reporte en {report_path}: {exc}",
+            file=sys.stderr,
+        )
+        return False
 
 
 def main() -> None:
@@ -85,10 +99,10 @@ def main() -> None:
 
     if not artifacts_dir.exists():
         print(f"ℹ️ No existe directorio de artifacts: {artifacts_dir}")
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        print(f"report_path={report_path}")
-        return
+        if write_report(report_path, report):
+            print(f"report_path={report_path}")
+            return
+        raise SystemExit(1)
 
     for path in sorted(p for p in artifacts_dir.rglob("*") if p.is_file()):
         if path.name == ".gitkeep":
@@ -128,8 +142,8 @@ def main() -> None:
                 report["errors"].append({"path": str(d), "stage": "rmdir", "error": str(exc)})
                 report["errors_count"] += 1
 
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    if not write_report(report_path, report):
+        raise SystemExit(1)
 
     action = "DRY-RUN" if args.dry_run else "APPLIED"
     print(f"retention={action}")
