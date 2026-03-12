@@ -349,7 +349,9 @@ class RiskEngine:
         available_symbol = max(max_symbol_risk_pct - symbol_before, 0.0)
         available_cluster = max(max_cluster_risk_pct - cluster_before, 0.0)
 
-        available_risk_pct = min(available_policy, available_portfolio, available_symbol, available_cluster)
+        # `available_policy` se conserva para diagnóstico, pero no restringe adicionalmente
+        # porque `available_portfolio` ya incorpora el techo de política por construcción.
+        available_risk_pct = min(available_portfolio, available_symbol, available_cluster)
 
         if suggested_risk_pct == 0:
             risk_events.append(
@@ -380,34 +382,56 @@ class RiskEngine:
             )
 
         if available_risk_pct <= 0:
-            if available_symbol <= 0:
-                reason = "Bloqueado por límite de riesgo por símbolo"
-                event_type = "symbol_risk_limit_breached"
-                context = {"symbol": normalized_symbol, "symbol_risk_before": symbol_before, "max_symbol_risk_pct": max_symbol_risk_pct}
-            elif available_cluster <= 0:
-                reason = "Bloqueado por límite de riesgo por clúster correlacionado"
-                event_type = "cluster_risk_limit_breached"
-                context = {
-                    "symbol": normalized_symbol,
-                    "cluster_key": cluster_key,
-                    "cluster_risk_before": cluster_before,
-                    "max_cluster_risk_pct": max_cluster_risk_pct,
-                }
-            else:
-                reason = "Sin margen de riesgo disponible dentro del límite global de portafolio"
-                event_type = "portfolio_risk_limit_breached"
-                context = {
-                    "portfolio_risk_before": portfolio_before,
-                    "max_portfolio_risk_pct": max_portfolio_risk_pct,
-                    "available_policy_risk_pct": round(available_policy, 4),
-                }
+            breached: list[tuple[str, str, dict[str, float | str]]] = []
 
-            risk_events.append(RiskEventDetail(event_type=event_type, severity="critical", message=reason, context=context))
+            if available_symbol <= 0:
+                breached.append(
+                    (
+                        "symbol_risk_limit_breached",
+                        "Bloqueado por límite de riesgo por símbolo",
+                        {
+                            "symbol": normalized_symbol,
+                            "symbol_risk_before": symbol_before,
+                            "max_symbol_risk_pct": max_symbol_risk_pct,
+                        },
+                    )
+                )
+            if available_cluster <= 0:
+                breached.append(
+                    (
+                        "cluster_risk_limit_breached",
+                        "Bloqueado por límite de riesgo por clúster correlacionado",
+                        {
+                            "symbol": normalized_symbol,
+                            "cluster_key": cluster_key,
+                            "cluster_risk_before": cluster_before,
+                            "max_cluster_risk_pct": max_cluster_risk_pct,
+                        },
+                    )
+                )
+            if not breached:
+                breached.append(
+                    (
+                        "portfolio_risk_limit_breached",
+                        "Sin margen de riesgo disponible dentro del límite global de portafolio",
+                        {
+                            "portfolio_risk_before": portfolio_before,
+                            "max_portfolio_risk_pct": max_portfolio_risk_pct,
+                            "available_policy_risk_pct": round(available_policy, 4),
+                        },
+                    )
+                )
+
+            for event_type, reason, context in breached:
+                risk_events.append(
+                    RiskEventDetail(event_type=event_type, severity="critical", message=reason, context=context)
+                )
+
             return RiskDecision(
                 approved=False,
                 max_position_notional=0,
                 suggested_risk_pct=0,
-                reason=reason,
+                reason=breached[0][1],
                 market_regime=regime,
                 score=score,
                 regime_confidence=regime_confidence,
