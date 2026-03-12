@@ -188,6 +188,8 @@ def test_risk_policy_rejects_inconsistent_default_limit_hierarchy():
 def test_risk_policy_rejects_high_volatility_threshold_below_minimum_supported_bucket():
     with pytest.raises(ValueError):
         RiskPolicy(high_volatility_threshold_pct=1.5)
+    with pytest.raises(ValueError):
+        RiskPolicy(high_volatility_threshold_pct=2.0)
 
 
 
