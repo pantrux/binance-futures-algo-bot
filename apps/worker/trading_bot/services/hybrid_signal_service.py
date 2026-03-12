@@ -39,15 +39,24 @@ class HybridSignalService:
                     self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
                 )
                 market_task = task_group.create_task(self.api_client.get_market_snapshot(symbol))
+                regime_task = task_group.create_task(
+                    self.api_client.get_market_regime_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
+                )
 
             snapshot = snapshot_task.result()
             market = market_task.result()
+            market_regime_snapshot = regime_task.result()
             if not self._is_snapshot_usable(snapshot):
                 raise ValueError("snapshot_incompleto")
             if market is None:
                 raise ValueError("market_snapshot_missing")
 
-            pack, context, thesis, levels, side = self._build_from_market(symbol=symbol, snapshot=snapshot, market=market)
+            pack, context, thesis, levels, side = self._build_from_market(
+                symbol=symbol,
+                snapshot=snapshot,
+                market=market,
+                market_regime_snapshot=market_regime_snapshot,
+            )
             return pack, context, thesis, levels, HybridSignalResult(source="market", reason="ok", side=side)
         except Exception as exc:  # noqa: BLE001
             pack, context, thesis, levels = self.demo_service.build_signal_pack(symbol)
@@ -84,7 +93,13 @@ class HybridSignalService:
             return False
         return True
 
-    def _build_from_market(self, symbol: str, snapshot: dict, market: dict) -> tuple[SignalPack, MarketContext, str, dict[str, float], str]:
+    def _build_from_market(
+        self,
+        symbol: str,
+        snapshot: dict,
+        market: dict,
+        market_regime_snapshot: dict | None,
+    ) -> tuple[SignalPack, MarketContext, str, dict[str, float], str]:
         trend_bias = snapshot.get("trend_bias", "unknown")
         momentum_bias = snapshot.get("momentum_bias", "unknown")
         vol_regime = snapshot.get("volatility_regime", "unknown")
@@ -102,12 +117,20 @@ class HybridSignalService:
         trend_strength = self._trend_strength(ema_spread_pct)
         liquidity_score = self._liquidity_score(market)
 
+        regime = None
+        regime_confidence = None
+        if isinstance(market_regime_snapshot, dict):
+            regime = market_regime_snapshot.get("regime")
+            regime_confidence = self._coerce_optional_number(market_regime_snapshot.get("regime_confidence"), default=None)
+
         context = MarketContext(
             symbol=symbol,
             timeframe=snapshot.get("timeframe") or self.timeframe,
             volatility_pct=volatility_pct,
             trend_strength=trend_strength,
             liquidity_score=liquidity_score,
+            market_regime=regime,
+            regime_confidence=regime_confidence,
         )
 
         entry = self._entry_price(market)

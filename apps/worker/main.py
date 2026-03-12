@@ -61,6 +61,8 @@ async def process_symbol(
             "volatility_pct": context.volatility_pct,
             "trend_strength": context.trend_strength,
             "liquidity_score": context.liquidity_score,
+            "market_regime": context.market_regime,
+            "regime_confidence": context.regime_confidence,
         },
     }
     created = await api_client.create_trade_plan(payload)

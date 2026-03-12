@@ -5,9 +5,17 @@ from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalS
 
 
 class FakeApiClient:
-    def __init__(self, *, snapshot: dict | None = None, market: dict | None = None, error: Exception | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        snapshot: dict | None = None,
+        market: dict | None = None,
+        market_regime: dict | None = None,
+        error: Exception | None = None,
+    ) -> None:
         self._snapshot = snapshot
         self._market = market
+        self._market_regime = market_regime
         self._error = error
 
     def _raise_error(self) -> None:
@@ -24,6 +32,13 @@ class FakeApiClient:
         assert symbol
         return None if self._market is None else dict(self._market)
 
+    async def get_market_regime_snapshot(self, symbol: str, timeframe: str = "15m", limit: int = 200) -> dict | None:
+        self._raise_error()
+        assert symbol
+        assert timeframe
+        assert limit >= 0
+        return None if self._market_regime is None else dict(self._market_regime)
+
 
 def test_hybrid_uses_market_when_snapshot_is_usable():
     snapshot = {
@@ -39,7 +54,8 @@ def test_hybrid_uses_market_when_snapshot_is_usable():
         "momentum_10": 2.0,
     }
     market = {"mark_price": 50000.0, "volume_24h": 1_000_000.0}
-    service = HybridSignalService(api_client=FakeApiClient(snapshot=snapshot, market=market))
+    regime = {"regime": "tendencia_alcista", "regime_confidence": 78.4}
+    service = HybridSignalService(api_client=FakeApiClient(snapshot=snapshot, market=market, market_regime=regime))
 
     signals, context, thesis, levels, meta = asyncio.run(service.build_signal_pack("BTCUSDT"))
 
@@ -47,6 +63,8 @@ def test_hybrid_uses_market_when_snapshot_is_usable():
     assert meta.side == "long"
     assert signals.technical > 60
     assert context.volatility_pct > 0
+    assert context.market_regime == "tendencia_alcista"
+    assert context.regime_confidence == 78.4
     assert levels["stop"] < levels["entry"] < levels["take_profit"]
     assert "market-driven" in thesis
 

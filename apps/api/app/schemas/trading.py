@@ -15,6 +15,8 @@ class MarketState(BaseModel):
     volatility_pct: float = Field(ge=0)
     trend_strength: float = Field(ge=0, le=100)
     liquidity_score: float = Field(ge=0, le=100)
+    market_regime: str | None = None
+    regime_confidence: float | None = Field(default=None, ge=0, le=100)
 
 
 class TradePlanRequest(BaseModel):

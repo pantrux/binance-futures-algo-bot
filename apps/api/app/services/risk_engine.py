@@ -8,20 +8,72 @@ class RiskPolicy:
     max_account_risk_pct: float = 5.0
     base_risk_per_trade_pct: float = 1.0
     max_single_trade_pct: float = 1.25
+    min_score_to_trade: float = 60.0
 
 
 class RiskEngine:
     def __init__(self, policy: RiskPolicy | None = None):
         self.policy = policy or RiskPolicy()
 
+    @staticmethod
+    def _normalize_regime_alias(raw_regime: str | None) -> str | None:
+        if raw_regime is None:
+            return None
+        normalized = str(raw_regime).strip().lower()
+        aliases = {
+            "tendencia": "tendencia_alcista",
+            "tendencia_fuerte": "tendencia_alcista",
+            "rango": "rango_lateral",
+        }
+        normalized = aliases.get(normalized, normalized)
+        allowed = {
+            "tendencia_alcista",
+            "tendencia_bajista",
+            "rango_lateral",
+            "transicion",
+            "alta_volatilidad",
+            "unknown",
+        }
+        return normalized if normalized in allowed else None
+
     def classify_market_regime(self, market_state: MarketState) -> str:
         if market_state.volatility_pct >= 4.0:
             return "alta_volatilidad"
         if market_state.trend_strength >= 70:
-            return "tendencia_fuerte"
+            return "tendencia_alcista"
         if market_state.trend_strength <= 35:
             return "rango_lateral"
         return "transicion"
+
+    def resolve_market_regime(self, market_state: MarketState) -> str:
+        provided = self._normalize_regime_alias(market_state.market_regime)
+        if provided is not None:
+            return provided
+        return self.classify_market_regime(market_state)
+
+    def estimate_regime_confidence(self, *, market_state: MarketState, regime: str) -> float:
+        if market_state.regime_confidence is not None:
+            return max(0.0, min(100.0, float(market_state.regime_confidence)))
+
+        volatility_score = max(0.0, min(100.0, market_state.volatility_pct * 18.0))
+        inverse_volatility = 100.0 - volatility_score
+
+        if regime == "alta_volatilidad":
+            return round(volatility_score, 4)
+        if regime in {"tendencia_alcista", "tendencia_bajista"}:
+            return round(max(0.0, min(100.0, (market_state.trend_strength * 0.6) + (inverse_volatility * 0.4))), 4)
+        if regime == "rango_lateral":
+            return round(
+                max(
+                    0.0,
+                    min(100.0, ((100.0 - market_state.trend_strength) * 0.6) + (inverse_volatility * 0.4)),
+                ),
+                4,
+            )
+        if regime == "transicion":
+            trend_ambiguity = 100.0 - abs(market_state.trend_strength - 50.0) * 2.0
+            return round(max(0.0, min(100.0, (trend_ambiguity * 0.55) + (inverse_volatility * 0.45))), 4)
+        return 0.0
 
     def aggregate_score(self, signals: SignalSnapshot, market_state: MarketState) -> float:
         weights = {
@@ -40,29 +92,98 @@ class RiskEngine:
             2,
         )
 
-    def suggest_risk_pct(self, score: float, regime: str) -> float:
-        base = self.policy.base_risk_per_trade_pct
-        if regime == "alta_volatilidad":
-            return round(min(base * 0.5, self.policy.max_single_trade_pct), 2)
-        if score >= 80:
-            return round(min(base * 1.1, self.policy.max_single_trade_pct), 2)
-        if score >= 70:
-            return round(min(base, self.policy.max_single_trade_pct), 2)
+    @staticmethod
+    def _score_multiplier(score: float) -> float:
+        if score >= 85:
+            return 1.15
+        if score >= 75:
+            return 1.0
+        if score >= 65:
+            return 0.8
         if score >= 60:
-            return round(min(base * 0.75, self.policy.max_single_trade_pct), 2)
+            return 0.65
         return 0.0
 
-    def evaluate(self, *, capital_usdt: float, existing_risk_pct: float, signals: SignalSnapshot, market_state: MarketState, entry_price: float, stop_loss: float) -> RiskDecision:
-        regime = self.classify_market_regime(market_state)
+    @staticmethod
+    def _regime_multiplier(regime: str, regime_confidence: float) -> float:
+        if regime == "unknown":
+            return 0.0
+
+        if regime == "alta_volatilidad":
+            if regime_confidence >= 70:
+                return 0.45
+            if regime_confidence >= 50:
+                return 0.6
+            # Cerca del umbral de alta volatilidad (confidence más baja), degradamos menos agresivo.
+            return 0.75
+
+        if regime == "transicion":
+            return 0.75 if regime_confidence >= 70 else 0.85
+
+        if regime == "rango_lateral":
+            return 0.8
+
+        if regime in {"tendencia_alcista", "tendencia_bajista"}:
+            if regime_confidence >= 75:
+                return 1.05
+            if regime_confidence < 45:
+                return 0.95
+            return 1.0
+
+        return 0.9
+
+    @staticmethod
+    def _volatility_multiplier(volatility_pct: float) -> float:
+        if volatility_pct >= 5.0:
+            return 0.45
+        if volatility_pct >= 4.0:
+            return 0.6
+        if volatility_pct >= 3.0:
+            return 0.75
+        if volatility_pct >= 2.0:
+            return 0.9
+        return 1.0
+
+    def suggest_risk_pct(self, *, score: float, regime: str, regime_confidence: float, volatility_pct: float) -> float:
+        if score < self.policy.min_score_to_trade:
+            return 0.0
+
+        score_mult = self._score_multiplier(score)
+        regime_mult = self._regime_multiplier(regime, regime_confidence)
+        vol_mult = self._volatility_multiplier(volatility_pct)
+
+        if score_mult <= 0 or regime_mult <= 0:
+            return 0.0
+
+        suggested = self.policy.base_risk_per_trade_pct * score_mult * regime_mult * vol_mult
+        return round(min(suggested, self.policy.max_single_trade_pct), 4)
+
+    def evaluate(
+        self,
+        *,
+        capital_usdt: float,
+        existing_risk_pct: float,
+        signals: SignalSnapshot,
+        market_state: MarketState,
+        entry_price: float,
+        stop_loss: float,
+    ) -> RiskDecision:
+        regime = self.resolve_market_regime(market_state)
+        regime_confidence = self.estimate_regime_confidence(market_state=market_state, regime=regime)
         score = self.aggregate_score(signals, market_state)
-        suggested_risk_pct = self.suggest_risk_pct(score, regime)
+        suggested_risk_pct = self.suggest_risk_pct(
+            score=score,
+            regime=regime,
+            regime_confidence=regime_confidence,
+            volatility_pct=market_state.volatility_pct,
+        )
 
         if suggested_risk_pct == 0:
             return RiskDecision(
                 approved=False,
                 max_position_notional=0,
                 suggested_risk_pct=0,
-                reason="Score insuficiente para abrir operación",
+                reason="Score/régimen insuficiente para abrir operación",
                 market_regime=regime,
                 score=score,
             )

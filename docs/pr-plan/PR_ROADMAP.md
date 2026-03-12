@@ -48,7 +48,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-23 | Observabilidad y alerting de infraestructura | ✅ Mergeado | alertas operacionales + SLO de pipeline + workflow horario |
 | PR-24 | Resiliencia, recuperación y hardening operacional | ✅ Mergeado | backup/restore + DR + hardening de secretos/permisos |
 | PR-25 | Clasificador de régimen de mercado | ✅ Mergeado | clasificación de contexto de mercado para gating |
-| PR-26 | Sizing dinámico por volatilidad/riesgo | 🔵 Planificado | position sizing adaptativo por riesgo cuantitativo |
+| PR-26 | Sizing dinámico por volatilidad/riesgo | 🟡 En progreso | position sizing adaptativo por riesgo cuantitativo |
 | PR-27 | Riesgo de portafolio y correlación | 🔵 Planificado | límites de exposición multi-símbolo y correlación |
 | PR-28 | Gate de decisión final y circuit breakers avanzados | 🔵 Planificado | capa final de decisión y apagado seguro |
 | PR-29 | Router Binance Testnet | 🔵 Planificado | ejecución real en testnet con trazabilidad de órdenes |
@@ -414,7 +414,7 @@ Convertir fallos operativos en señales accionables antes de que impacten contin
 ---
 
 ### PR-24 — Resiliencia, recuperación y hardening operacional
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Asegurar continuidad ante incidentes y reducir riesgo por exposición operativa.
@@ -429,7 +429,7 @@ Asegurar continuidad ante incidentes y reducir riesgo por exposición operativa.
 ---
 
 ### PR-25 — Clasificador de régimen de mercado
-**Estado:** 🔵 Planificado
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Diferenciar contexto de mercado para ajustar reglas de entrada/salida y riesgo.
@@ -442,7 +442,7 @@ Diferenciar contexto de mercado para ajustar reglas de entrada/salida y riesgo.
 ---
 
 ### PR-26 — Sizing dinámico por volatilidad/riesgo
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Escalar tamaño de posición según volatilidad y presupuesto de riesgo.
