@@ -284,6 +284,16 @@ def test_momentum_score_uses_pct_scale_not_absolute_price() -> None:
     assert 50.0 < score < 100.0
 
 
+def test_momentum_score_handles_missing_rsi() -> None:
+    score = MarketRegimeService._momentum_score(rsi_14=None, momentum_10_pct=1.0)
+    assert 50.0 < score < 100.0
+
+
+def test_momentum_score_handles_missing_momentum_pct() -> None:
+    score = MarketRegimeService._momentum_score(rsi_14=60.0, momentum_10_pct=None)
+    assert 50.0 < score < 100.0
+
+
 def test_momentum_score_only_rsi_when_momentum_pct_is_none() -> None:
     score = MarketRegimeService._momentum_score(rsi_14=70.0, momentum_10_pct=None)
     assert score == pytest.approx(68.2, abs=0.05)
