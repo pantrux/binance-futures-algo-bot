@@ -89,14 +89,14 @@ def test_risk_engine_high_volatility_near_threshold_degrades_less_than_high_conf
         stop_loss=2960,
     )
 
-    severe_high_vol = engine.evaluate(
+    high_confidence_same_vol = engine.evaluate(
         capital_usdt=1500,
         existing_risk_pct=0.0,
         signals=signals,
         market_state=MarketState(
             symbol="ETHUSDT",
             timeframe="15m",
-            volatility_pct=4.8,
+            volatility_pct=2.6,
             trend_strength=62,
             liquidity_score=90,
             market_regime="alta_volatilidad",
@@ -107,8 +107,8 @@ def test_risk_engine_high_volatility_near_threshold_degrades_less_than_high_conf
     )
 
     assert near_threshold.approved is True
-    assert severe_high_vol.approved is True
-    assert near_threshold.suggested_risk_pct > severe_high_vol.suggested_risk_pct
+    assert high_confidence_same_vol.approved is True
+    assert near_threshold.suggested_risk_pct > high_confidence_same_vol.suggested_risk_pct
 
 
 def test_risk_engine_rejects_if_score_below_dynamic_threshold():
