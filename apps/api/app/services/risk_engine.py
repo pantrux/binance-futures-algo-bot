@@ -167,7 +167,10 @@ class RiskEngine:
         # Guardrail defensivo: si la volatilidad observada ya es alta, un régimen explícito
         # no puede habilitar un multiplicador más agresivo que el permitido para alta volatilidad.
         if volatility_pct >= 4.0:
-            high_vol_cap = self._regime_multiplier("alta_volatilidad", regime_confidence)
+            # El cap de alta volatilidad debe depender de la volatilidad observada,
+            # no de la confianza del régimen explícito (que puede venir desfasada o faltar).
+            vol_based_confidence = max(0.0, min(100.0, volatility_pct * 18.0))
+            high_vol_cap = self._regime_multiplier("alta_volatilidad", vol_based_confidence)
             regime_mult = min(regime_mult, high_vol_cap)
 
         if score_mult <= 0 or regime_mult <= 0:

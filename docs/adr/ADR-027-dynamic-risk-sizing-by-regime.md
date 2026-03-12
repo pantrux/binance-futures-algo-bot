@@ -38,7 +38,8 @@ con clamp final a `max_single_trade_pct`.
    - `unknown`: bloqueo (`0`)
 
    Guardrail adicional: si `volatility_pct >= 4.0`, el multiplicador de régimen efectivo
-   queda capped al máximo permitido por `alta_volatilidad`, incluso cuando llega un
+   queda capped al máximo permitido por `alta_volatilidad`, calculado con confianza
+   derivada de la volatilidad observada (`volatility_pct`), incluso cuando llega un
    `market_regime` explícito optimista (protección contra régimen externo obsoleto).
 
 3. **volatility_multiplier** (presión de volatilidad observada):

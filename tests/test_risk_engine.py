@@ -159,6 +159,7 @@ def test_risk_engine_caps_explicit_regime_when_observed_volatility_is_high():
     engine = RiskEngine()
     signals = SignalSnapshot(technical=90, fundamental=85, sentiment=88, confidence=90)
 
+    # Escenario de riesgo: régimen explícito no-volátil sin confidence, pero con volatilidad observada alta.
     explicit_stale_regime = engine.evaluate(
         capital_usdt=2000,
         existing_risk_pct=0.0,
@@ -166,16 +167,17 @@ def test_risk_engine_caps_explicit_regime_when_observed_volatility_is_high():
         market_state=MarketState(
             symbol="BTCUSDT",
             timeframe="15m",
-            volatility_pct=4.6,
-            trend_strength=78,
+            volatility_pct=5.0,
+            trend_strength=30,
             liquidity_score=95,
-            market_regime="tendencia_alcista",
-            regime_confidence=80,
+            market_regime="rango_lateral",
+            regime_confidence=None,
         ),
         entry_price=50000,
         stop_loss=49750,
     )
 
+    # Referencia conservadora: sin régimen explícito, el fallback clasifica alta volatilidad.
     internal_fallback = engine.evaluate(
         capital_usdt=2000,
         existing_risk_pct=0.0,
@@ -183,8 +185,8 @@ def test_risk_engine_caps_explicit_regime_when_observed_volatility_is_high():
         market_state=MarketState(
             symbol="BTCUSDT",
             timeframe="15m",
-            volatility_pct=4.6,
-            trend_strength=78,
+            volatility_pct=5.0,
+            trend_strength=30,
             liquidity_score=95,
             market_regime=None,
             regime_confidence=None,
