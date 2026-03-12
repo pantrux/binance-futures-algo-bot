@@ -165,6 +165,9 @@ def main() -> int:
     print(f"bundle_path={bundle_path}")
     print(f"manifest_path={manifest_path}")
 
+    if missing:
+        print(f"❌ Archivos no encontrados en el backup: {missing}")
+        return 1
     if verify_status == "failed":
         return 1
     return 0

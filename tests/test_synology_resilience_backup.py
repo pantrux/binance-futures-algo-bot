@@ -83,3 +83,73 @@ def test_main_returns_1_when_no_files_can_be_included(monkeypatch, tmp_path):
     )
 
     assert module.main() == 1
+
+
+def test_main_returns_1_when_backup_is_partial(monkeypatch, tmp_path):
+    module = load_module()
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "infra/docker/synology").mkdir(parents=True)
+    (repo / "infra/docker/synology/docker-compose.yml").write_text("services: {}\n", encoding="utf-8")
+
+    out_dir = tmp_path / "out"
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "script.py",
+            "--repo-root",
+            str(repo),
+            "--output-dir",
+            str(out_dir),
+            "--paths",
+            "infra/docker/synology/docker-compose.yml,missing.txt",
+        ],
+    )
+
+    assert module.main() == 1
+
+
+def test_main_returns_1_when_verify_restore_detects_hash_mismatch(monkeypatch, tmp_path):
+    module = load_module()
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "infra/docker/synology").mkdir(parents=True)
+    (repo / "docs/plans").mkdir(parents=True)
+
+    (repo / "infra/docker/synology/docker-compose.yml").write_text("services: {}\n", encoding="utf-8")
+    (repo / "infra/docker/synology/.env.example").write_text("A=B\n", encoding="utf-8")
+    (repo / "Makefile").write_text("all:\n\t@echo ok\n", encoding="utf-8")
+    (repo / "docs/plans/synology-runbook.md").write_text("# runbook\n", encoding="utf-8")
+
+    original_sha = module.sha256_file
+
+    def fake_sha(path):
+        if "synology-backup-verify-" in str(path):
+            return "deadbeef"
+        return original_sha(path)
+
+    monkeypatch.setattr(module, "sha256_file", fake_sha)
+
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "script.py",
+            "--repo-root",
+            str(repo),
+            "--output-dir",
+            str(out_dir),
+            "--verify-restore",
+        ],
+    )
+
+    assert module.main() == 1
+
+    manifest = json.loads((out_dir / "synology-critical-config-backup-manifest.json").read_text(encoding="utf-8"))
+    assert manifest["verify_status"] == "failed"
+    assert manifest["verify_errors_count"] > 0
