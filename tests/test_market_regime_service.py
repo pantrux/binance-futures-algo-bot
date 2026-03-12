@@ -130,13 +130,13 @@ def test_regime_confidence_unknown_is_zero() -> None:
 def test_regime_confidence_high_volatility_follows_volatility_score() -> None:
     confidence_low = MarketRegimeService._regime_confidence(
         regime="alta_volatilidad",
-        trend_strength=10.0,
+        trend_strength=50.0,
         volatility_score=30.0,
         momentum_score=50.0,
     )
     confidence_high = MarketRegimeService._regime_confidence(
         regime="alta_volatilidad",
-        trend_strength=90.0,
+        trend_strength=50.0,
         volatility_score=80.0,
         momentum_score=50.0,
     )

@@ -49,14 +49,15 @@ class MarketRegimeService:
         volatility_score: float,
         momentum_score: float,
     ) -> str:
-        # Guardrail: si el contexto base viene incompleto, preferimos un régimen "unknown"
-        # antes de inferir direccionalidad. Esto evita decisiones erróneas en consumidores futuros
-        # (por ejemplo RiskEngine) cuando falten señales/indicadores.
-        if trend_bias == "unknown" or momentum_bias == "unknown" or volatility_regime == "unknown":
-            return "unknown"
-
+        # Alta volatilidad tiene prioridad: incluso si faltan señales direccionales, esto es un
+        # contexto de riesgo relevante para consumidores futuros (RiskEngine).
         if volatility_regime == "high":
             return "alta_volatilidad"
+
+        # Guardrail: si el contexto base viene incompleto, preferimos un régimen "unknown"
+        # antes de inferir direccionalidad.
+        if trend_bias == "unknown" or momentum_bias == "unknown" or volatility_regime == "unknown":
+            return "unknown"
 
         if trend_bias == "bullish" and momentum_bias == "bullish" and trend_strength >= 58.0 and momentum_score >= 58.0:
             return "tendencia_alcista"
