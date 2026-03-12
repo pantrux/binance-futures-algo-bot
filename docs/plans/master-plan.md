@@ -35,7 +35,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa D — Infraestructura recurrente (en progreso)
 - PR-22 a PR-24 (con PR-21 como ajuste documental de alineación).
-- Estado actual: PR-22 ✅ mergeado (retención de artifacts), PR-23 🟡 en progreso (observabilidad/alerting), PR-24 🔵 planificado.
+- Estado actual: PR-22 ✅ mergeado (retención de artifacts), PR-23 ✅ mergeado (observabilidad/alerting), PR-24 🟡 en progreso.
 - Entrega: gobierno de artifacts, cron operativo, alerting, DR y hardening de seguridad.
 
 ### Etapa E — Riesgo cuantitativo avanzado

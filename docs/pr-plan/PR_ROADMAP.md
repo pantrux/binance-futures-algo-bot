@@ -45,8 +45,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-20 | Estabilizar worker Synology (one-shot sin restart loop) | ✅ Mergeado | `worker.restart="no"` + operación Synology estable sin loop |
 | PR-21 | Corrección documental post PR-19/PR-20 | ✅ Mergeado | roadmap/master-plan/runbook alineados + sync Outline validado |
 | PR-22 | Retención y gobierno de artifacts | ✅ Mergeado | política 30/60/90 días + limpieza automática + trazabilidad auditable |
-| PR-23 | Observabilidad y alerting de infraestructura | 🟡 En progreso | alertas operacionales + SLO de pipeline + workflow horario |
-| PR-24 | Resiliencia, recuperación y hardening operacional | 🔵 Planificado | backup/restore + DR + hardening de secretos/permisos |
+| PR-23 | Observabilidad y alerting de infraestructura | ✅ Mergeado | alertas operacionales + SLO de pipeline + workflow horario |
+| PR-24 | Resiliencia, recuperación y hardening operacional | 🟡 En progreso | backup/restore + DR + hardening de secretos/permisos |
 | PR-25 | Clasificador de régimen de mercado | 🔵 Planificado | clasificación de contexto de mercado para gating |
 | PR-26 | Sizing dinámico por volatilidad/riesgo | 🔵 Planificado | position sizing adaptativo por riesgo cuantitativo |
 | PR-27 | Riesgo de portafolio y correlación | 🔵 Planificado | límites de exposición multi-símbolo y correlación |
@@ -399,7 +399,7 @@ Controlar crecimiento de evidencia operativa y conservar sólo la historia útil
 ---
 
 ### PR-23 — Observabilidad y alerting de infraestructura
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Convertir fallos operativos en señales accionables antes de que impacten continuidad.
@@ -414,15 +414,17 @@ Convertir fallos operativos en señales accionables antes de que impacten contin
 ---
 
 ### PR-24 — Resiliencia, recuperación y hardening operacional
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Asegurar continuidad ante incidentes y reducir riesgo por exposición operativa.
 
 **Entregables**
-- backup/restore verificado + runbook DR con RTO/RPO
-- inventario/rotación de secretos
-- revisión de permisos/superficie expuesta
+- script `scripts/synology_resilience_backup.py` (bundle + manifest + verify-restore)
+- target Make `synology-resilience-backup`
+- workflow `Synology Resilience Backup Verify` (dispatch + schedule diario)
+- ADR-025 + runbook con baseline RTO/RPO y evidencia operacional
+- inventario/rotación de secretos y revisión de superficie expuesta (siguiente iteración del PR)
 
 ---
 

@@ -10,6 +10,7 @@ coverage
 *.pyc
 artifacts/
 artifacts-retention/
+artifacts-resilience/
 
 !.env.example
 !infra/docker/synology/.env.example

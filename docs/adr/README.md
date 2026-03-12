@@ -26,6 +26,7 @@
 - `ADR-022-phase5-operational-closure.md`
 - `ADR-023-artifact-retention-policy.md`
 - `ADR-024-operational-observability-alerting.md`
+- `ADR-025-resilience-backup-recovery-hardening.md`
 
 ## Archivados
 
