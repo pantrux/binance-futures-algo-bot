@@ -63,6 +63,39 @@ def test_classify_regime_bearish_trend() -> None:
     assert regime == "tendencia_bajista"
 
 
+def test_classify_regime_bullish_trend_at_exact_threshold() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bullish",
+        momentum_bias="bullish",
+        volatility_regime="medium",
+        trend_strength=58.0,
+        momentum_score=58.0,
+    )
+    assert regime == "tendencia_alcista"
+
+
+def test_classify_regime_bearish_trend_at_exact_threshold() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bearish",
+        momentum_bias="bearish",
+        volatility_regime="medium",
+        trend_strength=58.0,
+        momentum_score=42.0,
+    )
+    assert regime == "tendencia_bajista"
+
+
+def test_classify_regime_transicion_when_momentum_just_above_bearish_threshold() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bearish",
+        momentum_bias="bearish",
+        volatility_regime="medium",
+        trend_strength=60.0,
+        momentum_score=42.01,
+    )
+    assert regime == "transicion"
+
+
 def test_classify_regime_range_lateral() -> None:
     regime = MarketRegimeService._classify_regime(
         trend_bias="neutral",
@@ -157,6 +190,16 @@ def test_regime_confidence_unknown_is_zero() -> None:
         momentum_score=50.0,
     )
     assert confidence == 0.0
+
+
+def test_regime_confidence_raises_for_unexpected_regime() -> None:
+    with pytest.raises(ValueError):
+        MarketRegimeService._regime_confidence(
+            regime="regimen_invalido",
+            trend_strength=50.0,
+            volatility_score=50.0,
+            momentum_score=50.0,
+        )
 
 
 def test_regime_confidence_high_volatility_follows_volatility_score() -> None:

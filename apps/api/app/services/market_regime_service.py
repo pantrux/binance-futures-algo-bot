@@ -110,17 +110,20 @@ class MarketRegimeService:
                 4,
             )
 
-        # "transicion" debería tener más confianza cuando el momentum es más neutral (cerca de 50),
-        # cuando la volatilidad no es excesiva y cuando la tendencia NO es fuerte (ambigüedad).
-        momentum_neutrality = max(0.0, min(100.0, 100.0 - (abs(momentum_score - 50.0) * 2.0)))
-        trend_ambiguity = 100.0 - trend_strength
-        return round(
-            max(
-                0.0,
-                min(100.0, (trend_ambiguity * 0.35) + (momentum_neutrality * 0.3) + (inverse_volatility * 0.35)),
-            ),
-            4,
-        )
+        if regime == "transicion":
+            # "transicion" debería tener más confianza cuando el momentum es más neutral (cerca de 50),
+            # cuando la volatilidad no es excesiva y cuando la tendencia NO es fuerte (ambigüedad).
+            momentum_neutrality = max(0.0, min(100.0, 100.0 - (abs(momentum_score - 50.0) * 2.0)))
+            trend_ambiguity = 100.0 - trend_strength
+            return round(
+                max(
+                    0.0,
+                    min(100.0, (trend_ambiguity * 0.35) + (momentum_neutrality * 0.3) + (inverse_volatility * 0.35)),
+                ),
+                4,
+            )
+
+        raise ValueError(f"Régimen desconocido para confidence: {regime!r}")
 
     def snapshot(
         self,
