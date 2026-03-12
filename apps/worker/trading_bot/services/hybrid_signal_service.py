@@ -39,6 +39,8 @@ class HybridSignalService:
                     self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
                 )
                 market_task = task_group.create_task(self.api_client.get_market_snapshot(symbol))
+                # `regime_task` siempre completa sin excepción porque `_safe_get_market_regime_snapshot`
+                # absorbe cualquier error y retorna `None`; así no puede tumbar este TaskGroup.
                 regime_task = task_group.create_task(self._safe_get_market_regime_snapshot(symbol))
 
             snapshot = snapshot_task.result()

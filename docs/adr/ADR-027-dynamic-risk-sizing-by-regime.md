@@ -21,11 +21,14 @@ con clamp final a `max_single_trade_pct`.
 
 ### Factores
 1. **score_multiplier** (calidad del setup):
-   - `>=85 -> 1.15`
-   - `>=75 -> 1.00`
-   - `>=65 -> 0.80`
-   - `>=60 -> 0.65`
-   - `<60 -> 0` (no trade)
+   - umbrales **relativos** a `min_score_to_trade` (default `60`)
+   - `score >= min+25 -> 1.15`
+   - `score >= min+15 -> 1.00`
+   - `score >= min+5 -> 0.80`
+   - `score >= min -> 0.65`
+   - `score < min -> 0` (no trade)
+
+   Con la configuración default (`min=60`) esto equivale a los buckets absolutos `85/75/65/60`.
 
 2. **regime_multiplier** (contexto de mercado):
    - `alta_volatilidad`: degradación escalonada según `regime_confidence`
