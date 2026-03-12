@@ -173,6 +173,30 @@ def test_risk_engine_uses_policy_defaults_for_symbol_and_cluster_limits_when_por
     assert any(event.event_type == "risk_pct_capped_by_portfolio" for event in decision.risk_events)
 
 
+def test_risk_engine_respects_custom_high_volatility_threshold_in_volatility_multiplier():
+    engine = RiskEngine(policy=RiskPolicy(high_volatility_threshold_pct=3.0))
+    decision = engine.evaluate(
+        capital_usdt=1000,
+        existing_risk_pct=0.0,
+        signals=SignalSnapshot(technical=88, fundamental=82, sentiment=84, confidence=86),
+        market_state=MarketState(
+            symbol="ETHUSDT",
+            timeframe="15m",
+            volatility_pct=3.5,
+            trend_strength=68,
+            liquidity_score=90,
+            market_regime="alta_volatilidad",
+            regime_confidence=75,
+        ),
+        entry_price=3000,
+        stop_loss=2960,
+    )
+
+    # Con threshold=3.0, 3.5% cae en bucket de alta volatilidad (0.6), no en 0.75.
+    assert decision.approved is True
+    assert decision.suggested_risk_pct <= 0.6
+
+
 def test_risk_engine_respects_custom_min_score_policy_threshold():
     engine = RiskEngine(policy=RiskPolicy(min_score_to_trade=55.0))
     decision = engine.evaluate(

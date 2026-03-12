@@ -44,27 +44,32 @@ class TradePlanService:
             status="approved" if decision.approved else "blocked",
             is_testnet=True,
         )
-        self.db.add(trade_plan)
-        self.db.commit()
-        self.db.refresh(trade_plan)
+        try:
+            self.db.add(trade_plan)
+            self.db.flush()
 
-        for event in decision.risk_events:
-            context_payload = ", ".join(f"{key}={value}" for key, value in sorted(event.context.items()))
-            composed_message = event.message
-            if context_payload:
-                composed_message = f"{composed_message} | {context_payload}"
-            composed_message = (
-                f"{composed_message} | market_regime={decision.market_regime}, regime_confidence={decision.regime_confidence}"
-            )
+            for event in decision.risk_events:
+                context_payload = ", ".join(f"{key}={value}" for key, value in sorted(event.context.items()))
+                composed_message = event.message
+                if context_payload:
+                    composed_message = f"{composed_message} | {context_payload}"
+                composed_message = (
+                    f"{composed_message} | market_regime={decision.market_regime}, regime_confidence={decision.regime_confidence}"
+                )
 
-            risk_event = RiskEvent(
-                trade_plan_id=trade_plan.id,
-                event_type=event.event_type,
-                severity=event.severity,
-                message=composed_message,
-            )
-            self.db.add(risk_event)
-        self.db.commit()
+                risk_event = RiskEvent(
+                    trade_plan_id=trade_plan.id,
+                    event_type=event.event_type,
+                    severity=event.severity,
+                    message=composed_message,
+                )
+                self.db.add(risk_event)
+
+            self.db.commit()
+            self.db.refresh(trade_plan)
+        except Exception:
+            self.db.rollback()
+            raise
 
         outline_result = await self.outline_service.create_trade_plan_document(
             request=payload,

@@ -44,6 +44,7 @@ con clamp final a `max_single_trade_pct`.
 
 3. **volatility_multiplier** (presión de volatilidad observada):
    - degradación progresiva por bandas de `volatility_pct`
+   - las bandas se anclan al `high_volatility_threshold_pct` configurable de política
 
 ### Integración de inputs
 - `MarketState` incorpora campos opcionales:

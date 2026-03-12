@@ -240,13 +240,16 @@ class RiskEngine:
         logger.warning("_regime_multiplier: régimen no reconocido '%s'; aplicando multiplicador 0.9", regime)
         return 0.9
 
-    @staticmethod
-    def _volatility_multiplier(volatility_pct: float) -> float:
-        if volatility_pct >= 5.0:
+    def _volatility_multiplier(self, volatility_pct: float) -> float:
+        high_vol_threshold = self.policy.high_volatility_threshold_pct
+        severe_vol_threshold = high_vol_threshold + 1.0
+        elevated_vol_threshold = max(2.0, high_vol_threshold - 1.0)
+
+        if volatility_pct >= severe_vol_threshold:
             return 0.45
-        if volatility_pct >= 4.0:
+        if volatility_pct >= high_vol_threshold:
             return 0.6
-        if volatility_pct >= 3.0:
+        if volatility_pct >= elevated_vol_threshold:
             return 0.75
         if volatility_pct >= 2.0:
             return 0.9
@@ -423,7 +426,8 @@ class RiskEngine:
                 )
             # Invariante: si available_risk_pct <= 0, al menos uno de los componentes
             # disponibles debe estar agotado y por tanto `breached` no puede quedar vacío.
-            assert breached, "invariante violada: available_risk_pct <= 0 sin límites agotados"
+            if not breached:
+                raise RuntimeError("invariante violada: available_risk_pct <= 0 sin límites agotados")
 
             for event_type, reason, context in breached:
                 risk_events.append(
