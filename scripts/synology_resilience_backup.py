@@ -13,6 +13,7 @@ import hashlib
 import json
 import tarfile
 import tempfile
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -122,8 +123,9 @@ def main() -> int:
         verify_status = "ok"
         with tempfile.TemporaryDirectory(prefix="synology-backup-verify-") as tmp_dir:
             tmp_root = Path(tmp_dir)
+            extract_kwargs = {"filter": "data"} if sys.version_info >= (3, 12) else {}
             with tarfile.open(bundle_path, mode="r:gz") as tar:
-                tar.extractall(tmp_root, filter="data")
+                tar.extractall(tmp_root, **extract_kwargs)
 
             for item in included:
                 rel_path = item["path"]
