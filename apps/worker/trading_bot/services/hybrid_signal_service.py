@@ -136,6 +136,9 @@ class HybridSignalService:
             regime_confidence = self._coerce_optional_number(market_regime_snapshot.get("regime_confidence"), default=None)
             if regime_confidence is not None:
                 regime_confidence = max(0.0, min(100.0, regime_confidence))
+            if regime is None:
+                # Si el régimen externo es inválido, descartamos también su confidence asociada.
+                regime_confidence = None
 
         context = MarketContext(
             symbol=symbol,

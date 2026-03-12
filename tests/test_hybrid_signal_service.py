@@ -142,7 +142,7 @@ def test_hybrid_coerces_invalid_regime_type_to_none():
 
     assert meta.source == "market"
     assert context.market_regime is None
-    assert context.regime_confidence == 60.0
+    assert context.regime_confidence is None
 
 
 def test_hybrid_falls_back_to_demo_on_api_error():
