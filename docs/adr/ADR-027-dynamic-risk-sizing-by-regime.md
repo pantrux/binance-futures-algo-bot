@@ -37,6 +37,10 @@ con clamp final a `max_single_trade_pct`.
    - `tendencia_alcista|tendencia_bajista`: neutro/bonus leve si confianza alta
    - `unknown`: bloqueo (`0`)
 
+   Guardrail adicional: si `volatility_pct >= 4.0`, el multiplicador de régimen efectivo
+   queda capped al máximo permitido por `alta_volatilidad`, incluso cuando llega un
+   `market_regime` explícito optimista (protección contra régimen externo obsoleto).
+
 3. **volatility_multiplier** (presión de volatilidad observada):
    - degradación progresiva por bandas de `volatility_pct`
 

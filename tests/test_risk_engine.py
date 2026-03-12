@@ -155,6 +155,49 @@ def test_risk_engine_respects_custom_min_score_policy_threshold():
     assert decision.suggested_risk_pct > 0
 
 
+def test_risk_engine_caps_explicit_regime_when_observed_volatility_is_high():
+    engine = RiskEngine()
+    signals = SignalSnapshot(technical=90, fundamental=85, sentiment=88, confidence=90)
+
+    explicit_stale_regime = engine.evaluate(
+        capital_usdt=2000,
+        existing_risk_pct=0.0,
+        signals=signals,
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=4.6,
+            trend_strength=78,
+            liquidity_score=95,
+            market_regime="tendencia_alcista",
+            regime_confidence=80,
+        ),
+        entry_price=50000,
+        stop_loss=49750,
+    )
+
+    internal_fallback = engine.evaluate(
+        capital_usdt=2000,
+        existing_risk_pct=0.0,
+        signals=signals,
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=4.6,
+            trend_strength=78,
+            liquidity_score=95,
+            market_regime=None,
+            regime_confidence=None,
+        ),
+        entry_price=50000,
+        stop_loss=49750,
+    )
+
+    assert explicit_stale_regime.approved is True
+    assert internal_fallback.approved is True
+    assert explicit_stale_regime.suggested_risk_pct <= internal_fallback.suggested_risk_pct
+
+
 def test_risk_engine_rejects_if_global_risk_exhausted():
     engine = RiskEngine()
     decision = engine.evaluate(
