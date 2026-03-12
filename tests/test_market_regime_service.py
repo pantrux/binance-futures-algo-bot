@@ -1,3 +1,5 @@
+import pytest
+
 from apps.api.app.services.market_regime_service import MarketRegimeService
 
 
@@ -280,3 +282,17 @@ def test_momentum_score_uses_pct_scale_not_absolute_price() -> None:
     # momentum_10_pct de +1% debería empujar el score por encima de 50 (sin saturar)
     score = MarketRegimeService._momentum_score(rsi_14=50.0, momentum_10_pct=1.0)
     assert 50.0 < score < 100.0
+
+
+def test_momentum_score_only_rsi_when_momentum_pct_is_none() -> None:
+    score = MarketRegimeService._momentum_score(rsi_14=70.0, momentum_10_pct=None)
+    assert score == pytest.approx(68.2, abs=0.05)
+
+
+def test_momentum_score_only_momentum_pct_when_rsi_is_none() -> None:
+    score = MarketRegimeService._momentum_score(rsi_14=None, momentum_10_pct=1.0)
+    assert score == pytest.approx(54.2, abs=0.05)
+
+
+def test_momentum_score_both_none_returns_neutral() -> None:
+    assert MarketRegimeService._momentum_score(rsi_14=None, momentum_10_pct=None) == 50.0
