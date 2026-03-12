@@ -128,7 +128,9 @@ class RiskEngine:
         cluster_key = cls._symbol_cluster(symbol_upper)
 
         sum_positions_risk = round(sum(position.risk_pct for position in positions), 4)
-        portfolio_before = round(max(existing_risk_pct, sum_positions_risk), 4)
+        # Política conservadora: `existing_risk_pct` y `positions.risk_pct` se tratan como
+        # fuentes aditivas para no subestimar exposición total.
+        portfolio_before = round(min(100.0, existing_risk_pct + sum_positions_risk), 4)
 
         symbol_before = round(
             sum(position.risk_pct for position in positions if position.symbol.upper() == symbol_upper),
@@ -342,7 +344,7 @@ class RiskEngine:
         max_cluster_risk_pct = min(max_portfolio_risk_pct, portfolio_state.max_cluster_risk_pct)
         max_symbol_risk_pct = min(max_portfolio_risk_pct, portfolio_state.max_symbol_risk_pct)
 
-        available_policy = max(self.policy.max_account_risk_pct - existing_risk_pct, 0.0)
+        available_policy = max(self.policy.max_account_risk_pct - portfolio_before, 0.0)
         available_portfolio = max(max_portfolio_risk_pct - portfolio_before, 0.0)
         available_symbol = max(max_symbol_risk_pct - symbol_before, 0.0)
         available_cluster = max(max_cluster_risk_pct - cluster_before, 0.0)

@@ -16,6 +16,9 @@ Agregar una capa de riesgo de portafolio en `RiskEngine` con:
 
 1. **Estado de portafolio opcional en request**
    - `portfolio_state.positions[]` con `symbol`, `side`, `notional_usdt`, `risk_pct`
+   - semántica conservadora del baseline de riesgo:
+     - `portfolio_before = existing_risk_pct + sum(positions.risk_pct)` (clamp a 100)
+     - esto evita subestimar exposición cuando ambas fuentes son independientes
    - límites configurables por request:
      - `max_portfolio_risk_pct`
      - `max_cluster_risk_pct`
