@@ -385,3 +385,8 @@ def test_momentum_score_only_momentum_pct_when_rsi_is_none() -> None:
 
 def test_momentum_score_both_none_returns_neutral() -> None:
     assert MarketRegimeService._momentum_score(rsi_14=None, momentum_10_pct=None) == 50.0
+
+
+def test_momentum_score_combines_rsi_and_momentum_pct_when_both_present() -> None:
+    score = MarketRegimeService._momentum_score(rsi_14=70.0, momentum_10_pct=1.0)
+    assert score == pytest.approx(72.4, abs=0.05)
