@@ -1,0 +1,56 @@
+name: Synology Resilience Backup Verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      rto_minutes:
+        description: "Objetivo RTO (min)"
+        required: false
+        default: "60"
+      rpo_minutes:
+        description: "Objetivo RPO (min)"
+        required: false
+        default: "1440"
+  schedule:
+    - cron: "45 4 * * *"
+
+jobs:
+  backup-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build resilience backup evidence
+        env:
+          RTO_MINUTES: ${{ inputs.rto_minutes || '60' }}
+          RPO_MINUTES: ${{ inputs.rpo_minutes || '1440' }}
+        run: |
+          make synology-resilience-backup \
+            RESILIENCE_VERIFY_RESTORE=true \
+            RESILIENCE_RTO_MINUTES="$RTO_MINUTES" \
+            RESILIENCE_RPO_MINUTES="$RPO_MINUTES"
+
+      - name: Publish summary
+        if: always()
+        run: |
+          {
+            echo "## Synology Resilience Backup Verify"
+            echo
+            if [[ -f artifacts-resilience/synology-critical-config-backup-manifest.json ]]; then
+              echo '```json'
+              cat artifacts-resilience/synology-critical-config-backup-manifest.json
+              echo '```'
+            else
+              echo "⚠️ No se generó manifest de backup (revisar logs)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload backup evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synology-resilience-backup-evidence
+          if-no-files-found: warn
+          path: artifacts-resilience/*

@@ -28,12 +28,17 @@ OPS_WORKFLOWS ?= Synology Release Gate,Synology Smoke Test,Synology Preflight,Sy
 OPS_DRIFT_WORKFLOWS ?= Synology Artifact Retention
 OPS_HEALTH_API_URL ?=
 OPS_HEALTH_WEB_URL ?=
+RESILIENCE_BACKUP_OUTPUT_DIR ?= artifacts-resilience
+RESILIENCE_BACKUP_PATHS ?= infra/docker/synology/docker-compose.yml,infra/docker/synology/.env.example,Makefile,docs/plans/synology-runbook.md
+RESILIENCE_RTO_MINUTES ?= 60
+RESILIENCE_RPO_MINUTES ?= 1440
+RESILIENCE_VERIFY_RESTORE ?= true
 RELEASE_REF ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 SIGNOFF_OWNER ?= pending
 SIGNOFF_NOTES ?=
 PYTHON ?= python3
 
-.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package synology-signoff-all synology-artifact-retention synology-operational-observability
+.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package synology-signoff-all synology-artifact-retention synology-operational-observability synology-resilience-backup
 
 help:
 	@echo "Targets disponibles:"
@@ -47,6 +52,7 @@ help:
 	@echo "  make synology-signoff-all # ejecuta gate + summary + verify + checklist + package"
 	@echo "  make synology-artifact-retention # aplica política de retención de artifacts (30/60/90 etc)"
 	@echo "  make synology-operational-observability # calcula SLO/alertas del pipeline Synology"
+	@echo "  make synology-resilience-backup # genera backup verificable de configuración crítica"
 
 synology-preflight:
 	ENV_FILE="$(ENV_FILE)" \
@@ -138,3 +144,16 @@ synology-operational-observability:
 	if [[ -n "$(OPS_HEALTH_API_URL)" ]]; then ARGS+=(--health-check "api=$(OPS_HEALTH_API_URL)"); fi; \
 	if [[ -n "$(OPS_HEALTH_WEB_URL)" ]]; then ARGS+=(--health-check "web=$(OPS_HEALTH_WEB_URL)"); fi; \
 	$(PYTHON) scripts/synology_operational_observability.py "$${ARGS[@]}"
+
+synology-resilience-backup:
+	@set -euo pipefail; \
+	VERIFY_FLAG=""; \
+	VERIFY_NORMALIZED="$$(echo "$(RESILIENCE_VERIFY_RESTORE)" | tr '[:upper:]' '[:lower:]')"; \
+	if [[ "$$VERIFY_NORMALIZED" == "true" ]]; then VERIFY_FLAG="--verify-restore"; fi; \
+	$(PYTHON) scripts/synology_resilience_backup.py \
+		--repo-root "." \
+		--paths "$(RESILIENCE_BACKUP_PATHS)" \
+		--output-dir "$(RESILIENCE_BACKUP_OUTPUT_DIR)" \
+		--rto-minutes "$(RESILIENCE_RTO_MINUTES)" \
+		--rpo-minutes "$(RESILIENCE_RPO_MINUTES)" \
+		$$VERIFY_FLAG

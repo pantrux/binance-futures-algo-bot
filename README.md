@@ -92,6 +92,7 @@ Ejecución remota desde GitHub Actions (`workflow_dispatch`):
 - `Synology Release Gate` (sube reporte Markdown + resumen JSON + checklist + paquete de sign-off, y valida estructura del JSON)
 - `Synology Artifact Retention` (dry-run en CI para gobierno de artifacts operacionales)
 - `Synology Observability & Alerting` (SLO + drift + health checks opcionales, con fallo explícito si hay alertas)
+- `Synology Resilience Backup Verify` (evidencia diaria de backup/restore verificable para configuración crítica)
 - Cierre formal de fase operativa documentado en `docs/plans/phase5-operational-closure.md`
 
 Checklist de aprobación manual:
@@ -187,6 +188,15 @@ make synology-operational-observability \
   OPS_REPO=pantrux/binance-futures-algo-bot \
   OPS_WINDOW_HOURS=168 \
   OPS_MIN_SUCCESS_RATE=0.90
+```
+
+- Evidencia de resiliencia (backup/restore verificable):
+
+```bash
+make synology-resilience-backup \
+  RESILIENCE_VERIFY_RESTORE=true \
+  RESILIENCE_RTO_MINUTES=60 \
+  RESILIENCE_RPO_MINUTES=1440
 ```
 
 ## Workflow GitHub

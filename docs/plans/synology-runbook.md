@@ -187,6 +187,31 @@ Variables opcionales de repo para health checks desde CI:
 
 > El workflow falla explícitamente cuando detecta alertas (SLO degradado, drift operativo o health fallido).
 
+## Resiliencia y recovery de configuración crítica (PR-24)
+
+Generar evidencia de backup + verificación de restore:
+
+```bash
+make synology-resilience-backup \
+  RESILIENCE_VERIFY_RESTORE=true \
+  RESILIENCE_RTO_MINUTES=60 \
+  RESILIENCE_RPO_MINUTES=1440
+```
+
+Artifacts esperados:
+- `artifacts-resilience/synology-critical-config-backup.tar.gz`
+- `artifacts-resilience/synology-critical-config-backup-manifest.json`
+
+Workflow disponible:
+- `Synology Resilience Backup Verify` (`workflow_dispatch` + `schedule` diario)
+
+Campos clave del manifest a revisar en cada corrida:
+- `verify_status` (debe ser `ok`)
+- `missing_count` (debe ser `0` para cobertura completa)
+- `rto_minutes` / `rpo_minutes` (alineados al objetivo operativo vigente)
+
+> Alcance actual: configuración crítica del repositorio. El DR completo de datos runtime del NAS se mantendrá como siguiente expansión de hardening.
+
 ## Sync de documentación en Outline (sin duplicados)
 
 ```bash
