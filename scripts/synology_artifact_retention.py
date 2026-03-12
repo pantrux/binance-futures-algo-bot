@@ -126,15 +126,18 @@ def main() -> None:
         )
 
         if modified < cutoff:
-            report["deleted"].append(asdict(item))
-            report["deleted_count"] += 1
-            report["deleted_bytes"] += stat.st_size
+            item_dict = asdict(item)
             if not args.dry_run:
                 try:
                     path.unlink(missing_ok=True)
                 except OSError as exc:
                     report["errors"].append({"path": str(path), "stage": "unlink", "error": str(exc)})
                     report["errors_count"] += 1
+                    continue
+
+            report["deleted"].append(item_dict)
+            report["deleted_count"] += 1
+            report["deleted_bytes"] += stat.st_size
         else:
             report["kept"].append(asdict(item))
             report["kept_count"] += 1
