@@ -66,3 +66,4 @@ con clamp final a `max_single_trade_pct`.
 ## Guardrails
 - No se modifica el límite global del 5% ni el tope de 1.25% por trade.
 - Si no hay margen de riesgo disponible o `stop_distance<=0`, se mantiene bloqueo explícito.
+- `high_volatility_threshold_pct` de política se valida con mínimo `>=2.0` para mantener el orden semántico de buckets de volatilidad.

@@ -17,6 +17,10 @@ class RiskPolicy:
     high_volatility_threshold_pct: float = 4.0
 
     def __post_init__(self) -> None:
+        if self.high_volatility_threshold_pct < 2.0:
+            raise ValueError(
+                f"high_volatility_threshold_pct ({self.high_volatility_threshold_pct}) debe ser >= 2.0"
+            )
         if self.default_max_symbol_risk_pct > self.default_max_cluster_risk_pct:
             raise ValueError(
                 f"default_max_symbol_risk_pct ({self.default_max_symbol_risk_pct}) no puede superar "

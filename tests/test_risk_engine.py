@@ -185,6 +185,11 @@ def test_risk_policy_rejects_inconsistent_default_limit_hierarchy():
         RiskPolicy(default_max_symbol_risk_pct=3.0, default_max_cluster_risk_pct=2.0)
 
 
+def test_risk_policy_rejects_high_volatility_threshold_below_minimum_supported_bucket():
+    with pytest.raises(ValueError):
+        RiskPolicy(high_volatility_threshold_pct=1.5)
+
+
 
 def test_risk_engine_correlation_normalization_respects_custom_portfolio_max_risk():
     engine = RiskEngine(policy=RiskPolicy(max_account_risk_pct=10.0))
@@ -218,8 +223,10 @@ def test_risk_engine_correlation_normalization_respects_custom_portfolio_max_ris
 
 
 def test_risk_engine_respects_custom_high_volatility_threshold_in_volatility_multiplier():
-    engine = RiskEngine(policy=RiskPolicy(high_volatility_threshold_pct=3.0))
-    decision = engine.evaluate(
+    engine_default = RiskEngine()
+    engine_custom = RiskEngine(policy=RiskPolicy(high_volatility_threshold_pct=3.0))
+
+    default_decision = engine_default.evaluate(
         capital_usdt=1000,
         existing_risk_pct=0.0,
         signals=SignalSnapshot(technical=88, fundamental=82, sentiment=84, confidence=86),
@@ -236,9 +243,27 @@ def test_risk_engine_respects_custom_high_volatility_threshold_in_volatility_mul
         stop_loss=2960,
     )
 
-    # Con threshold=3.0, 3.5% cae en bucket de alta volatilidad (0.6), no en 0.75.
-    assert decision.approved is True
-    assert decision.suggested_risk_pct <= 0.6
+    custom_decision = engine_custom.evaluate(
+        capital_usdt=1000,
+        existing_risk_pct=0.0,
+        signals=SignalSnapshot(technical=88, fundamental=82, sentiment=84, confidence=86),
+        market_state=MarketState(
+            symbol="ETHUSDT",
+            timeframe="15m",
+            volatility_pct=3.5,
+            trend_strength=68,
+            liquidity_score=90,
+            market_regime="alta_volatilidad",
+            regime_confidence=75,
+        ),
+        entry_price=3000,
+        stop_loss=2960,
+    )
+
+    # Con threshold custom más bajo (3.0), el mismo 3.5% debe degradar más que el default (4.0).
+    assert default_decision.approved is True
+    assert custom_decision.approved is True
+    assert custom_decision.suggested_risk_pct < default_decision.suggested_risk_pct
 
 
 def test_risk_engine_preserves_mild_volatility_bucket_with_low_custom_threshold():
