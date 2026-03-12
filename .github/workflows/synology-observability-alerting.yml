@@ -1,0 +1,91 @@
+name: Synology Observability & Alerting
+
+on:
+  workflow_dispatch:
+    inputs:
+      window_hours:
+        description: "Ventana de análisis en horas"
+        required: false
+        default: "168"
+      min_success_rate:
+        description: "SLO mínimo por workflow (0..1)"
+        required: false
+        default: "0.90"
+      min_runs:
+        description: "Mínimo de runs por workflow en ventana"
+        required: false
+        default: "1"
+  schedule:
+    - cron: "25 * * * *"
+
+jobs:
+  observability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run operational observability report
+        id: observability
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WINDOW_HOURS: ${{ inputs.window_hours || '168' }}
+          MIN_SUCCESS_RATE: ${{ inputs.min_success_rate || '0.90' }}
+          MIN_RUNS: ${{ inputs.min_runs || '1' }}
+          DRIFT_WORKFLOWS: Synology Artifact Retention
+          HEALTH_API_URL: ${{ vars.SYNOLOGY_HEALTH_API_URL }}
+          HEALTH_WEB_URL: ${{ vars.SYNOLOGY_HEALTH_WEB_URL }}
+        run: |
+          set +e
+          ARGS=(
+            --repo "${{ github.repository }}"
+            --github-token "$GH_TOKEN"
+            --window-hours "$WINDOW_HOURS"
+            --min-success-rate "$MIN_SUCCESS_RATE"
+            --min-runs "$MIN_RUNS"
+            --drift-workflows "$DRIFT_WORKFLOWS"
+            --output-json artifacts/synology-operational-observability.json
+            --output-md artifacts/synology-operational-observability.md
+          )
+
+          if [[ -n "$HEALTH_API_URL" ]]; then
+            ARGS+=(--health-check "api=${HEALTH_API_URL}")
+          fi
+          if [[ -n "$HEALTH_WEB_URL" ]]; then
+            ARGS+=(--health-check "web=${HEALTH_WEB_URL}")
+          fi
+
+          python3 scripts/synology_operational_observability.py "${ARGS[@]}"
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publish summary
+        if: always()
+        run: |
+          {
+            echo "## Synology Observability & Alerting"
+            echo
+            if [[ -f artifacts/synology-operational-observability.md ]]; then
+              cat artifacts/synology-operational-observability.md
+            else
+              echo "⚠️ No se generó resumen Markdown (revisar logs del paso anterior)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload observability artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synology-operational-observability
+          if-no-files-found: warn
+          path: |
+            artifacts/synology-operational-observability.json
+            artifacts/synology-operational-observability.md
+
+      - name: Fail job if alerts detected
+        if: ${{ steps.observability.outputs.exit_code != '0' }}
+        run: |
+          echo "❌ Se detectaron alertas operacionales (ver summary/artifacts)."
+          exit 1
