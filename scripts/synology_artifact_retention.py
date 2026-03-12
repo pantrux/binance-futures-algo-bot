@@ -178,6 +178,10 @@ def main() -> None:
     print(f"errors_count={report['errors_count']}")
     print(f"report_path={report_path}")
 
+    if report["errors_count"] > 0:
+        print("⚠️ Retención completada con errores; revisar reporte JSON", file=sys.stderr)
+        raise SystemExit(1)
+
 
 if __name__ == "__main__":
     main()

@@ -98,8 +98,16 @@ synology-signoff-all: synology-release-gate synology-release-summary synology-re
 	@echo "✅ Sign-off pipeline completado"
 
 synology-artifact-retention:
+	@set -euo pipefail; \
+	DRY_RUN_NORMALIZED="$$(echo "$(RETENTION_DRY_RUN)" | tr '[:upper:]' '[:lower:]')"; \
+	if [[ "$$DRY_RUN_NORMALIZED" != "true" && "$$DRY_RUN_NORMALIZED" != "false" ]]; then \
+		echo "❌ RETENTION_DRY_RUN debe ser 'true' o 'false' (recibido: '$(RETENTION_DRY_RUN)')"; \
+		exit 1; \
+	fi; \
+	EXTRA_FLAG=""; \
+	if [[ "$$DRY_RUN_NORMALIZED" == "true" ]]; then EXTRA_FLAG="--dry-run"; fi; \
 	$(PYTHON) scripts/synology_artifact_retention.py \
 		--artifacts-dir "$(ARTIFACTS_DIR)" \
 		--keep-days "$(KEEP_DAYS)" \
 		--report-path "$(RETENTION_REPORT_PATH)" \
-		$(if $(filter true,$(RETENTION_DRY_RUN)),--dry-run,)
+		$$EXTRA_FLAG
