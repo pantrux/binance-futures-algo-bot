@@ -25,12 +25,18 @@ class MarketRegimeService:
         return max(0.0, min(100.0, float(atr_pct) * 18.0))
 
     @staticmethod
-    def _momentum_score(rsi_14: float | None, momentum_10: float | None) -> float:
-        if rsi_14 is None and momentum_10 is None:
+    def _momentum_score(rsi_14: float | None, momentum_10_pct: float | None) -> float:
+        if rsi_14 is None and momentum_10_pct is None:
             return 50.0
 
         rsi_component = 50.0 if rsi_14 is None else max(0.0, min(100.0, 50.0 + ((float(rsi_14) - 50.0) * 1.4)))
-        mom_component = 50.0 if momentum_10 is None else max(0.0, min(100.0, 50.0 + (float(momentum_10) * 8.0)))
+        # Normalizamos momentum a % para que la escala sea comparable entre activos (BTC vs altcoins).
+        # momentum_10_pct es porcentaje real (ej: 0.8 = +0.8%).
+        mom_component = (
+            50.0
+            if momentum_10_pct is None
+            else max(0.0, min(100.0, 50.0 + (float(momentum_10_pct) * 12.0)))
+        )
         return round((rsi_component * 0.65) + (mom_component * 0.35), 4)
 
     @staticmethod
@@ -111,7 +117,11 @@ class MarketRegimeService:
 
         trend_strength = self._trend_strength(signal_snapshot.ema_spread_pct)
         volatility_score = self._volatility_score(signal_snapshot.atr_pct)
-        momentum_score = self._momentum_score(signal_snapshot.rsi_14, signal_snapshot.momentum_10)
+        momentum_10_pct = None
+        if signal_snapshot.momentum_10 is not None and indicator_snapshot.ema_21 not in (None, 0):
+            momentum_10_pct = round((float(signal_snapshot.momentum_10) / float(indicator_snapshot.ema_21)) * 100.0, 6)
+
+        momentum_score = self._momentum_score(signal_snapshot.rsi_14, momentum_10_pct)
 
         regime = self._classify_regime(
             trend_bias=signal_snapshot.trend_bias,

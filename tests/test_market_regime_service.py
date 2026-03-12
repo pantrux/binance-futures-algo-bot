@@ -49,6 +49,18 @@ def test_classify_regime_range_lateral() -> None:
     assert regime == "rango_lateral"
 
 
+def test_classify_regime_transicion_fallback() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bullish",
+        momentum_bias="neutral",
+        volatility_regime="medium",
+        trend_strength=45.0,
+        volatility_score=50.0,
+        momentum_score=55.0,
+    )
+    assert regime == "transicion"
+
+
 def test_classify_regime_unknown_when_inputs_unknown() -> None:
     regime = MarketRegimeService._classify_regime(
         trend_bias="unknown",
@@ -101,3 +113,9 @@ def test_regime_confidence_unknown_is_zero() -> None:
         momentum_score=50.0,
     )
     assert confidence == 0.0
+
+
+def test_momentum_score_uses_pct_scale_not_absolute_price() -> None:
+    # momentum_10_pct de +1% debería empujar el score por encima de 50 (sin saturar)
+    score = MarketRegimeService._momentum_score(rsi_14=50.0, momentum_10_pct=1.0)
+    assert 50.0 < score < 100.0
