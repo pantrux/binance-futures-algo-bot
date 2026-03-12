@@ -12,11 +12,13 @@ class FakeApiClient:
         market: dict | None = None,
         market_regime: dict | None = None,
         error: Exception | None = None,
+        regime_error: Exception | None = None,
     ) -> None:
         self._snapshot = snapshot
         self._market = market
         self._market_regime = market_regime
         self._error = error
+        self._regime_error = regime_error
 
     def _raise_error(self) -> None:
         if self._error:
@@ -33,6 +35,8 @@ class FakeApiClient:
         return None if self._market is None else dict(self._market)
 
     async def get_market_regime_snapshot(self, symbol: str, timeframe: str = "15m", limit: int = 200) -> dict | None:
+        if self._regime_error:
+            raise type(self._regime_error)(str(self._regime_error))
         self._raise_error()
         assert symbol
         assert timeframe
@@ -67,6 +71,54 @@ def test_hybrid_uses_market_when_snapshot_is_usable():
     assert context.regime_confidence == 78.4
     assert levels["stop"] < levels["entry"] < levels["take_profit"]
     assert "market-driven" in thesis
+
+
+def test_hybrid_tolerates_regime_endpoint_error_without_falling_to_demo():
+    snapshot = {
+        "symbol": "BTCUSDT",
+        "timeframe": "15m",
+        "last_candle_close_ms": 123,
+        "trend_bias": "bullish",
+        "momentum_bias": "bullish",
+        "volatility_regime": "medium",
+        "ema_spread_pct": 0.12,
+        "atr_pct": 1.0,
+        "rsi_14": 55.0,
+        "momentum_10": 2.0,
+    }
+    market = {"mark_price": 50000.0, "volume_24h": 1_000_000.0}
+    service = HybridSignalService(
+        api_client=FakeApiClient(snapshot=snapshot, market=market, regime_error=RuntimeError("regime down"))
+    )
+
+    _, context, _, _, meta = asyncio.run(service.build_signal_pack("BTCUSDT"))
+
+    assert meta.source == "market"
+    assert context.market_regime is None
+    assert context.regime_confidence is None
+
+
+def test_hybrid_clamps_regime_confidence_to_valid_range():
+    snapshot = {
+        "symbol": "BTCUSDT",
+        "timeframe": "15m",
+        "last_candle_close_ms": 123,
+        "trend_bias": "bullish",
+        "momentum_bias": "bullish",
+        "volatility_regime": "medium",
+        "ema_spread_pct": 0.12,
+        "atr_pct": 1.0,
+        "rsi_14": 55.0,
+        "momentum_10": 2.0,
+    }
+    market = {"mark_price": 50000.0, "volume_24h": 1_000_000.0}
+    regime = {"regime": "tendencia_alcista", "regime_confidence": 150.0}
+    service = HybridSignalService(api_client=FakeApiClient(snapshot=snapshot, market=market, market_regime=regime))
+
+    _, context, _, _, meta = asyncio.run(service.build_signal_pack("BTCUSDT"))
+
+    assert meta.source == "market"
+    assert context.regime_confidence == 100.0
 
 
 def test_hybrid_falls_back_to_demo_on_api_error():

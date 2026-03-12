@@ -40,6 +40,8 @@ class RiskEngine:
         if market_state.volatility_pct >= 4.0:
             return "alta_volatilidad"
         if market_state.trend_strength >= 70:
+            # Fallback sin dirección: `trend_strength` no distingue alcista/bajista por sí solo.
+            # Si el caller conoce dirección real, debe proveer `market_regime` explícito.
             return "tendencia_alcista"
         if market_state.trend_strength <= 35:
             return "rango_lateral"

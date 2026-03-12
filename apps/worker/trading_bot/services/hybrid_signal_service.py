@@ -39,13 +39,19 @@ class HybridSignalService:
                     self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
                 )
                 market_task = task_group.create_task(self.api_client.get_market_snapshot(symbol))
-                regime_task = task_group.create_task(
-                    self.api_client.get_market_regime_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
-                )
 
             snapshot = snapshot_task.result()
             market = market_task.result()
-            market_regime_snapshot = regime_task.result()
+
+            try:
+                market_regime_snapshot = await self.api_client.get_market_regime_snapshot(
+                    symbol,
+                    timeframe=self.timeframe,
+                    limit=self.limit,
+                )
+            except Exception:  # noqa: BLE001
+                logger.warning("market_regime_snapshot_unavailable; fallback sin régimen para %s", symbol)
+                market_regime_snapshot = None
             if not self._is_snapshot_usable(snapshot):
                 raise ValueError("snapshot_incompleto")
             if market is None:
@@ -122,6 +128,8 @@ class HybridSignalService:
         if isinstance(market_regime_snapshot, dict):
             regime = market_regime_snapshot.get("regime")
             regime_confidence = self._coerce_optional_number(market_regime_snapshot.get("regime_confidence"), default=None)
+            if regime_confidence is not None:
+                regime_confidence = max(0.0, min(100.0, regime_confidence))
 
         context = MarketContext(
             symbol=symbol,
