@@ -94,16 +94,24 @@ class RiskEngine:
         return table.get(pair, 0.45)
 
     @classmethod
-    def _correlation_multiplier(cls, *, symbol: str, positions: list[PositionExposure]) -> tuple[float, float]:
+    def _correlation_multiplier(
+        cls,
+        *,
+        symbol: str,
+        positions: list[PositionExposure],
+        max_risk_pct: float,
+    ) -> tuple[float, float]:
         if not positions:
             return 1.0, 0.0
+
+        normalization_base = max(max_risk_pct, 0.0001)
 
         target_cluster = cls._symbol_cluster(symbol)
         aggregated_pressure = 0.0
         for position in positions:
             source_cluster = cls._symbol_cluster(position.symbol)
             coeff = cls._correlation_coefficient(target_cluster, source_cluster)
-            weighted = coeff * max(0.0, min(1.0, position.risk_pct / 5.0))
+            weighted = coeff * max(0.0, min(1.0, position.risk_pct / normalization_base))
             aggregated_pressure += weighted
 
         normalized_pressure = min(1.0, aggregated_pressure)
@@ -322,10 +330,15 @@ class RiskEngine:
             volatility_pct=market_state.volatility_pct,
         )
 
+        max_portfolio_risk_pct = min(self.policy.max_account_risk_pct, portfolio_state.max_portfolio_risk_pct)
+        max_cluster_risk_pct = min(max_portfolio_risk_pct, portfolio_state.max_cluster_risk_pct)
+        max_symbol_risk_pct = min(max_portfolio_risk_pct, portfolio_state.max_symbol_risk_pct)
+
         if portfolio_state.correlation_guard_enabled:
             correlation_multiplier, correlation_pressure = self._correlation_multiplier(
                 symbol=normalized_symbol,
                 positions=positions,
+                max_risk_pct=max_portfolio_risk_pct,
             )
             if correlation_multiplier < 1.0 and suggested_risk_pct > 0:
                 suggested_risk_pct = round(suggested_risk_pct * correlation_multiplier, 4)
@@ -342,10 +355,6 @@ class RiskEngine:
                         },
                     )
                 )
-
-        max_portfolio_risk_pct = min(self.policy.max_account_risk_pct, portfolio_state.max_portfolio_risk_pct)
-        max_cluster_risk_pct = min(max_portfolio_risk_pct, portfolio_state.max_cluster_risk_pct)
-        max_symbol_risk_pct = min(max_portfolio_risk_pct, portfolio_state.max_symbol_risk_pct)
 
         available_policy = max(self.policy.max_account_risk_pct - portfolio_before, 0.0)
         available_portfolio = max(max_portfolio_risk_pct - portfolio_before, 0.0)

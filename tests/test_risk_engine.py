@@ -1,3 +1,5 @@
+import pytest
+
 from apps.api.app.schemas.trading import MarketState, PortfolioState, PositionExposure, SignalSnapshot
 from apps.api.app.services.risk_engine import RiskEngine, RiskPolicy
 
@@ -171,6 +173,42 @@ def test_risk_engine_uses_policy_defaults_for_symbol_and_cluster_limits_when_por
     assert decision.approved is True
     assert decision.suggested_risk_pct <= 0.2
     assert any(event.event_type == "risk_pct_capped_by_portfolio" for event in decision.risk_events)
+
+
+def test_portfolio_state_rejects_inconsistent_limit_hierarchy():
+    with pytest.raises(ValueError):
+        PortfolioState(max_symbol_risk_pct=3.0, max_cluster_risk_pct=2.0, max_portfolio_risk_pct=5.0)
+
+
+def test_risk_engine_correlation_normalization_respects_custom_portfolio_max_risk():
+    engine = RiskEngine(policy=RiskPolicy(max_account_risk_pct=10.0))
+    decision = engine.evaluate(
+        capital_usdt=2000,
+        existing_risk_pct=0.0,
+        signals=SignalSnapshot(technical=90, fundamental=85, sentiment=88, confidence=90),
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=2.0,
+            trend_strength=78,
+            liquidity_score=95,
+            market_regime="tendencia_alcista",
+            regime_confidence=82,
+        ),
+        entry_price=50000,
+        stop_loss=49750,
+        symbol="BTCUSDT",
+        side="long",
+        portfolio_state=PortfolioState(
+            positions=[PositionExposure(symbol="BTCUSDT", side="long", notional_usdt=8000, risk_pct=5.0)],
+            max_portfolio_risk_pct=10.0,
+            max_cluster_risk_pct=8.0,
+            max_symbol_risk_pct=7.0,
+        ),
+    )
+
+    assert decision.approved is True
+    assert decision.correlation_multiplier == pytest.approx(0.92, abs=1e-6)
 
 
 def test_risk_engine_respects_custom_high_volatility_threshold_in_volatility_multiplier():

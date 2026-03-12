@@ -1,5 +1,5 @@
 from typing import Any, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class SignalSnapshot(BaseModel):
@@ -32,6 +32,20 @@ class PortfolioState(BaseModel):
     max_cluster_risk_pct: float = Field(default=2.5, gt=0, le=100)
     max_symbol_risk_pct: float = Field(default=1.5, gt=0, le=100)
     correlation_guard_enabled: bool = True
+
+    @model_validator(mode="after")
+    def validate_risk_limit_hierarchy(self) -> "PortfolioState":
+        if self.max_symbol_risk_pct > self.max_cluster_risk_pct:
+            raise ValueError(
+                f"max_symbol_risk_pct ({self.max_symbol_risk_pct}) no puede superar "
+                f"max_cluster_risk_pct ({self.max_cluster_risk_pct})"
+            )
+        if self.max_cluster_risk_pct > self.max_portfolio_risk_pct:
+            raise ValueError(
+                f"max_cluster_risk_pct ({self.max_cluster_risk_pct}) no puede superar "
+                f"max_portfolio_risk_pct ({self.max_portfolio_risk_pct})"
+            )
+        return self
 
 
 class TradePlanRequest(BaseModel):
