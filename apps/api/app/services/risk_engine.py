@@ -68,7 +68,7 @@ class RiskEngine:
 
     @staticmethod
     def _symbol_cluster(symbol: str) -> str:
-        token = symbol.upper().replace("USDT", "")
+        token = symbol.upper().removesuffix("USDT")
         if token.startswith("BTC"):
             return "BTC_CORE"
         if token.startswith("ETH"):
@@ -99,20 +99,22 @@ class RiskEngine:
             return 1.0, 0.0
 
         target_cluster = cls._symbol_cluster(symbol)
-        max_pressure = 0.0
+        aggregated_pressure = 0.0
         for position in positions:
             source_cluster = cls._symbol_cluster(position.symbol)
             coeff = cls._correlation_coefficient(target_cluster, source_cluster)
             weighted = coeff * max(0.0, min(1.0, position.risk_pct / 5.0))
-            max_pressure = max(max_pressure, weighted)
+            aggregated_pressure += weighted
 
-        if max_pressure >= 0.8:
-            return 0.72, max_pressure
-        if max_pressure >= 0.6:
-            return 0.84, max_pressure
-        if max_pressure >= 0.45:
-            return 0.92, max_pressure
-        return 1.0, max_pressure
+        normalized_pressure = min(1.0, aggregated_pressure)
+
+        if normalized_pressure >= 0.8:
+            return 0.72, normalized_pressure
+        if normalized_pressure >= 0.6:
+            return 0.84, normalized_pressure
+        if normalized_pressure >= 0.45:
+            return 0.92, normalized_pressure
+        return 1.0, normalized_pressure
 
     @classmethod
     def _portfolio_metrics(
@@ -289,7 +291,11 @@ class RiskEngine:
         normalized_side = (side or "long").lower()
         _ = normalized_side  # reservado para futuras reglas side-aware
 
-        portfolio_state = portfolio_state or PortfolioState()
+        portfolio_state = portfolio_state or PortfolioState(
+            max_portfolio_risk_pct=self.policy.max_account_risk_pct,
+            max_cluster_risk_pct=self.policy.default_max_cluster_risk_pct,
+            max_symbol_risk_pct=self.policy.default_max_symbol_risk_pct,
+        )
         positions = portfolio_state.positions
         portfolio_metrics = self._portfolio_metrics(
             symbol=normalized_symbol,

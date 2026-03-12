@@ -1,5 +1,3 @@
-import json
-
 from sqlalchemy.orm import Session
 
 from apps.api.app.db.models import RiskEvent, TradePlan
@@ -51,19 +49,19 @@ class TradePlanService:
         self.db.refresh(trade_plan)
 
         for event in decision.risk_events:
+            context_payload = ", ".join(f"{key}={value}" for key, value in sorted(event.context.items()))
+            composed_message = event.message
+            if context_payload:
+                composed_message = f"{composed_message} | {context_payload}"
+            composed_message = (
+                f"{composed_message} | market_regime={decision.market_regime}, regime_confidence={decision.regime_confidence}"
+            )
+
             risk_event = RiskEvent(
                 trade_plan_id=trade_plan.id,
                 event_type=event.event_type,
                 severity=event.severity,
-                message=json.dumps(
-                    {
-                        "message": event.message,
-                        "context": event.context,
-                        "market_regime": decision.market_regime,
-                        "regime_confidence": decision.regime_confidence,
-                    },
-                    ensure_ascii=False,
-                ),
+                message=composed_message,
             )
             self.db.add(risk_event)
         self.db.commit()

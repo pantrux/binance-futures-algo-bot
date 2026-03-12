@@ -149,6 +149,30 @@ def test_risk_engine_uses_neutral_confidence_for_unexpected_regime_name():
     assert confidence == 50.0
 
 
+def test_risk_engine_uses_policy_defaults_for_symbol_and_cluster_limits_when_portfolio_state_is_missing():
+    engine = RiskEngine(policy=RiskPolicy(default_max_symbol_risk_pct=0.2, default_max_cluster_risk_pct=0.8))
+    decision = engine.evaluate(
+        capital_usdt=1000,
+        existing_risk_pct=0.0,
+        signals=SignalSnapshot(technical=86, fundamental=76, sentiment=80, confidence=84),
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=1.8,
+            trend_strength=75,
+            liquidity_score=91,
+            market_regime="tendencia_alcista",
+            regime_confidence=80,
+        ),
+        entry_price=50000,
+        stop_loss=49750,
+    )
+
+    assert decision.approved is True
+    assert decision.suggested_risk_pct <= 0.2
+    assert any(event.event_type == "risk_pct_capped_by_portfolio" for event in decision.risk_events)
+
+
 def test_risk_engine_respects_custom_min_score_policy_threshold():
     engine = RiskEngine(policy=RiskPolicy(min_score_to_trade=55.0))
     decision = engine.evaluate(

@@ -39,7 +39,7 @@ Agregar una capa de riesgo de portafolio en `RiskEngine` con:
 5. **Eventos de riesgo enriquecidos**
    - `RiskDecision` expone métricas antes/después (portfolio/symbol/cluster)
    - `risk_events[]` con tipo, severidad y contexto
-   - `TradePlanService` persiste estos eventos en tabla `risk_events`
+   - `TradePlanService` persiste estos eventos en tabla `risk_events` con mensaje plano enriquecido (`key=value`) para facilitar búsquedas operativas sin parseo JSON
 
 ## Consecuencias
 - Menor probabilidad de concentración de riesgo por activos correlacionados.
