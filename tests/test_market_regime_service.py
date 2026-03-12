@@ -61,6 +61,30 @@ def test_classify_regime_unknown_when_inputs_unknown() -> None:
     assert regime == "unknown"
 
 
+def test_classify_regime_unknown_has_priority_over_trend() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="bullish",
+        momentum_bias="bullish",
+        volatility_regime="unknown",
+        trend_strength=80.0,
+        volatility_score=40.0,
+        momentum_score=80.0,
+    )
+    assert regime == "unknown"
+
+
+def test_classify_regime_high_volatility_triggered_by_score_even_if_regime_not_high() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="neutral",
+        momentum_bias="neutral",
+        volatility_regime="medium",
+        trend_strength=40.0,
+        volatility_score=72.0,
+        momentum_score=50.0,
+    )
+    assert regime == "alta_volatilidad"
+
+
 def test_regime_confidence_unknown_is_zero() -> None:
     confidence = MarketRegimeService._regime_confidence(
         regime="unknown",

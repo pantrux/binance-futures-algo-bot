@@ -43,6 +43,12 @@ class MarketRegimeService:
         volatility_score: float,
         momentum_score: float,
     ) -> str:
+        # Guardrail: si el contexto base viene incompleto, preferimos un régimen "unknown"
+        # antes de inferir direccionalidad. Esto evita decisiones erróneas en consumidores futuros
+        # (por ejemplo RiskEngine) cuando falten señales/indicadores.
+        if trend_bias == "unknown" or momentum_bias == "unknown" or volatility_regime == "unknown":
+            return "unknown"
+
         if volatility_regime == "high" or volatility_score >= 72.0:
             return "alta_volatilidad"
 
@@ -54,9 +60,6 @@ class MarketRegimeService:
 
         if trend_strength <= 35.0 and volatility_score <= 55.0:
             return "rango_lateral"
-
-        if trend_bias == "unknown" or momentum_bias == "unknown" or volatility_regime == "unknown":
-            return "unknown"
 
         return "transicion"
 
