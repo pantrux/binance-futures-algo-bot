@@ -25,6 +25,7 @@
 - `ADR-021-complete-signoff-workflow.md`
 - `ADR-022-phase5-operational-closure.md`
 - `ADR-023-artifact-retention-policy.md`
+- `ADR-024-operational-observability-alerting.md`
 
 ## Archivados
 

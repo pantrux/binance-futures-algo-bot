@@ -18,12 +18,22 @@ RETENTION_REPORT_PATH ?= artifacts-retention/synology-artifact-retention.json
 ARTIFACTS_DIR ?= artifacts
 KEEP_DAYS ?= 45
 RETENTION_DRY_RUN ?= true
+OPS_OBSERVABILITY_JSON_PATH ?= artifacts/synology-operational-observability.json
+OPS_OBSERVABILITY_MD_PATH ?= artifacts/synology-operational-observability.md
+OPS_WINDOW_HOURS ?= 168
+OPS_MIN_SUCCESS_RATE ?= 0.90
+OPS_MIN_RUNS ?= 1
+OPS_REPO ?= pantrux/binance-futures-algo-bot
+OPS_WORKFLOWS ?= Synology Release Gate,Synology Smoke Test,Synology Preflight,Synology Artifact Retention
+OPS_DRIFT_WORKFLOWS ?= Synology Artifact Retention
+OPS_HEALTH_API_URL ?=
+OPS_HEALTH_WEB_URL ?=
 RELEASE_REF ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 SIGNOFF_OWNER ?= pending
 SIGNOFF_NOTES ?=
 PYTHON ?= python3
 
-.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package synology-signoff-all synology-artifact-retention
+.PHONY: help synology-preflight synology-smoke synology-release-gate synology-release-summary synology-release-verify synology-release-checklist synology-signoff-package synology-signoff-all synology-artifact-retention synology-operational-observability
 
 help:
 	@echo "Targets disponibles:"
@@ -36,6 +46,7 @@ help:
 	@echo "  make synology-signoff-package # consolida evidencia final de sign-off"
 	@echo "  make synology-signoff-all # ejecuta gate + summary + verify + checklist + package"
 	@echo "  make synology-artifact-retention # aplica política de retención de artifacts (30/60/90 etc)"
+	@echo "  make synology-operational-observability # calcula SLO/alertas del pipeline Synology"
 
 synology-preflight:
 	ENV_FILE="$(ENV_FILE)" \
@@ -111,3 +122,19 @@ synology-artifact-retention:
 		--keep-days "$(KEEP_DAYS)" \
 		--report-path "$(RETENTION_REPORT_PATH)" \
 		$$EXTRA_FLAG
+
+synology-operational-observability:
+	@set -euo pipefail; \
+	ARGS=( \
+		--repo "$(OPS_REPO)" \
+		--workflows "$(OPS_WORKFLOWS)" \
+		--drift-workflows "$(OPS_DRIFT_WORKFLOWS)" \
+		--window-hours "$(OPS_WINDOW_HOURS)" \
+		--min-success-rate "$(OPS_MIN_SUCCESS_RATE)" \
+		--min-runs "$(OPS_MIN_RUNS)" \
+		--output-json "$(OPS_OBSERVABILITY_JSON_PATH)" \
+		--output-md "$(OPS_OBSERVABILITY_MD_PATH)" \
+	); \
+	if [[ -n "$(OPS_HEALTH_API_URL)" ]]; then ARGS+=(--health-check "api=$(OPS_HEALTH_API_URL)"); fi; \
+	if [[ -n "$(OPS_HEALTH_WEB_URL)" ]]; then ARGS+=(--health-check "web=$(OPS_HEALTH_WEB_URL)"); fi; \
+	$(PYTHON) scripts/synology_operational_observability.py "$${ARGS[@]}"

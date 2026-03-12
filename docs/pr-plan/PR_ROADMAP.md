@@ -44,8 +44,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-19 | Orden documental y sync Outline idempotente | ✅ Mergeado | dedupe de Outline + estructura documental ordenada + script anti-duplicados |
 | PR-20 | Estabilizar worker Synology (one-shot sin restart loop) | ✅ Mergeado | `worker.restart="no"` + operación Synology estable sin loop |
 | PR-21 | Corrección documental post PR-19/PR-20 | ✅ Mergeado | roadmap/master-plan/runbook alineados + sync Outline validado |
-| PR-22 | Retención y gobierno de artifacts | 🟡 En progreso | política 30/60/90 días + limpieza automática + trazabilidad |
-| PR-23 | Observabilidad y alerting de infraestructura | 🔵 Planificado | alertas operacionales + SLO de pipeline |
+| PR-22 | Retención y gobierno de artifacts | ✅ Mergeado | política 30/60/90 días + limpieza automática + trazabilidad auditable |
+| PR-23 | Observabilidad y alerting de infraestructura | 🟡 En progreso | alertas operacionales + SLO de pipeline + workflow horario |
 | PR-24 | Resiliencia, recuperación y hardening operacional | 🔵 Planificado | backup/restore + DR + hardening de secretos/permisos |
 | PR-25 | Clasificador de régimen de mercado | 🔵 Planificado | clasificación de contexto de mercado para gating |
 | PR-26 | Sizing dinámico por volatilidad/riesgo | 🔵 Planificado | position sizing adaptativo por riesgo cuantitativo |
@@ -385,7 +385,7 @@ Alinear documentación estratégica y operativa con la implementación real en S
 ---
 
 ### PR-22 — Retención y gobierno de artifacts
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Controlar crecimiento de evidencia operativa y conservar sólo la historia útil para auditoría.
@@ -399,15 +399,17 @@ Controlar crecimiento de evidencia operativa y conservar sólo la historia útil
 ---
 
 ### PR-23 — Observabilidad y alerting de infraestructura
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Convertir fallos operativos en señales accionables antes de que impacten continuidad.
 
 **Entregables**
-- alertas por fallo de gate/degradación
-- SLO del pipeline operacional
-- panel resumido de salud de operación
+- script `scripts/synology_operational_observability.py`
+- workflow `Synology Observability & Alerting` (dispatch + schedule horario)
+- target Make `synology-operational-observability`
+- reporte JSON + resumen Markdown (`artifacts/synology-operational-observability.*`)
+- ADR-024 de observabilidad operacional
 
 ---
 

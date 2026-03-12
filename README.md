@@ -90,6 +90,8 @@ Ejecución remota desde GitHub Actions (`workflow_dispatch`):
 - `Synology Preflight` (modo `require_secrets=true` usa `BINANCE_API_KEY`, `BINANCE_API_SECRET`, `OUTLINE_API_TOKEN` desde GitHub Secrets)
 - `Synology Smoke Test`
 - `Synology Release Gate` (sube reporte Markdown + resumen JSON + checklist + paquete de sign-off, y valida estructura del JSON)
+- `Synology Artifact Retention` (dry-run en CI para gobierno de artifacts operacionales)
+- `Synology Observability & Alerting` (SLO + drift + health checks opcionales, con fallo explícito si hay alertas)
 - Cierre formal de fase operativa documentado en `docs/plans/phase5-operational-closure.md`
 
 Checklist de aprobación manual:
@@ -175,6 +177,16 @@ OUTLINE_API_TOKEN="..." python3 scripts/sync_outline_docs.py --archive-unknown
 
 ```bash
 make synology-artifact-retention KEEP_DAYS=45 RETENTION_DRY_RUN=true
+```
+
+- Observabilidad/alerting operacional del pipeline Synology:
+
+```bash
+GH_TOKEN="<github_token>" \
+make synology-operational-observability \
+  OPS_REPO=pantrux/binance-futures-algo-bot \
+  OPS_WINDOW_HOURS=168 \
+  OPS_MIN_SUCCESS_RATE=0.90
 ```
 
 ## Workflow GitHub

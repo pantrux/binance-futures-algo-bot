@@ -150,6 +150,43 @@ También disponible workflow de GitHub Actions:
 
 > Nota: la eliminación real (`RETENTION_DRY_RUN=false`) debe ejecutarse en Synology, donde existe el directorio real de artifacts.
 
+## Observabilidad y alerting operacional (PR-23)
+
+Ejecución manual local:
+
+```bash
+GH_TOKEN="<github_token>" \
+make synology-operational-observability \
+  OPS_REPO=pantrux/binance-futures-algo-bot \
+  OPS_WINDOW_HOURS=168 \
+  OPS_MIN_SUCCESS_RATE=0.90 \
+  OPS_MIN_RUNS=1 \
+  OPS_DRIFT_WORKFLOWS="Synology Artifact Retention"
+```
+
+Health checks opcionales (si el endpoint es alcanzable desde donde se ejecuta):
+
+```bash
+GH_TOKEN="<github_token>" \
+make synology-operational-observability \
+  OPS_REPO=pantrux/binance-futures-algo-bot \
+  OPS_HEALTH_API_URL="https://pantrux.duckdns.org/dashboard/health" \
+  OPS_HEALTH_WEB_URL="https://pantrux.duckdns.org/dashboard/"
+```
+
+Artifacts generados:
+- `artifacts/synology-operational-observability.json`
+- `artifacts/synology-operational-observability.md`
+
+Workflow disponible:
+- `Synology Observability & Alerting` (`workflow_dispatch` + `schedule` horario)
+
+Variables opcionales de repo para health checks desde CI:
+- `SYNOLOGY_HEALTH_API_URL`
+- `SYNOLOGY_HEALTH_WEB_URL`
+
+> El workflow falla explícitamente cuando detecta alertas (SLO degradado, drift operativo o health fallido).
+
 ## Sync de documentación en Outline (sin duplicados)
 
 ```bash
