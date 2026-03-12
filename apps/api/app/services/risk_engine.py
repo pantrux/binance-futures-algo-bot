@@ -16,6 +16,18 @@ class RiskPolicy:
     default_max_symbol_risk_pct: float = 1.5
     high_volatility_threshold_pct: float = 4.0
 
+    def __post_init__(self) -> None:
+        if self.default_max_symbol_risk_pct > self.default_max_cluster_risk_pct:
+            raise ValueError(
+                f"default_max_symbol_risk_pct ({self.default_max_symbol_risk_pct}) no puede superar "
+                f"default_max_cluster_risk_pct ({self.default_max_cluster_risk_pct})"
+            )
+        if self.default_max_cluster_risk_pct > self.max_account_risk_pct:
+            raise ValueError(
+                f"default_max_cluster_risk_pct ({self.default_max_cluster_risk_pct}) no puede superar "
+                f"max_account_risk_pct ({self.max_account_risk_pct})"
+            )
+
 
 class RiskEngine:
     def __init__(self, policy: RiskPolicy | None = None):
@@ -252,6 +264,7 @@ class RiskEngine:
         high_vol_threshold = self.policy.high_volatility_threshold_pct
         severe_vol_threshold = high_vol_threshold + 1.0
         elevated_vol_threshold = max(2.0, high_vol_threshold - 1.0)
+        mild_vol_threshold = max(0.5, min(2.0, elevated_vol_threshold - 0.5))
 
         if volatility_pct >= severe_vol_threshold:
             return 0.45
@@ -259,7 +272,7 @@ class RiskEngine:
             return 0.6
         if volatility_pct >= elevated_vol_threshold:
             return 0.75
-        if volatility_pct >= 2.0:
+        if volatility_pct >= mild_vol_threshold:
             return 0.9
         return 1.0
 

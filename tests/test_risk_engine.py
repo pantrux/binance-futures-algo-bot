@@ -180,6 +180,12 @@ def test_portfolio_state_rejects_inconsistent_limit_hierarchy():
         PortfolioState(max_symbol_risk_pct=3.0, max_cluster_risk_pct=2.0, max_portfolio_risk_pct=5.0)
 
 
+def test_risk_policy_rejects_inconsistent_default_limit_hierarchy():
+    with pytest.raises(ValueError):
+        RiskPolicy(default_max_symbol_risk_pct=3.0, default_max_cluster_risk_pct=2.0)
+
+
+
 def test_risk_engine_correlation_normalization_respects_custom_portfolio_max_risk():
     engine = RiskEngine(policy=RiskPolicy(max_account_risk_pct=10.0))
     decision = engine.evaluate(
@@ -233,6 +239,48 @@ def test_risk_engine_respects_custom_high_volatility_threshold_in_volatility_mul
     # Con threshold=3.0, 3.5% cae en bucket de alta volatilidad (0.6), no en 0.75.
     assert decision.approved is True
     assert decision.suggested_risk_pct <= 0.6
+
+
+def test_risk_engine_preserves_mild_volatility_bucket_with_low_custom_threshold():
+    engine = RiskEngine(policy=RiskPolicy(high_volatility_threshold_pct=3.0))
+
+    mild = engine.evaluate(
+        capital_usdt=1000,
+        existing_risk_pct=0.0,
+        signals=SignalSnapshot(technical=88, fundamental=82, sentiment=84, confidence=86),
+        market_state=MarketState(
+            symbol="ETHUSDT",
+            timeframe="15m",
+            volatility_pct=1.8,
+            trend_strength=68,
+            liquidity_score=90,
+            market_regime="transicion",
+            regime_confidence=60,
+        ),
+        entry_price=3000,
+        stop_loss=2960,
+    )
+
+    elevated = engine.evaluate(
+        capital_usdt=1000,
+        existing_risk_pct=0.0,
+        signals=SignalSnapshot(technical=88, fundamental=82, sentiment=84, confidence=86),
+        market_state=MarketState(
+            symbol="ETHUSDT",
+            timeframe="15m",
+            volatility_pct=2.2,
+            trend_strength=68,
+            liquidity_score=90,
+            market_regime="transicion",
+            regime_confidence=60,
+        ),
+        entry_price=3000,
+        stop_loss=2960,
+    )
+
+    assert mild.approved is True
+    assert elevated.approved is True
+    assert mild.suggested_risk_pct > elevated.suggested_risk_pct
 
 
 def test_risk_engine_respects_custom_min_score_policy_threshold():
