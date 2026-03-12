@@ -29,6 +29,7 @@
 - `ADR-025-resilience-backup-recovery-hardening.md`
 - `ADR-026-market-regime-classifier.md`
 - `ADR-027-dynamic-risk-sizing-by-regime.md`
+- `ADR-028-portfolio-correlation-risk-guards.md`
 
 ## Archivados
 

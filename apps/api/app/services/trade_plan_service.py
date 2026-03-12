@@ -1,6 +1,8 @@
+import json
+
 from sqlalchemy.orm import Session
 
-from apps.api.app.db.models import TradePlan
+from apps.api.app.db.models import RiskEvent, TradePlan
 from apps.api.app.schemas.trade_plan import TradePlanCreateRequest, TradePlanCreateResponse
 from apps.api.app.services.outline_service import OutlineService
 from apps.api.app.services.risk_engine import RiskEngine
@@ -20,6 +22,9 @@ class TradePlanService:
             market_state=payload.market_state,
             entry_price=payload.entry_price,
             stop_loss=payload.stop_loss,
+            symbol=payload.symbol,
+            side=payload.side,
+            portfolio_state=payload.portfolio_state,
         )
         trade_plan = TradePlan(
             symbol=payload.symbol,
@@ -45,6 +50,24 @@ class TradePlanService:
         self.db.commit()
         self.db.refresh(trade_plan)
 
+        for event in decision.risk_events:
+            risk_event = RiskEvent(
+                trade_plan_id=trade_plan.id,
+                event_type=event.event_type,
+                severity=event.severity,
+                message=json.dumps(
+                    {
+                        "message": event.message,
+                        "context": event.context,
+                        "market_regime": decision.market_regime,
+                        "regime_confidence": decision.regime_confidence,
+                    },
+                    ensure_ascii=False,
+                ),
+            )
+            self.db.add(risk_event)
+        self.db.commit()
+
         outline_result = await self.outline_service.create_trade_plan_document(
             request=payload,
             risk_summary={
@@ -53,6 +76,11 @@ class TradePlanService:
                 "suggested_risk_pct": decision.suggested_risk_pct,
                 "max_position_notional": decision.max_position_notional,
                 "reason": decision.reason,
+                "regime_confidence": decision.regime_confidence,
+                "cluster_key": decision.cluster_key,
+                "correlation_multiplier": decision.correlation_multiplier,
+                "portfolio_risk_pct_before": decision.portfolio_risk_pct_before,
+                "portfolio_risk_pct_after": decision.portfolio_risk_pct_after,
             },
         )
         outline_url = outline_result.get("data", {}).get("url") if isinstance(outline_result, dict) else None

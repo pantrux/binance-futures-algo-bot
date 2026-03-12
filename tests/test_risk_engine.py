@@ -1,4 +1,4 @@
-from apps.api.app.schemas.trading import MarketState, SignalSnapshot
+from apps.api.app.schemas.trading import MarketState, PortfolioState, PositionExposure, SignalSnapshot
 from apps.api.app.services.risk_engine import RiskEngine, RiskPolicy
 
 
@@ -216,6 +216,133 @@ def test_risk_engine_caps_explicit_regime_when_observed_volatility_is_high():
     assert explicit_stale_regime.suggested_risk_pct <= internal_fallback.suggested_risk_pct
 
 
+def test_risk_engine_blocks_when_symbol_risk_limit_is_exceeded():
+    engine = RiskEngine()
+    decision = engine.evaluate(
+        capital_usdt=1000,
+        existing_risk_pct=1.0,
+        signals=SignalSnapshot(technical=88, fundamental=78, sentiment=80, confidence=84),
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=1.8,
+            trend_strength=75,
+            liquidity_score=90,
+            market_regime="tendencia_alcista",
+            regime_confidence=78,
+        ),
+        entry_price=50000,
+        stop_loss=49750,
+        symbol="BTCUSDT",
+        side="long",
+        portfolio_state=PortfolioState(
+            positions=[PositionExposure(symbol="BTCUSDT", side="long", notional_usdt=1200, risk_pct=1.6)],
+            max_symbol_risk_pct=1.6,
+            max_cluster_risk_pct=3.0,
+            max_portfolio_risk_pct=5.0,
+        ),
+    )
+
+    assert decision.approved is False
+    assert "símbolo" in decision.reason.lower()
+    assert any(event.event_type == "symbol_risk_limit_breached" for event in decision.risk_events)
+
+
+def test_risk_engine_blocks_when_cluster_risk_limit_is_exceeded():
+    engine = RiskEngine()
+    decision = engine.evaluate(
+        capital_usdt=1000,
+        existing_risk_pct=2.0,
+        signals=SignalSnapshot(technical=85, fundamental=77, sentiment=79, confidence=83),
+        market_state=MarketState(
+            symbol="ETHUSDT",
+            timeframe="15m",
+            volatility_pct=2.1,
+            trend_strength=72,
+            liquidity_score=88,
+            market_regime="tendencia_alcista",
+            regime_confidence=74,
+        ),
+        entry_price=3000,
+        stop_loss=2960,
+        symbol="ETHUSDT",
+        side="long",
+        portfolio_state=PortfolioState(
+            positions=[
+                PositionExposure(symbol="ETHUSDT", side="long", notional_usdt=900, risk_pct=1.4),
+                PositionExposure(symbol="ETHFIUSDT", side="long", notional_usdt=450, risk_pct=1.0),
+            ],
+            max_symbol_risk_pct=2.0,
+            max_cluster_risk_pct=2.4,
+            max_portfolio_risk_pct=5.0,
+        ),
+    )
+
+    assert decision.approved is False
+    assert "clúster" in decision.reason.lower() or "cluster" in decision.reason.lower()
+    assert any(event.event_type == "cluster_risk_limit_breached" for event in decision.risk_events)
+
+
+def test_risk_engine_degrades_sizing_under_correlation_pressure():
+    engine = RiskEngine()
+    signals = SignalSnapshot(technical=90, fundamental=84, sentiment=86, confidence=89)
+
+    baseline = engine.evaluate(
+        capital_usdt=1500,
+        existing_risk_pct=1.0,
+        signals=signals,
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=2.0,
+            trend_strength=78,
+            liquidity_score=93,
+            market_regime="tendencia_alcista",
+            regime_confidence=80,
+        ),
+        entry_price=50000,
+        stop_loss=49750,
+        symbol="BTCUSDT",
+        side="long",
+        portfolio_state=PortfolioState(positions=[]),
+    )
+
+    pressured = engine.evaluate(
+        capital_usdt=1500,
+        existing_risk_pct=1.0,
+        signals=signals,
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=2.0,
+            trend_strength=78,
+            liquidity_score=93,
+            market_regime="tendencia_alcista",
+            regime_confidence=80,
+        ),
+        entry_price=50000,
+        stop_loss=49750,
+        symbol="BTCUSDT",
+        side="long",
+        portfolio_state=PortfolioState(
+            positions=[
+                PositionExposure(symbol="ETHUSDT", side="long", notional_usdt=1500, risk_pct=1.0),
+                PositionExposure(symbol="BTCUSDT", side="long", notional_usdt=1800, risk_pct=2.4),
+            ],
+            max_symbol_risk_pct=3.0,
+            max_cluster_risk_pct=4.0,
+            max_portfolio_risk_pct=5.0,
+        ),
+    )
+
+    assert baseline.approved is True
+    assert pressured.approved is True
+    assert pressured.suggested_risk_pct < baseline.suggested_risk_pct
+    assert pressured.correlation_multiplier is not None
+    assert pressured.correlation_multiplier < 1.0
+    assert any(event.event_type == "correlation_pressure" for event in pressured.risk_events)
+
+
 def test_risk_engine_rejects_if_global_risk_exhausted():
     engine = RiskEngine()
     decision = engine.evaluate(
@@ -227,7 +354,7 @@ def test_risk_engine_rejects_if_global_risk_exhausted():
         stop_loss=49900,
     )
     assert decision.approved is False
-    assert "5%" in decision.reason
+    assert "margen" in decision.reason.lower() or "portafolio" in decision.reason.lower()
 
 
 def test_risk_engine_notional_matches_applied_risk_pct_formula():

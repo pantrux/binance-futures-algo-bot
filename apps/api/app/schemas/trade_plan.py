@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from apps.api.app.schemas.trading import MarketState, SignalSnapshot
+from apps.api.app.schemas.trading import MarketState, PortfolioState, SignalSnapshot
 
 
 class TradePlanCreateRequest(BaseModel):
@@ -14,6 +14,7 @@ class TradePlanCreateRequest(BaseModel):
     thesis: str = Field(min_length=10)
     signals: SignalSnapshot
     market_state: MarketState
+    portfolio_state: PortfolioState | None = None
 
 
 class TradePlanCreateResponse(BaseModel):
