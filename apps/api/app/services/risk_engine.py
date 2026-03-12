@@ -95,16 +95,17 @@ class RiskEngine:
         )
 
     @staticmethod
-    def _score_multiplier(score: float) -> float:
-        if score >= 85:
+    def _score_multiplier(score: float, min_score_to_trade: float) -> float:
+        if score < min_score_to_trade:
+            return 0.0
+
+        if score >= min_score_to_trade + 25:
             return 1.15
-        if score >= 75:
+        if score >= min_score_to_trade + 15:
             return 1.0
-        if score >= 65:
+        if score >= min_score_to_trade + 5:
             return 0.8
-        if score >= 60:
-            return 0.65
-        return 0.0
+        return 0.65
 
     @staticmethod
     def _regime_multiplier(regime: str, regime_confidence: float) -> float:
@@ -147,10 +148,7 @@ class RiskEngine:
         return 1.0
 
     def suggest_risk_pct(self, *, score: float, regime: str, regime_confidence: float, volatility_pct: float) -> float:
-        if score < self.policy.min_score_to_trade:
-            return 0.0
-
-        score_mult = self._score_multiplier(score)
+        score_mult = self._score_multiplier(score, self.policy.min_score_to_trade)
         regime_mult = self._regime_multiplier(regime, regime_confidence)
         vol_mult = self._volatility_multiplier(volatility_pct)
 

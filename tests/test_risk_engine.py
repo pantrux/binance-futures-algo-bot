@@ -1,5 +1,5 @@
 from apps.api.app.schemas.trading import MarketState, SignalSnapshot
-from apps.api.app.services.risk_engine import RiskEngine
+from apps.api.app.services.risk_engine import RiskEngine, RiskPolicy
 
 
 def test_risk_engine_approves_high_quality_setup():
@@ -131,6 +131,28 @@ def test_risk_engine_rejects_if_score_below_dynamic_threshold():
     )
     assert decision.approved is False
     assert "insuficiente" in decision.reason.lower()
+
+
+def test_risk_engine_respects_custom_min_score_policy_threshold():
+    engine = RiskEngine(policy=RiskPolicy(min_score_to_trade=55.0))
+    decision = engine.evaluate(
+        capital_usdt=1000,
+        existing_risk_pct=0.0,
+        signals=SignalSnapshot(technical=57, fundamental=57, sentiment=57, confidence=57),
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=1.5,
+            trend_strength=70,
+            liquidity_score=57,
+            market_regime="tendencia_alcista",
+            regime_confidence=70,
+        ),
+        entry_price=50000,
+        stop_loss=49800,
+    )
+    assert decision.approved is True
+    assert decision.suggested_risk_pct > 0
 
 
 def test_risk_engine_rejects_if_global_risk_exhausted():

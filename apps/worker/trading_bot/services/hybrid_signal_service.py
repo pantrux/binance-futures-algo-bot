@@ -39,19 +39,11 @@ class HybridSignalService:
                     self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
                 )
                 market_task = task_group.create_task(self.api_client.get_market_snapshot(symbol))
+                regime_task = task_group.create_task(self._safe_get_market_regime_snapshot(symbol))
 
             snapshot = snapshot_task.result()
             market = market_task.result()
-
-            try:
-                market_regime_snapshot = await self.api_client.get_market_regime_snapshot(
-                    symbol,
-                    timeframe=self.timeframe,
-                    limit=self.limit,
-                )
-            except Exception:  # noqa: BLE001
-                logger.warning("market_regime_snapshot_unavailable; fallback sin régimen para %s", symbol)
-                market_regime_snapshot = None
+            market_regime_snapshot = regime_task.result()
             if not self._is_snapshot_usable(snapshot):
                 raise ValueError("snapshot_incompleto")
             if market is None:
@@ -79,6 +71,17 @@ class HybridSignalService:
             first = exc.exceptions[0]
             return str(first)
         return str(exc)
+
+    async def _safe_get_market_regime_snapshot(self, symbol: str) -> dict | None:
+        try:
+            return await self.api_client.get_market_regime_snapshot(
+                symbol,
+                timeframe=self.timeframe,
+                limit=self.limit,
+            )
+        except Exception:  # noqa: BLE001
+            logger.warning("market_regime_snapshot_unavailable; fallback sin régimen para %s", symbol)
+            return None
 
     @staticmethod
     def _is_snapshot_usable(snapshot: dict | None) -> bool:
