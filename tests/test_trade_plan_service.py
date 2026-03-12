@@ -13,7 +13,7 @@ class DummyOutlineService:
         return {"data": {"url": "/doc/fake-trade-plan"}}
 
 
-async def _create_plan():
+async def _create_plan(*, market_state: MarketState | None = None):
     engine = create_engine('sqlite:///:memory:')
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
@@ -29,7 +29,7 @@ async def _create_plan():
         existing_risk_pct=1.0,
         thesis='Ruptura con confirmación de volumen y régimen favorable.',
         signals=SignalSnapshot(technical=81, fundamental=66, sentiment=74, confidence=79),
-        market_state=MarketState(symbol='BTCUSDT', timeframe='15m', volatility_pct=2.4, trend_strength=73, liquidity_score=92),
+        market_state=market_state or MarketState(symbol='BTCUSDT', timeframe='15m', volatility_pct=2.4, trend_strength=73, liquidity_score=92),
         portfolio_state=PortfolioState(
             positions=[
                 PositionExposure(symbol='ETHUSDT', side='long', notional_usdt=800, risk_pct=1.0),
@@ -53,4 +53,17 @@ def test_trade_plan_service_persists_and_returns_outline_url():
 
     events = db.query(RiskEvent).filter(RiskEvent.trade_plan_id == result.id).all()
     assert len(events) >= 1
-    assert any(event.event_type in {'portfolio_risk_approved', 'correlation_pressure'} for event in events)
+    assert any(event.event_type in {'portfolio_risk_approved', 'correlation_pressure', 'final_gate_pass'} for event in events)
+
+
+def test_trade_plan_service_blocks_when_final_gate_triggers_breaker():
+    import asyncio
+
+    high_vol_state = MarketState(symbol='BTCUSDT', timeframe='15m', volatility_pct=6.3, trend_strength=70, liquidity_score=90)
+    result, db = asyncio.run(_create_plan(market_state=high_vol_state))
+
+    assert result.status == 'blocked'
+    assert result.max_position_notional == 0
+
+    events = db.query(RiskEvent).filter(RiskEvent.trade_plan_id == result.id).all()
+    assert any(event.event_type == 'circuit_breaker_extreme_volatility' for event in events)
