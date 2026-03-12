@@ -20,7 +20,6 @@ def test_classify_regime_high_volatility_has_priority() -> None:
         momentum_bias="bullish",
         volatility_regime="high",
         trend_strength=80.0,
-        volatility_score=80.0,
         momentum_score=80.0,
     )
     assert regime == "alta_volatilidad"
@@ -32,7 +31,6 @@ def test_classify_regime_high_volatility_beats_unknown_direction() -> None:
         momentum_bias="unknown",
         volatility_regime="high",
         trend_strength=50.0,
-        volatility_score=90.0,
         momentum_score=50.0,
     )
     assert regime == "alta_volatilidad"
@@ -44,7 +42,6 @@ def test_classify_regime_bullish_trend() -> None:
         momentum_bias="bullish",
         volatility_regime="medium",
         trend_strength=60.0,
-        volatility_score=40.0,
         momentum_score=60.0,
     )
     assert regime == "tendencia_alcista"
@@ -56,7 +53,6 @@ def test_classify_regime_bearish_trend() -> None:
         momentum_bias="bearish",
         volatility_regime="medium",
         trend_strength=60.0,
-        volatility_score=40.0,
         momentum_score=40.0,
     )
     assert regime == "tendencia_bajista"
@@ -68,7 +64,6 @@ def test_classify_regime_range_lateral() -> None:
         momentum_bias="neutral",
         volatility_regime="low",
         trend_strength=30.0,
-        volatility_score=50.0,
         momentum_score=50.0,
     )
     assert regime == "rango_lateral"
@@ -80,7 +75,6 @@ def test_classify_regime_transicion_fallback() -> None:
         momentum_bias="neutral",
         volatility_regime="medium",
         trend_strength=45.0,
-        volatility_score=50.0,
         momentum_score=55.0,
     )
     assert regime == "transicion"
@@ -92,7 +86,6 @@ def test_classify_regime_unknown_when_inputs_unknown() -> None:
         momentum_bias="neutral",
         volatility_regime="medium",
         trend_strength=50.0,
-        volatility_score=50.0,
         momentum_score=50.0,
     )
     assert regime == "unknown"
@@ -104,7 +97,6 @@ def test_classify_regime_unknown_has_priority_over_trend() -> None:
         momentum_bias="bullish",
         volatility_regime="unknown",
         trend_strength=80.0,
-        volatility_score=40.0,
         momentum_score=80.0,
     )
     assert regime == "unknown"
@@ -266,6 +258,22 @@ def test_regime_confidence_transicion_prefers_neutral_momentum() -> None:
         momentum_score=90.0,
     )
     assert c_neutral > c_extreme
+
+
+def test_regime_confidence_transicion_decreases_when_trend_strength_increases() -> None:
+    c_low_trend = MarketRegimeService._regime_confidence(
+        regime="transicion",
+        trend_strength=20.0,
+        volatility_score=40.0,
+        momentum_score=50.0,
+    )
+    c_high_trend = MarketRegimeService._regime_confidence(
+        regime="transicion",
+        trend_strength=80.0,
+        volatility_score=40.0,
+        momentum_score=50.0,
+    )
+    assert c_low_trend > c_high_trend
 
 
 def test_momentum_score_uses_pct_scale_not_absolute_price() -> None:

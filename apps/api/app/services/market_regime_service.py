@@ -46,7 +46,6 @@ class MarketRegimeService:
         momentum_bias: str,
         volatility_regime: str,
         trend_strength: float,
-        volatility_score: float,
         momentum_score: float,
     ) -> str:
         # Alta volatilidad tiene prioridad: incluso si faltan señales direccionales, esto es un
@@ -151,7 +150,6 @@ class MarketRegimeService:
             momentum_bias=signal_snapshot.momentum_bias,
             volatility_regime=signal_snapshot.volatility_regime,
             trend_strength=trend_strength,
-            volatility_score=volatility_score,
             momentum_score=momentum_score,
         )
 
