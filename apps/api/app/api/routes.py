@@ -99,13 +99,13 @@ def market_regime_snapshot(symbol: str, timeframe: str = '15m', limit: int = Que
     if any(value is None for value in (indicator_snapshot.ema_9, indicator_snapshot.ema_21, indicator_snapshot.rsi_14, indicator_snapshot.atr_14, indicator_snapshot.momentum_10)):
         raise HTTPException(status_code=400, detail=f"Candles insuficientes para calcular régimen de mercado de {symbol} en timeframe {timeframe}")
 
-    signal_snapshot = SignalService(db).snapshot(
+    regime_signal_snapshot = SignalService(db).snapshot(
         symbol=symbol,
         timeframe=timeframe,
         limit=limit,
         indicator_snapshot=indicator_snapshot,
     )
-    if any(value is None for value in (signal_snapshot.ema_spread_pct, signal_snapshot.atr_pct)):
+    if any(value is None for value in (regime_signal_snapshot.ema_spread_pct, regime_signal_snapshot.atr_pct)):
         raise HTTPException(status_code=400, detail=f"Candles insuficientes para calcular régimen de mercado de {symbol} en timeframe {timeframe}")
 
     return MarketRegimeService(db).snapshot(
@@ -113,7 +113,7 @@ def market_regime_snapshot(symbol: str, timeframe: str = '15m', limit: int = Que
         timeframe=timeframe,
         limit=limit,
         indicator_snapshot=indicator_snapshot,
-        signal_snapshot=signal_snapshot,
+        signal_snapshot=regime_signal_snapshot,
     )
 
 
