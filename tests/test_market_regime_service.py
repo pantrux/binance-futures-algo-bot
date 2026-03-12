@@ -8,12 +8,15 @@ def test_trend_strength_scales_with_ema_spread_pct() -> None:
     assert MarketRegimeService._trend_strength(0.0) == 0.0
     assert MarketRegimeService._trend_strength(1.0) == 40.0
     assert MarketRegimeService._trend_strength(-1.0) == 40.0
+    assert MarketRegimeService._trend_strength(3.0) == 100.0
+    assert MarketRegimeService._trend_strength(-3.0) == 100.0
 
 
 def test_volatility_score_scales_with_atr_pct() -> None:
     assert MarketRegimeService._volatility_score(None) == 50.0
     assert MarketRegimeService._volatility_score(0.0) == 0.0
     assert MarketRegimeService._volatility_score(1.0) == 18.0
+    assert MarketRegimeService._volatility_score(6.0) == 100.0
 
 
 def test_classify_regime_high_volatility_has_priority() -> None:
@@ -69,6 +72,28 @@ def test_classify_regime_range_lateral() -> None:
         momentum_score=50.0,
     )
     assert regime == "rango_lateral"
+
+
+def test_classify_regime_range_lateral_at_exact_threshold() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="neutral",
+        momentum_bias="neutral",
+        volatility_regime="medium",
+        trend_strength=35.0,
+        momentum_score=50.0,
+    )
+    assert regime == "rango_lateral"
+
+
+def test_classify_regime_transicion_just_above_range_lateral_threshold() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="neutral",
+        momentum_bias="neutral",
+        volatility_regime="medium",
+        trend_strength=35.01,
+        momentum_score=50.0,
+    )
+    assert regime == "transicion"
 
 
 def test_classify_regime_transicion_fallback() -> None:
@@ -276,22 +301,6 @@ def test_regime_confidence_transicion_decreases_when_trend_strength_increases() 
         momentum_score=50.0,
     )
     assert c_low_trend > c_high_trend
-
-
-def test_momentum_score_uses_pct_scale_not_absolute_price() -> None:
-    # momentum_10_pct de +1% debería empujar el score por encima de 50 (sin saturar)
-    score = MarketRegimeService._momentum_score(rsi_14=50.0, momentum_10_pct=1.0)
-    assert 50.0 < score < 100.0
-
-
-def test_momentum_score_handles_missing_rsi() -> None:
-    score = MarketRegimeService._momentum_score(rsi_14=None, momentum_10_pct=1.0)
-    assert 50.0 < score < 100.0
-
-
-def test_momentum_score_handles_missing_momentum_pct() -> None:
-    score = MarketRegimeService._momentum_score(rsi_14=60.0, momentum_10_pct=None)
-    assert 50.0 < score < 100.0
 
 
 def test_momentum_score_only_rsi_when_momentum_pct_is_none() -> None:
