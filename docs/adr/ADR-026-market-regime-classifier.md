@@ -32,6 +32,7 @@ Salida principal: `regime` ∈ {`tendencia_alcista`, `tendencia_bajista`, `rango
 - El régimen queda **auditado y estable** (misma entrada → misma salida), útil para debugging y gates.
 - No se agrega dependencia externa ni complejidad de entrenamiento.
 - La heurística se podrá endurecer en PRs posteriores (PR-26+), y el `RiskEngine` podrá usar `regime/regime_confidence` como feature de gating.
+- En `alta_volatilidad`, la confianza se define directamente como `volatility_score` (0..100). Esto implica que cerca del umbral de clasificación (`atr_pct` ≈ 2.5%), la confianza puede ser menor a 50 aun cuando el régimen sea `alta_volatilidad`; este comportamiento es **intencional** y deberá considerarse explícitamente en los gates de sizing de PR-26+.
 
 ## Follow-ups
 - Integrar régimen en `RiskEngine` como guardrail (por ejemplo: degradar sizing en `alta_volatilidad` y `transicion`).

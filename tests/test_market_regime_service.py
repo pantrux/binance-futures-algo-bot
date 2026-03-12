@@ -156,6 +156,22 @@ def test_regime_confidence_high_volatility_follows_volatility_score() -> None:
     assert confidence_high > confidence_low
 
 
+def test_regime_confidence_high_volatility_is_independent_from_trend_strength() -> None:
+    confidence_low_trend = MarketRegimeService._regime_confidence(
+        regime="alta_volatilidad",
+        trend_strength=10.0,
+        volatility_score=70.0,
+        momentum_score=50.0,
+    )
+    confidence_high_trend = MarketRegimeService._regime_confidence(
+        regime="alta_volatilidad",
+        trend_strength=90.0,
+        volatility_score=70.0,
+        momentum_score=50.0,
+    )
+    assert confidence_low_trend == confidence_high_trend == 70.0
+
+
 def test_regime_confidence_bullish_increases_with_momentum_when_others_constant() -> None:
     c_low_momentum = MarketRegimeService._regime_confidence(
         regime="tendencia_alcista",
