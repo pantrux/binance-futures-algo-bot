@@ -23,6 +23,7 @@ def test_risk_engine_approves_high_quality_setup():
     assert decision.approved is True
     assert decision.suggested_risk_pct > 0
     assert decision.max_position_notional > 0
+    assert decision.regime_confidence is not None
 
 
 def test_risk_engine_degrades_sizing_in_high_volatility_vs_trend_regime():

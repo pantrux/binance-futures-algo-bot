@@ -59,7 +59,7 @@ con clamp final a `max_single_trade_pct`.
 ## Consecuencias
 - Sizing más sensible al contexto real, no solo al score agregado.
 - Menor exposición en volatilidad alta severa y en transición.
-- Mejor trazabilidad para PR-27 (riesgo de portafolio/correlación), ya que el sizing por símbolo queda más contextualizado.
+- Mejor trazabilidad para PR-27 (riesgo de portafolio/correlación), ya que la salida de riesgo expone `market_regime` y `regime_confidence` junto al sizing aplicado.
 - Se mantiene compatibilidad hacia atrás: callers que no envían régimen siguen operando con fallback.
 
 ## Guardrails

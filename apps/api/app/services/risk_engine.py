@@ -207,6 +207,7 @@ class RiskEngine:
                 reason="Score/régimen insuficiente para abrir operación",
                 market_regime=regime,
                 score=score,
+                regime_confidence=regime_confidence,
             )
 
         available_risk_pct = max(self.policy.max_account_risk_pct - existing_risk_pct, 0)
@@ -220,6 +221,7 @@ class RiskEngine:
                 reason="Sin margen de riesgo disponible dentro del límite global del 5%",
                 market_regime=regime,
                 score=score,
+                regime_confidence=regime_confidence,
             )
 
         stop_distance = abs(entry_price - stop_loss)
@@ -231,6 +233,7 @@ class RiskEngine:
                 reason="Stop loss inválido: distancia cero",
                 market_regime=regime,
                 score=score,
+                regime_confidence=regime_confidence,
             )
 
         capital_at_risk = capital_usdt * (applied_risk_pct / 100)
@@ -244,4 +247,5 @@ class RiskEngine:
             reason="Operación aprobada por el motor de riesgo",
             market_regime=regime,
             score=score,
+            regime_confidence=regime_confidence,
         )

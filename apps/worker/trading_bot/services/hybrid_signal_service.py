@@ -131,7 +131,8 @@ class HybridSignalService:
         regime = None
         regime_confidence = None
         if isinstance(market_regime_snapshot, dict):
-            regime = market_regime_snapshot.get("regime")
+            raw_regime = market_regime_snapshot.get("regime")
+            regime = raw_regime if isinstance(raw_regime, str) else None
             regime_confidence = self._coerce_optional_number(market_regime_snapshot.get("regime_confidence"), default=None)
             if regime_confidence is not None:
                 regime_confidence = max(0.0, min(100.0, regime_confidence))

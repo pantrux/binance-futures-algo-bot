@@ -121,6 +121,30 @@ def test_hybrid_clamps_regime_confidence_to_valid_range():
     assert context.regime_confidence == 100.0
 
 
+def test_hybrid_coerces_invalid_regime_type_to_none():
+    snapshot = {
+        "symbol": "BTCUSDT",
+        "timeframe": "15m",
+        "last_candle_close_ms": 123,
+        "trend_bias": "bullish",
+        "momentum_bias": "bullish",
+        "volatility_regime": "medium",
+        "ema_spread_pct": 0.12,
+        "atr_pct": 1.0,
+        "rsi_14": 55.0,
+        "momentum_10": 2.0,
+    }
+    market = {"mark_price": 50000.0, "volume_24h": 1_000_000.0}
+    regime = {"regime": 123, "regime_confidence": 60.0}
+    service = HybridSignalService(api_client=FakeApiClient(snapshot=snapshot, market=market, market_regime=regime))
+
+    _, context, _, _, meta = asyncio.run(service.build_signal_pack("BTCUSDT"))
+
+    assert meta.source == "market"
+    assert context.market_regime is None
+    assert context.regime_confidence == 60.0
+
+
 def test_hybrid_falls_back_to_demo_on_api_error():
     demo = DemoSignalService()
     demo_signals, demo_context, demo_thesis, demo_levels = demo.build_signal_pack("ETHUSDT")

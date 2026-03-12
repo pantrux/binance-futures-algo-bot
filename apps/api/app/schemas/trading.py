@@ -38,3 +38,4 @@ class RiskDecision(BaseModel):
     reason: str
     market_regime: str
     score: float
+    regime_confidence: float | None = Field(default=None, ge=0, le=100)
