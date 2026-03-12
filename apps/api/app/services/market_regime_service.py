@@ -99,11 +99,15 @@ class MarketRegimeService:
         if regime == "rango_lateral":
             return round(max(0.0, min(100.0, ((100.0 - trend_strength) * 0.5) + (inverse_volatility * 0.5))), 4)
 
-        # "transicion" debería tener más confianza cuando el momentum es más neutral (cerca de 50)
-        # y cuando la volatilidad no es excesiva.
+        # "transicion" debería tener más confianza cuando el momentum es más neutral (cerca de 50),
+        # cuando la volatilidad no es excesiva y cuando la tendencia NO es fuerte (ambigüedad).
         momentum_neutrality = max(0.0, min(100.0, 100.0 - (abs(momentum_score - 50.0) * 2.0)))
+        trend_ambiguity = 100.0 - trend_strength
         return round(
-            max(0.0, min(100.0, (trend_strength * 0.35) + (momentum_neutrality * 0.3) + (inverse_volatility * 0.35))),
+            max(
+                0.0,
+                min(100.0, (trend_ambiguity * 0.35) + (momentum_neutrality * 0.3) + (inverse_volatility * 0.35)),
+            ),
             4,
         )
 

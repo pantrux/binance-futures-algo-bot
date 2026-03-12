@@ -44,4 +44,4 @@ def test_market_regime_snapshot_uses_provided_snapshots() -> None:
     assert snapshot.timeframe == "15m"
     assert snapshot.last_candle_close_ms == 123
     assert snapshot.regime == "transicion"
-    assert snapshot.regime_confidence == pytest.approx(72.98, abs=0.05)
+    assert snapshot.regime_confidence == pytest.approx(74.38, abs=0.05)

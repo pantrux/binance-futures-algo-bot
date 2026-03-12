@@ -26,6 +26,18 @@ def test_classify_regime_high_volatility_has_priority() -> None:
     assert regime == "alta_volatilidad"
 
 
+def test_classify_regime_high_volatility_beats_unknown_direction() -> None:
+    regime = MarketRegimeService._classify_regime(
+        trend_bias="unknown",
+        momentum_bias="unknown",
+        volatility_regime="high",
+        trend_strength=50.0,
+        volatility_score=90.0,
+        momentum_score=50.0,
+    )
+    assert regime == "alta_volatilidad"
+
+
 def test_classify_regime_bullish_trend() -> None:
     regime = MarketRegimeService._classify_regime(
         trend_bias="bullish",
