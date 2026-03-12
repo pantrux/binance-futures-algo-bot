@@ -1,4 +1,4 @@
-# ADR-028 — Guardrails de riesgo de portafolio y correlación multi-símbolo
+# ADR-028 — Riesgo de portafolio y correlación
 
 ## Estado
 Aceptado

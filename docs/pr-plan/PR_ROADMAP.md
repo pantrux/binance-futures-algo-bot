@@ -49,8 +49,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-24 | Resiliencia, recuperación y hardening operacional | ✅ Mergeado | backup/restore + DR + hardening de secretos/permisos |
 | PR-25 | Clasificador de régimen de mercado | ✅ Mergeado | clasificación de contexto de mercado para gating |
 | PR-26 | Sizing dinámico por volatilidad/riesgo | ✅ Mergeado | position sizing adaptativo por riesgo cuantitativo |
-| PR-27 | Riesgo de portafolio y correlación | 🟡 En progreso | límites de exposición multi-símbolo y correlación |
-| PR-28 | Gate de decisión final y circuit breakers avanzados | 🔵 Planificado | capa final de decisión y apagado seguro |
+| PR-27 | Riesgo de portafolio y correlación | ✅ Mergeado | límites de exposición multi-símbolo y correlación |
+| PR-28 | Gate de decisión final y circuit breakers avanzados | 🟡 En progreso | capa final de decisión y apagado seguro |
 | PR-29 | Router Binance Testnet | 🔵 Planificado | ejecución real en testnet con trazabilidad de órdenes |
 | PR-30 | Reconciliación y máquina de estados de ejecución | 🔵 Planificado | consistencia entre órdenes/posiciones/eventos |
 | PR-31 | Paridad paper vs testnet (shadow run) | 🔵 Planificado | reporte comparativo y brechas de comportamiento |
@@ -455,7 +455,7 @@ Escalar tamaño de posición según volatilidad y presupuesto de riesgo.
 ---
 
 ### PR-27 — Riesgo de portafolio y correlación
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Evitar sobreexposición agregada por posiciones correlacionadas.
@@ -468,7 +468,7 @@ Evitar sobreexposición agregada por posiciones correlacionadas.
 ---
 
 ### PR-28 — Gate de decisión final y circuit breakers avanzados
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Consolidar una capa final de autorización/rechazo de trade plan.
