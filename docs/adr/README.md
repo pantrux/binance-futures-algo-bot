@@ -24,6 +24,7 @@
 - `ADR-020-signoff-package-consolidation.md`
 - `ADR-021-complete-signoff-workflow.md`
 - `ADR-022-phase5-operational-closure.md`
+- `ADR-023-artifact-retention-policy.md`
 
 ## Archivados
 

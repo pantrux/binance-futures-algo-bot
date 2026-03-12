@@ -43,10 +43,10 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-18 | Cierre formal de fase operativa | ✅ Mergeado | cierre documental de fase 5 completado con criterios consolidados |
 | PR-19 | Orden documental y sync Outline idempotente | ✅ Mergeado | dedupe de Outline + estructura documental ordenada + script anti-duplicados |
 | PR-20 | Estabilizar worker Synology (one-shot sin restart loop) | ✅ Mergeado | `worker.restart="no"` + operación Synology estable sin loop |
-| PR-21 | Retención y gobierno de artifacts | 🟡 En progreso | política 30/60/90 días + limpieza automática + trazabilidad |
-| PR-22 | Observabilidad y alerting de infraestructura | 🔵 Planificado | alertas operacionales + SLO de pipeline |
-| PR-23 | Resiliencia y recuperación (DR) | 🔵 Planificado | backup/restore validado y playbook de recuperación |
-| PR-24 | Hardening de seguridad operacional | 🔵 Planificado | rotación de secretos, permisos y superficie de exposición |
+| PR-21 | Corrección documental post PR-19/PR-20 | ✅ Mergeado | roadmap/master-plan/runbook alineados + sync Outline validado |
+| PR-22 | Retención y gobierno de artifacts | 🟡 En progreso | política 30/60/90 días + limpieza automática + trazabilidad |
+| PR-23 | Observabilidad y alerting de infraestructura | 🔵 Planificado | alertas operacionales + SLO de pipeline |
+| PR-24 | Resiliencia, recuperación y hardening operacional | 🔵 Planificado | backup/restore + DR + hardening de secretos/permisos |
 | PR-25 | Clasificador de régimen de mercado | 🔵 Planificado | clasificación de contexto de mercado para gating |
 | PR-26 | Sizing dinámico por volatilidad/riesgo | 🔵 Planificado | position sizing adaptativo por riesgo cuantitativo |
 | PR-27 | Riesgo de portafolio y correlación | 🔵 Planificado | límites de exposición multi-símbolo y correlación |
@@ -372,21 +372,33 @@ Eliminar reinicios infinitos del worker en Synology y alinear operación con su 
 
 ---
 
-### PR-21 — Retención y gobierno de artifacts
+### PR-21 — Corrección documental post PR-19/PR-20
+**Estado:** ✅ Mergeado
+
+**Objetivo**
+Alinear documentación estratégica y operativa con la implementación real en Synology.
+
+**Entregables**
+- actualización de roadmap + PR roadmap + master plan + runbook
+- sincronización de Outline validada (`docs_synced=42`)
+
+---
+
+### PR-22 — Retención y gobierno de artifacts
 **Estado:** 🟡 En progreso
 
 **Objetivo**
 Controlar crecimiento de evidencia operativa y conservar sólo la historia útil para auditoría.
 
 **Entregables**
-- corrección documental post-merge de `PR-19` y `PR-20` (roadmap + PR roadmap + runbook)
-- política de retención (30/60/90 días)
-- cleanup automático de artifacts obsoletos
-- índice de evidencia por corrida
+- script `scripts/synology_artifact_retention.py`
+- target Make `synology-artifact-retention`
+- workflow `Synology Artifact Retention` (dispatch + schedule)
+- política 30/60/90 días y reporte JSON por corrida
 
 ---
 
-### PR-22 — Observabilidad y alerting de infraestructura
+### PR-23 — Observabilidad y alerting de infraestructura
 **Estado:** 🔵 Planificado
 
 **Objetivo**
@@ -399,29 +411,16 @@ Convertir fallos operativos en señales accionables antes de que impacten contin
 
 ---
 
-### PR-23 — Resiliencia y recuperación (DR)
+### PR-24 — Resiliencia, recuperación y hardening operacional
 **Estado:** 🔵 Planificado
 
 **Objetivo**
-Asegurar continuidad ante incidentes de infraestructura o corrupción operativa.
+Asegurar continuidad ante incidentes y reducir riesgo por exposición operativa.
 
 **Entregables**
-- backup/restore verificado
-- runbook de recuperación con pruebas
-- criterios de RTO/RPO documentados
-
----
-
-### PR-24 — Hardening de seguridad operacional
-**Estado:** 🔵 Planificado
-
-**Objetivo**
-Reducir riesgo operacional por exposición de secretos o configuración insegura.
-
-**Entregables**
-- inventario y rotación de secretos
+- backup/restore verificado + runbook DR con RTO/RPO
+- inventario/rotación de secretos
 - revisión de permisos/superficie expuesta
-- checklist de hardening continuo
 
 ---
 
