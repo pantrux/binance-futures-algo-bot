@@ -85,7 +85,15 @@ class RiskEngine:
         if regime == "transicion":
             trend_ambiguity = 100.0 - abs(market_state.trend_strength - 50.0) * 2.0
             return round(max(0.0, min(100.0, (trend_ambiguity * 0.55) + (inverse_volatility * 0.45))), 4)
-        return 0.0
+        if regime == "unknown":
+            return 0.0
+
+        # Fallback defensivo: solo alcanzable si se agrega un régimen nuevo sin actualizar esta función.
+        logger.warning(
+            "estimate_regime_confidence: régimen no reconocido '%s'; retornando confianza neutral 50.0",
+            regime,
+        )
+        return 50.0
 
     def aggregate_score(self, signals: SignalSnapshot, market_state: MarketState) -> float:
         weights = {

@@ -134,6 +134,21 @@ def test_risk_engine_rejects_if_score_below_dynamic_threshold():
     assert "insuficiente" in decision.reason.lower()
 
 
+def test_risk_engine_uses_neutral_confidence_for_unexpected_regime_name():
+    engine = RiskEngine()
+    confidence = engine.estimate_regime_confidence(
+        market_state=MarketState(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            volatility_pct=2.0,
+            trend_strength=70,
+            liquidity_score=90,
+        ),
+        regime="regimen_futuro_no_soportado",
+    )
+    assert confidence == 50.0
+
+
 def test_risk_engine_respects_custom_min_score_policy_threshold():
     engine = RiskEngine(policy=RiskPolicy(min_score_to_trade=55.0))
     decision = engine.evaluate(
