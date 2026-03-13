@@ -70,6 +70,10 @@ def test_daily_summary_aggregates_counts_and_scores():
     assert summary.blocked_trade_plans == 1
     assert summary.paper_executed_trade_plans == 1
     assert summary.testnet_executed_trade_plans == 1
+    assert summary.approved_trade_plans_24h == 1
+    assert summary.blocked_trade_plans_24h == 1
+    assert summary.paper_executed_trade_plans_24h == 1
+    assert summary.testnet_executed_trade_plans_24h == 1
     assert summary.avg_aggregate_score == 65.0
     assert summary.critical_risk_events_24h == 1
     assert summary.warning_risk_events_24h == 1
@@ -79,6 +83,8 @@ def test_alerts_evaluate_flags_expected_conditions():
     db = build_db()
     p1 = seed_trade_plan(db, status="blocked", score=40)
     seed_trade_plan(db, status="blocked", score=42)
+    seed_trade_plan(db, status="blocked", score=44)
+    seed_trade_plan(db, status="blocked", score=46)
     seed_trade_plan(db, status="approved", score=45)
     seed_trade_plan(db, status="paper_executed", score=48)
     seed_trade_plan(db, status="paper_executed", score=50)

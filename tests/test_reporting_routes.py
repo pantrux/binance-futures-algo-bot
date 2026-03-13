@@ -69,6 +69,8 @@ def test_reporting_daily_summary_route_returns_payload():
     assert payload["total_trade_plans"] == 2
     assert payload["approved_trade_plans"] == 1
     assert payload["blocked_trade_plans"] == 1
+    assert payload["approved_trade_plans_24h"] == 1
+    assert payload["blocked_trade_plans_24h"] == 1
 
 
 def test_alerts_evaluate_route_returns_non_healthy_when_critical_events_high():

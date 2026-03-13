@@ -12,40 +12,44 @@ class ProductionReportingService:
         self.db = db
 
     def daily_summary(self) -> DailyProductionSummary:
-        total = self.db.query(func.count(TradePlan.id)).scalar() or 0
-        approved = self.db.query(func.count(TradePlan.id)).filter(TradePlan.status == "approved").scalar() or 0
-        blocked = self.db.query(func.count(TradePlan.id)).filter(TradePlan.status == "blocked").scalar() or 0
-        paper_executed = self.db.query(func.count(TradePlan.id)).filter(TradePlan.status == "paper_executed").scalar() or 0
-        testnet_executed = self.db.query(func.count(TradePlan.id)).filter(TradePlan.status == "testnet_executed").scalar() or 0
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+
+        trade_plan_counts = {
+            str(status): int(count)
+            for status, count in self.db.query(TradePlan.status, func.count(TradePlan.id))
+            .group_by(TradePlan.status)
+            .all()
+        }
+        recent_trade_plan_counts = {
+            str(status): int(count)
+            for status, count in self.db.query(TradePlan.status, func.count(TradePlan.id))
+            .filter(TradePlan.created_at >= cutoff)
+            .group_by(TradePlan.status)
+            .all()
+        }
 
         avg_score = self.db.query(func.avg(TradePlan.aggregate_score)).scalar()
-        avg_score_rounded = round(float(avg_score), 4) if avg_score is not None else None
-
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-        critical_24h = (
-            self.db.query(func.count(RiskEvent.id))
+        risk_event_counts_24h = {
+            str(severity): int(count)
+            for severity, count in self.db.query(RiskEvent.severity, func.count(RiskEvent.id))
             .filter(RiskEvent.created_at >= cutoff)
-            .filter(RiskEvent.severity == "critical")
-            .scalar()
-            or 0
-        )
-        warning_24h = (
-            self.db.query(func.count(RiskEvent.id))
-            .filter(RiskEvent.created_at >= cutoff)
-            .filter(RiskEvent.severity == "warning")
-            .scalar()
-            or 0
-        )
+            .group_by(RiskEvent.severity)
+            .all()
+        }
 
         return DailyProductionSummary(
-            total_trade_plans=int(total),
-            approved_trade_plans=int(approved),
-            blocked_trade_plans=int(blocked),
-            paper_executed_trade_plans=int(paper_executed),
-            testnet_executed_trade_plans=int(testnet_executed),
-            avg_aggregate_score=avg_score_rounded,
-            critical_risk_events_24h=int(critical_24h),
-            warning_risk_events_24h=int(warning_24h),
+            total_trade_plans=sum(trade_plan_counts.values()),
+            approved_trade_plans=trade_plan_counts.get("approved", 0),
+            blocked_trade_plans=trade_plan_counts.get("blocked", 0),
+            paper_executed_trade_plans=trade_plan_counts.get("paper_executed", 0),
+            testnet_executed_trade_plans=trade_plan_counts.get("testnet_executed", 0),
+            approved_trade_plans_24h=recent_trade_plan_counts.get("approved", 0),
+            blocked_trade_plans_24h=recent_trade_plan_counts.get("blocked", 0),
+            paper_executed_trade_plans_24h=recent_trade_plan_counts.get("paper_executed", 0),
+            testnet_executed_trade_plans_24h=recent_trade_plan_counts.get("testnet_executed", 0),
+            avg_aggregate_score=round(float(avg_score), 4) if avg_score is not None else None,
+            critical_risk_events_24h=risk_event_counts_24h.get("critical", 0),
+            warning_risk_events_24h=risk_event_counts_24h.get("warning", 0),
         )
 
     def evaluate_alerts(self) -> AlertEvaluationResponse:
@@ -61,21 +65,22 @@ class ProductionReportingService:
                 )
             )
 
-        if summary.blocked_trade_plans > summary.approved_trade_plans and summary.total_trade_plans >= 5:
+        recent_conversion_population = summary.approved_trade_plans_24h + summary.blocked_trade_plans_24h
+        if summary.blocked_trade_plans_24h > summary.approved_trade_plans_24h and recent_conversion_population >= 5:
             alerts.append(
                 AlertItem(
                     severity="warning",
                     category="trade_plan_conversion",
-                    message="La tasa de bloqueo supera aprobaciones en el período observado",
+                    message="La tasa de bloqueo en las últimas 24h supera a las aprobaciones",
                 )
             )
 
-        if summary.testnet_executed_trade_plans == 0 and summary.paper_executed_trade_plans > 0:
+        if summary.testnet_executed_trade_plans_24h == 0 and summary.paper_executed_trade_plans_24h > 0:
             alerts.append(
                 AlertItem(
                     severity="warning",
                     category="execution_mode",
-                    message="Hay ejecuciones paper pero ninguna ejecución testnet",
+                    message="Hay ejecuciones paper en las últimas 24h pero ninguna ejecución testnet",
                 )
             )
 
