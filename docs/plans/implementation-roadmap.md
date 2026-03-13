@@ -33,7 +33,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 6 — Infraestructura recurrente | 🟡 En progreso | 85% | PR-22..PR-24 | Operación continua endurecida (SRE + continuidad) |
 | Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
 | Fase 8 — Ejecución exchange robusta | 🔵 Planificada | 0% | PR-29..PR-31 | Router testnet + reconciliación + paridad paper/testnet |
-| Fase 9 — Go-live readiness | 🔵 Planificada | 0% | PR-32..PR-34 | Criterios formales de transición y rampa controlada |
+| Fase 9 — Go-live readiness | 🔵 Planificada | 0% | PR-33..PR-35 | Criterios formales de transición y rampa controlada |
 
 ---
 
@@ -94,12 +94,13 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 ### PR-29 — Router Binance Testnet (orden real en entorno seguro)
 ### PR-30 — Reconciliación de órdenes/posiciones y máquina de estados
 ### PR-31 — Paridad paper vs testnet + shadow run
+### PR-32 — Alerting y reporting de producción
 
 ## Fase 9 — Go-live readiness
 
-### PR-32 — Backtesting/walk-forward y benchmark de estrategia
-### PR-33 — Checklist formal de transición y política de rampa de capital
-### PR-34 — Cutover controlado (si y solo si todos los gates pasan)
+### PR-33 — Backtesting/walk-forward y benchmark de estrategia
+### PR-34 — Checklist formal de transición y política de rampa de capital
+### PR-35 — Cutover controlado (si y solo si todos los gates pasan)
 
 ---
 

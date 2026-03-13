@@ -43,11 +43,11 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Entrega: régimen de mercado, sizing dinámico, correlación de portafolio, gate final avanzado.
 
 ### Etapa F — Ejecución robusta en exchange
-- PR-29 a PR-31.
-- Entrega: router testnet, reconciliación/state machine, paridad paper-vs-testnet.
+- PR-29 a PR-32.
+- Entrega: router testnet, reconciliación/state machine, paridad paper-vs-testnet y visibilidad operativa diaria.
 
 ### Etapa G — Go-live readiness
-- PR-32 a PR-34.
+- PR-33 a PR-35.
 - Entrega: backtesting/walk-forward, checklist de transición, cutover controlado.
 
 ## Reglas inmutables del plan

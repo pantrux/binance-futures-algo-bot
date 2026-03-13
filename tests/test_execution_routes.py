@@ -6,7 +6,7 @@ from starlette.testclient import TestClient
 from apps.api.app.api.routes import router
 from apps.api.app.db.base import Base
 from apps.api.app.db.models import Order, Position, TradePlan
-from apps.api.app.db.session import get_db
+from apps.api.app.api.deps import get_db
 from fastapi import FastAPI
 
 
@@ -52,7 +52,7 @@ def seed_trade_plan(db: Session, *, symbol: str, status: str, side: str = "long"
 
 
 def test_reconcile_execution_route_returns_report():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(bind=engine)
     db = SessionLocal()
@@ -99,7 +99,7 @@ def test_reconcile_execution_route_returns_report():
 
 
 def test_execution_parity_route_returns_pairs():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(bind=engine)
     db = SessionLocal()

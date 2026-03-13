@@ -9,6 +9,7 @@ from apps.api.app.observability.metrics import api_metrics
 from apps.api.app.schemas.dashboard import DashboardSummary
 from apps.api.app.schemas.execution_parity import ExecutionParityReport
 from apps.api.app.schemas.execution_reconciliation import ReconciliationReport
+from apps.api.app.schemas.production_reporting import AlertEvaluationResponse, DailyProductionSummary
 from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.market_data import MarketCandleRead, MarketIngestionResponse, MarketSnapshotRead
 from apps.api.app.schemas.market_regime import MarketRegimeSnapshot
@@ -26,6 +27,7 @@ from apps.api.app.services.execution_state_machine_service import ExecutionState
 from apps.api.app.services.indicator_service import IndicatorService
 from apps.api.app.services.market_regime_service import MarketRegimeService
 from apps.api.app.services.paper_trading_service import PaperTradingService
+from apps.api.app.services.production_reporting_service import ProductionReportingService
 from apps.api.app.services.risk_engine import RiskEngine
 from apps.api.app.services.signal_service import SignalService
 from apps.api.app.services.testnet_trading_service import BinanceTestnetTradingService
@@ -178,3 +180,13 @@ def reconcile_execution(trade_plan_id: int, db: Session = Depends(get_db)) -> Re
 @router.get("/execution/parity/{symbol}", response_model=ExecutionParityReport)
 def execution_parity(symbol: str, limit: int = Query(default=50, ge=1, le=500), db: Session = Depends(get_db)) -> ExecutionParityReport:
     return ExecutionParityService(db).build_report(symbol=symbol.upper(), limit=limit)
+
+
+@router.get("/reporting/daily-summary", response_model=DailyProductionSummary)
+def reporting_daily_summary(db: Session = Depends(get_db)) -> DailyProductionSummary:
+    return ProductionReportingService(db).daily_summary()
+
+
+@router.get("/alerts/evaluate", response_model=AlertEvaluationResponse)
+def alerts_evaluate(db: Session = Depends(get_db)) -> AlertEvaluationResponse:
+    return ProductionReportingService(db).evaluate_alerts()
