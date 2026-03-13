@@ -91,10 +91,11 @@ class BacktestingService:
             testing_with_warmup_rows = rows[warmup_start : start + payload.training_window + payload.testing_window]
             testing_with_warmup_closes = [row.close_price for row in testing_with_warmup_rows]
             warmup_offset = len(testing_with_warmup_closes) - len(testing_closes)
+            window_start_capital = oos_capital
             out_of_sample_strategy = self._simulate_strategy(
                 closes=testing_with_warmup_closes,
                 parameters=selected_parameters,
-                initial_capital=oos_capital,
+                initial_capital=window_start_capital,
                 fee_rate=payload.fee_rate,
                 start_index=warmup_offset,
             )
@@ -105,7 +106,7 @@ class BacktestingService:
             full_oos_benchmark_closes.extend(testing_closes)
             out_of_sample_benchmark = self._simulate_buy_and_hold(
                 closes=testing_closes,
-                initial_capital=oos_capital,
+                initial_capital=window_start_capital,
                 fee_rate=payload.fee_rate,
             )
 
@@ -326,6 +327,7 @@ class BacktestingService:
         for index, price in enumerate(closes):
             if index < start_index:
                 continue
+
             if entries[index] and units == 0.0 and cash > 0:
                 units = (cash * (1 - fee_rate)) / price
                 entry_cost = cash
