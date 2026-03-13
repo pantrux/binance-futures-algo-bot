@@ -69,8 +69,18 @@ class FinalDecisionGate:
                 )
             )
 
-        portfolio_after = risk_decision.portfolio_risk_pct_after or 0.0
-        if portfolio_after >= self.policy.max_portfolio_risk_pct:
+        portfolio_after = risk_decision.portfolio_risk_pct_after
+        if portfolio_after is None:
+            triggered_breakers.append("portfolio_risk_unknown")
+            events.append(
+                RiskEventDetail(
+                    event_type="circuit_breaker_portfolio_risk_unknown",
+                    severity="critical",
+                    message="Circuit breaker activado por riesgo de portafolio desconocido",
+                    context={"threshold": self.policy.max_portfolio_risk_pct},
+                )
+            )
+        elif portfolio_after >= self.policy.max_portfolio_risk_pct:
             triggered_breakers.append("portfolio_overheat")
             events.append(
                 RiskEventDetail(
