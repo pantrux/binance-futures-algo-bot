@@ -1,9 +1,9 @@
+import json
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.db.base import Base
-import json
-
 from apps.api.app.db.models import RiskEvent, TradePlan
 from apps.api.app.schemas.trade_plan import TradePlanCreateRequest
 from apps.api.app.schemas.trading import MarketState, PortfolioState, PositionExposure, SignalSnapshot
