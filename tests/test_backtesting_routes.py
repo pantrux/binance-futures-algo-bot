@@ -5,8 +5,8 @@ from sqlalchemy.pool import StaticPool
 
 from apps.api.app.api.routes import run_backtesting
 from apps.api.app.db.base import Base
-from apps.api.app.db.models import MarketCandle
 from apps.api.app.schemas.backtesting import BacktestRunRequest
+from tests.conftest import seed_walk_forward_candles
 
 
 def _make_db():
@@ -16,34 +16,10 @@ def _make_db():
     return TestingSessionLocal()
 
 
-def _seed_walk_forward_candles(db, symbol: str = "BTCUSDT", timeframe: str = "15m", candles: int = 320) -> None:
-    close = 100.0
-    phases = [1.4] * 18 + [-1.1] * 12 + [1.8] * 20 + [-1.5] * 14 + [1.0] * 16 + [-0.9] * 10
-    for index in range(candles):
-        step = phases[index % len(phases)]
-        previous_close = close
-        close = max(10.0, close + step)
-        db.add(MarketCandle(
-            symbol=symbol,
-            timeframe=timeframe,
-            open_time_ms=index * 60_000,
-            close_time_ms=(index + 1) * 60_000,
-            open_price=previous_close,
-            high_price=max(previous_close, close) + 0.8,
-            low_price=min(previous_close, close) - 0.8,
-            close_price=close,
-            volume=100 + index,
-            quote_volume=1000 + index,
-            trades_count=10 + index,
-            source="binance",
-        ))
-    db.commit()
-
-
 def test_backtesting_route_returns_backtest_with_walk_forward_summary():
     db = _make_db()
     try:
-        _seed_walk_forward_candles(db)
+        seed_walk_forward_candles(db)
         response = run_backtesting(
             BacktestRunRequest(
                 symbol="BTCUSDT",

@@ -61,12 +61,11 @@ class BacktestingService:
         oos_trade_pnls: list[float] = []
         oos_equity_curve: list[float] = [payload.initial_capital]
         oos_capital = payload.initial_capital
-        benchmark_trade_pnls: list[float] = []
-        benchmark_equity_curve: list[float] = [payload.initial_capital]
-        benchmark_capital = payload.initial_capital
+        full_oos_benchmark_closes: list[float] = []
 
         last_window_start = len(rows) - (payload.training_window + payload.testing_window)
         window_index = 1
+        max_warmup = max(parameter.ema_slow_period for parameter in self.CANDIDATE_PARAMETERS)
         for start in range(0, last_window_start + 1, payload.testing_window):
             training_rows = rows[start : start + payload.training_window]
             testing_rows = rows[start + payload.training_window : start + payload.training_window + payload.testing_window]
@@ -76,11 +75,10 @@ class BacktestingService:
             training_closes = [row.close_price for row in training_rows]
             testing_closes = [row.close_price for row in testing_rows]
 
-            selected_parameters, in_sample_strategy = self._select_best_simulation(
+            selected_parameters, in_sample_strategy = self._select_best_simulation_with_parameters(
                 closes=training_closes,
                 initial_capital=payload.initial_capital,
                 fee_rate=payload.fee_rate,
-                return_parameters=True,
             )
             in_sample_returns.append(in_sample_strategy.metrics.total_return_pct)
             in_sample_benchmark = self._simulate_buy_and_hold(
@@ -89,24 +87,30 @@ class BacktestingService:
                 fee_rate=payload.fee_rate,
             )
 
+            warmup_start = max(0, start + payload.training_window - max_warmup)
+            testing_with_warmup_rows = rows[warmup_start : start + payload.training_window + payload.testing_window]
+            testing_with_warmup_closes = [row.close_price for row in testing_with_warmup_rows]
+            warmup_offset = len(testing_with_warmup_closes) - len(testing_closes)
             out_of_sample_strategy = self._simulate_strategy(
-                closes=testing_closes,
+                closes=testing_with_warmup_closes,
                 parameters=selected_parameters,
                 initial_capital=oos_capital,
                 fee_rate=payload.fee_rate,
+                start_index=warmup_offset,
             )
             oos_capital = out_of_sample_strategy.ending_capital
             oos_trade_pnls.extend(out_of_sample_strategy.trade_pnls)
             oos_equity_curve.extend(out_of_sample_strategy.equity_curve[1:])
 
+            if not full_oos_benchmark_closes:
+                full_oos_benchmark_closes.extend(testing_closes)
+            else:
+                full_oos_benchmark_closes.extend(testing_closes[1:])
             out_of_sample_benchmark = self._simulate_buy_and_hold(
                 closes=testing_closes,
-                initial_capital=benchmark_capital,
+                initial_capital=payload.initial_capital,
                 fee_rate=payload.fee_rate,
             )
-            benchmark_capital = out_of_sample_benchmark.ending_capital
-            benchmark_trade_pnls.extend(out_of_sample_benchmark.trade_pnls)
-            benchmark_equity_curve.extend(out_of_sample_benchmark.equity_curve[1:])
 
             windows.append(
                 BacktestWindowResult(
@@ -124,6 +128,12 @@ class BacktestingService:
             )
             window_index += 1
 
+        full_oos_benchmark = self._simulate_buy_and_hold(
+            closes=full_oos_benchmark_closes,
+            initial_capital=payload.initial_capital,
+            fee_rate=payload.fee_rate,
+        )
+
         walk_forward = WalkForwardSummary(
             windows_count=len(windows),
             in_sample_avg_return_pct=round(fmean(in_sample_returns), 6) if in_sample_returns else 0.0,
@@ -133,12 +143,7 @@ class BacktestingService:
                 trade_pnls=oos_trade_pnls,
                 equity_curve=oos_equity_curve,
             ),
-            out_of_sample_benchmark=self._build_metrics(
-                initial_capital=payload.initial_capital,
-                ending_capital=benchmark_capital,
-                trade_pnls=benchmark_trade_pnls,
-                equity_curve=benchmark_equity_curve,
-            ),
+            out_of_sample_benchmark=full_oos_benchmark.metrics,
             windows=windows,
         )
 
@@ -211,8 +216,19 @@ class BacktestingService:
         closes: list[float],
         initial_capital: float,
         fee_rate: float,
-        return_parameters: bool = False,
-    ) -> _SimulationOutput | tuple[BacktestStrategyParameters, _SimulationOutput]:
+    ) -> _SimulationOutput:
+        return self._select_best_simulation_with_parameters(
+            closes=closes,
+            initial_capital=initial_capital,
+            fee_rate=fee_rate,
+        )[1]
+
+    def _select_best_simulation_with_parameters(
+        self,
+        closes: list[float],
+        initial_capital: float,
+        fee_rate: float,
+    ) -> tuple[BacktestStrategyParameters, _SimulationOutput]:
         best_parameters = self.CANDIDATE_PARAMETERS[0]
         best_result = self._simulate_strategy(
             closes=closes,
@@ -230,9 +246,7 @@ class BacktestingService:
             if self._is_better_result(candidate_result, best_result):
                 best_parameters = parameters
                 best_result = candidate_result
-        if return_parameters:
-            return best_parameters, best_result
-        return best_result
+        return best_parameters, best_result
 
     @staticmethod
     def _is_better_result(candidate: _SimulationOutput, current: _SimulationOutput) -> bool:
@@ -248,6 +262,7 @@ class BacktestingService:
         parameters: BacktestStrategyParameters,
         initial_capital: float,
         fee_rate: float,
+        start_index: int = 0,
     ) -> _SimulationOutput:
         ema_fast = self._ema_series(closes, parameters.ema_fast_period)
         ema_slow = self._ema_series(closes, parameters.ema_slow_period)
@@ -255,7 +270,7 @@ class BacktestingService:
 
         entries = [False] * len(closes)
         exits = [False] * len(closes)
-        for index in range(1, len(closes)):
+        for index in range(max(1, start_index), len(closes)):
             current_fast = ema_fast[index]
             current_slow = ema_slow[index]
             previous_fast = ema_fast[index - 1]
@@ -274,6 +289,7 @@ class BacktestingService:
             exits=exits,
             initial_capital=initial_capital,
             fee_rate=fee_rate,
+            start_index=start_index,
         )
 
     def _simulate_buy_and_hold(
@@ -302,14 +318,18 @@ class BacktestingService:
         exits: list[bool],
         initial_capital: float,
         fee_rate: float,
+        start_index: int = 0,
     ) -> _SimulationOutput:
         cash = initial_capital
         units = 0.0
         entry_cost = 0.0
         trade_pnls: list[float] = []
-        equity_curve = [initial_capital]
+        baseline_equity = initial_capital if start_index == 0 else initial_capital
+        equity_curve = [baseline_equity]
 
         for index, price in enumerate(closes):
+            if index < start_index:
+                continue
             if entries[index] and units == 0.0 and cash > 0:
                 units = (cash * (1 - fee_rate)) / price
                 entry_cost = cash
@@ -351,11 +371,7 @@ class BacktestingService:
     ) -> BacktestMetrics:
         wins = [pnl for pnl in trade_pnls if pnl > 0]
         losses = [pnl for pnl in trade_pnls if pnl < 0]
-        profit_factor = None
-        if losses:
-            profit_factor = round(sum(wins) / abs(sum(losses)), 6)
-        elif wins:
-            profit_factor = None
+        profit_factor = round(sum(wins) / abs(sum(losses)), 6) if losses else None
 
         win_rate_pct = round((len(wins) / len(trade_pnls)) * 100, 6) if trade_pnls else 0.0
         max_drawdown_pct = BacktestingService._max_drawdown_pct(equity_curve)
