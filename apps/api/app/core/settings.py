@@ -13,7 +13,10 @@ class Settings(BaseSettings):
     postgres_dsn: str = "postgresql+psycopg://tradingbot:change-me@localhost:5432/tradingbot"
     redis_url: str = "redis://localhost:6379/0"
     binance_futures_base_url: str = "https://testnet.binancefuture.com"
+    binance_api_key: SecretStr = SecretStr("")
+    binance_api_secret: SecretStr = SecretStr("")
     paper_trading: bool = True
+    testnet_execution_enabled: bool = False
     metrics_api_key: SecretStr = SecretStr("")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

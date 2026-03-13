@@ -5,6 +5,7 @@ import sys
 
 from apps.worker.trading_bot.config.settings import WorkerSettings
 from apps.worker.trading_bot.services.api_client import TradingBotApiClient
+from apps.worker.trading_bot.services.binance_testnet_router import BinanceTestnetRouter
 from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalService
 
 logger = logging.getLogger("apps.worker.observability")
@@ -38,6 +39,7 @@ async def process_symbol(
     settings: WorkerSettings,
     signal_service: HybridSignalService,
     api_client: TradingBotApiClient,
+    testnet_router: BinanceTestnetRouter,
 ) -> bool:
     signals, context, thesis, levels, meta = await signal_service.build_signal_pack(symbol)
     payload = {
@@ -67,23 +69,48 @@ async def process_symbol(
     }
     created = await api_client.create_trade_plan(payload)
     log_event("trade_plan_created", symbol=symbol, source=meta.source, reason=meta.reason, trade_plan=created)
-    if settings.paper_trading:
-        if created.get("status") != "approved":
-            log_event(
-                "paper_trade_skipped_not_approved",
-                symbol=symbol,
-                status=created.get("status"),
-                trade_plan_id=created.get("id"),
-            )
-            return True
+    if created.get("status") != "approved":
+        log_event(
+            "trade_execution_skipped_not_approved",
+            symbol=symbol,
+            status=created.get("status"),
+            trade_plan_id=created.get("id"),
+        )
+        return True
 
-        trade_plan_id = created.get("id")
-        if not trade_plan_id:
-            log_event("paper_trade_skip_missing_id", symbol=symbol, trade_plan=created)
-            return False
+    trade_plan_id = created.get("id")
+    if not trade_plan_id:
+        log_event("trade_execution_skip_missing_id", symbol=symbol, trade_plan=created)
+        return False
+
+    if settings.paper_trading:
         executed = await api_client.execute_paper_trade(trade_plan_id)
         log_event("paper_trade_executed", symbol=symbol, execution=executed)
-    return True
+        return True
+
+    testnet_execution = await testnet_router.execute_trade_plan(symbol=symbol, trade_plan=created)
+    log_event("testnet_trade_execution_result", symbol=symbol, execution=testnet_execution)
+
+    if testnet_execution.get("executed"):
+        return True
+
+    if settings.testnet_fallback_to_paper:
+        executed = await api_client.execute_paper_trade(trade_plan_id)
+        log_event(
+            "paper_trade_fallback_executed",
+            symbol=symbol,
+            reason=testnet_execution.get("reason"),
+            execution=executed,
+        )
+        return True
+
+    return testnet_execution.get("reason") in {
+        "testnet_execution_disabled",
+        "global_kill_switch_enabled",
+        "symbol_kill_switch_enabled",
+        "trade_plan_not_approved",
+        "trade_plan_missing_id",
+    }
 
 
 async def main() -> None:
@@ -96,9 +123,15 @@ async def main() -> None:
         timeframe=settings.default_signal_timeframe,
         limit=settings.signal_snapshot_limit,
     )
+    testnet_router = BinanceTestnetRouter(
+        api_client=api_client,
+        execution_enabled=settings.testnet_execution_enabled,
+        global_kill_switch=settings.testnet_global_kill_switch,
+        kill_switch_symbols=settings.testnet_kill_switch_symbols,
+    )
 
     results = await asyncio.gather(
-        *(process_symbol(symbol, settings, signal_service, api_client) for symbol in settings.symbols),
+        *(process_symbol(symbol, settings, signal_service, api_client, testnet_router) for symbol in settings.symbols),
         return_exceptions=True,
     )
 

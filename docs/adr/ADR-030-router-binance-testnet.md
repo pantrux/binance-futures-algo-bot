@@ -1,7 +1,7 @@
 # ADR-030 — Router Binance Testnet y kill-switch operativo
 
 ## Estado
-Propuesto
+Aceptado
 
 ## Contexto
 Tras PR-28 el sistema tiene gate final y circuit breakers, pero aún no ejecuta órdenes reales en exchange testnet desde un router dedicado con garantías de seguridad operacional.
@@ -12,14 +12,25 @@ Tras PR-28 el sistema tiene gate final y circuit breakers, pero aún no ejecuta 
 - mantener modo paper como fallback explícito,
 - auditar cada intento/envío/rechazo de orden con trazabilidad consistente.
 
-## Decisión preliminar
+## Decisión
 Separar ejecución real en un módulo router específico y mantener el `TradePlanService` como productor de planes, no ejecutor directo.
 
-## Entregables previstos
-1. Servicio `binance_testnet_router.py` en worker.
-2. Verificaciones de preflight (credenciales, conectividad, flags de seguridad).
-3. Kill-switch operativo (global + por símbolo + por breaker crítico).
-4. Tests unitarios/integración de rutas de envío y bloqueo.
+## Implementación aprobada (PR-29)
+1. `apps/worker/trading_bot/services/binance_testnet_router.py`:
+   - preflight de ejecución por flags,
+   - kill-switch global y por símbolo,
+   - despacho a endpoint API de ejecución testnet.
+2. `apps/api/app/services/testnet_trading_service.py`:
+   - envío de orden `MARKET` a Binance Futures Testnet con firma,
+   - persistencia de `Order`/`Position` y transición de `TradePlan` a `testnet_executed`,
+   - manejo de errores con `RiskEvent` auditable.
+3. Endpoints/API client:
+   - `POST /testnet-trading/execute/{trade_plan_id}`,
+   - `TradingBotApiClient.execute_testnet_trade(...)`.
+4. Guardrails:
+   - `testnet_execution_enabled` default `False` (deny-by-default),
+   - fallback opcional a paper trading en worker (`testnet_fallback_to_paper`).
+5. Tests unitarios/integración para router y servicio testnet.
 
 ## Riesgos
 - Desalineación entre flags de seguridad y path de ejecución.
