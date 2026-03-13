@@ -98,7 +98,6 @@ def test_is_better_result_uses_tolerance_before_drawdown_tiebreak():
             trades_count=4,
             ending_capital=1100.0,
         ),
-        ending_capital=1100.0,
         trade_pnls=[10.0],
         equity_curve=[1000.0, 1100.0],
     )
@@ -111,7 +110,6 @@ def test_is_better_result_uses_tolerance_before_drawdown_tiebreak():
             trades_count=4,
             ending_capital=1100.0,
         ),
-        ending_capital=1100.0,
         trade_pnls=[10.0],
         equity_curve=[1000.0, 1100.0],
     )

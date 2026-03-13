@@ -27,7 +27,6 @@ class BacktestingDataNotFoundError(BacktestingError):
 @dataclass(frozen=True)
 class _SimulationOutput:
     metrics: BacktestMetrics
-    ending_capital: float
     trade_pnls: list[float]
     equity_curve: list[float]
 
@@ -115,7 +114,7 @@ class BacktestingService:
                 fee_rate=payload.fee_rate,
                 start_index=warmup_offset,
             )
-            oos_capital = out_of_sample_strategy.ending_capital
+            oos_capital = out_of_sample_strategy.metrics.ending_capital
             oos_trade_pnls.extend(out_of_sample_strategy.trade_pnls)
             oos_equity_curve.extend(out_of_sample_strategy.equity_curve[1:])
 
@@ -294,7 +293,10 @@ class BacktestingService:
 
         entries = [False] * len(closes)
         exits = [False] * len(closes)
-        for index in range(max(1, start_index), len(closes)):
+        signal_start_index = max(1, start_index)
+        # Los candles previos al offset solo calientan indicadores; no deben generar
+        # señales efectivas para que la depuración coincida con la ventana OOS real.
+        for index in range(signal_start_index, len(closes)):
             current_fast = ema_fast[index]
             current_slow = ema_slow[index]
             previous_fast = ema_fast[index - 1]
@@ -381,7 +383,6 @@ class BacktestingService:
         )
         return _SimulationOutput(
             metrics=metrics,
-            ending_capital=round(cash, 6),
             trade_pnls=trade_pnls,
             equity_curve=equity_curve,
         )
