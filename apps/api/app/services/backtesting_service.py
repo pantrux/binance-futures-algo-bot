@@ -289,7 +289,7 @@ class BacktestingService:
     ) -> _SimulationOutput:
         ema_fast = self._ema_series(closes, parameters.ema_fast_period)
         ema_slow = self._ema_series(closes, parameters.ema_slow_period)
-        rsi = self._rsi_series(closes, self.RSI_PERIOD)
+        rsi = self._rsi_series(closes, period=self.RSI_PERIOD)
 
         entries = [False] * len(closes)
         exits = [False] * len(closes)
@@ -370,6 +370,7 @@ class BacktestingService:
             equity_curve.append(round(equity, 6))
 
         if units > 0.0:
+            assert closes, "closes no puede estar vacío si hay unidades abiertas"
             final_cash = units * closes[-1] * (1 - fee_rate)
             trade_pnls.append(final_cash - entry_cost)
             cash = final_cash

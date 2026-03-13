@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from apps.api.app.db.base import Base
 from apps.api.app.schemas.backtesting import BacktestMetrics, BacktestRunRequest, BacktestStrategyParameters
@@ -8,7 +9,7 @@ from tests.conftest import seed_walk_forward_candles
 
 
 def test_backtesting_service_returns_metrics_and_walk_forward_windows():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     db = Session()
@@ -49,7 +50,7 @@ def test_backtesting_service_returns_metrics_and_walk_forward_windows():
 
 
 def test_backtesting_service_raises_when_walk_forward_windows_do_not_fit():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     db = Session()
