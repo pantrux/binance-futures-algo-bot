@@ -22,6 +22,8 @@ Separar ejecución real en un módulo router específico y mantener el `TradePla
    - despacho a endpoint API de ejecución testnet.
 2. `apps/api/app/services/testnet_trading_service.py`:
    - envío de orden `MARKET` a Binance Futures Testnet con firma,
+   - normalización de quantity por `LOT_SIZE.stepSize` (exchange info),
+   - lectura de leverage real por símbolo (`positionRisk`) con fallback controlado,
    - persistencia de `Order`/`Position` y transición de `TradePlan` a `testnet_executed`,
    - manejo de errores con `RiskEvent` auditable.
 3. Endpoints/API client:

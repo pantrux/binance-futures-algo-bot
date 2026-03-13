@@ -9,6 +9,15 @@ from apps.api.app.services.testnet_trading_service import BinanceTestnetTradingS
 
 
 class FakeBinanceClient:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        assert symbol
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        assert symbol
+        assert recv_window >= 0
+        return 10
+
     async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
         assert symbol
         assert side in {"BUY", "SELL"}
@@ -25,6 +34,12 @@ class FakeBinanceClient:
 
 
 class FakeBinanceClientZeroAvgPrice:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 3
+
     async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
         return {
             "orderId": 123,
@@ -36,8 +51,25 @@ class FakeBinanceClientZeroAvgPrice:
 
 
 class FakeBinanceClientMissingCredentials:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 1
+
     async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
         raise RuntimeError("binance_credentials_missing")
+
+
+class FakeBinanceClientMissingStepSize:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        raise RuntimeError("symbol_step_size_not_found:BTCUSDT")
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 1
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        raise AssertionError("No debería llamar place_market_order cuando falta step size")
 
 
 def build_db():
@@ -89,6 +121,9 @@ def test_testnet_trading_executes_approved_trade_plan_when_enabled():
 
     updated = db.get(TradePlan, plan.id)
     assert updated.status == "testnet_executed"
+
+    position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
+    assert position.leverage == 10
 
 
 def test_testnet_trading_blocks_when_disabled():
@@ -169,3 +204,18 @@ def test_testnet_trading_returns_explicit_reason_when_credentials_are_missing():
 
     assert result["executed"] is False
     assert result["reason"] == "testnet_credentials_missing"
+
+
+def test_testnet_trading_returns_explicit_reason_when_step_size_is_unavailable():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientMissingStepSize(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is False
+    assert result["reason"] == "symbol_step_size_unavailable"

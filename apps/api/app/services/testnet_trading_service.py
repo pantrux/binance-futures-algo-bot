@@ -1,3 +1,4 @@
+import math
 import time
 
 from sqlalchemy.orm import Session
@@ -24,6 +25,14 @@ class BinanceTestnetTradingService:
             return float(value)
         except (TypeError, ValueError):
             return fallback
+
+    @staticmethod
+    def _round_to_step(quantity: float, step_size: float) -> float:
+        if step_size <= 0:
+            return quantity
+        rounded = math.floor(quantity / step_size) * step_size
+        precision = max(0, min(12, int(round(-math.log10(step_size)))))
+        return round(rounded, precision)
 
     def _log_risk_event(self, *, trade_plan_id: int, event_type: str, severity: str, message: str) -> None:
         self.db.add(
@@ -61,13 +70,30 @@ class BinanceTestnetTradingService:
             return {"executed": False, "reason": "trade_plan_not_approved"}
 
         stop_distance = abs(trade_plan.entry_price - trade_plan.stop_loss)
-        quantity = 0.0 if stop_distance == 0 else round((trade_plan.capital_usdt * (trade_plan.applied_risk_pct / 100)) / stop_distance, 6)
+        raw_quantity = 0.0 if stop_distance == 0 else (trade_plan.capital_usdt * (trade_plan.applied_risk_pct / 100)) / stop_distance
+
+        try:
+            step_size = await self.binance_client.get_symbol_step_size(trade_plan.symbol)
+        except Exception as exc:  # noqa: BLE001
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_execution_step_size_unavailable",
+                severity="critical",
+                message=f"No fue posible obtener stepSize para {trade_plan.symbol}: {exc}",
+            )
+            self.db.commit()
+            return {"executed": False, "reason": "symbol_step_size_unavailable"}
+
+        quantity = self._round_to_step(raw_quantity, step_size)
         if quantity <= 0:
             self._log_risk_event(
                 trade_plan_id=trade_plan.id,
                 event_type="testnet_execution_invalid_quantity",
                 severity="critical",
-                message="Cantidad inválida calculada para ejecución testnet",
+                message=(
+                    "Cantidad inválida calculada para ejecución testnet "
+                    f"(raw={raw_quantity:.12f}, step_size={step_size})"
+                ),
             )
             self.db.commit()
             return {"executed": False, "reason": "invalid_quantity"}
@@ -131,6 +157,17 @@ class BinanceTestnetTradingService:
         order_status = str(exchange_order.get("status") or "FILLED").lower()
         external_order_id = str(exchange_order.get("orderId") or exchange_order.get("clientOrderId") or client_order_id)
 
+        leverage = 1
+        try:
+            leverage = await self.binance_client.get_symbol_leverage(trade_plan.symbol)
+        except Exception as exc:  # noqa: BLE001
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_execution_leverage_fallback",
+                severity="warning",
+                message=f"No fue posible obtener leverage real; fallback a 1x ({exc})",
+            )
+
         order = Order(
             trade_plan_id=trade_plan.id,
             venue="binance_futures_testnet",
@@ -152,7 +189,7 @@ class BinanceTestnetTradingService:
             entry_price=exchange_price,
             mark_price=exchange_price,
             unrealized_pnl=0,
-            leverage=1,
+            leverage=leverage,
             status="open",
             is_testnet=True,
         )
