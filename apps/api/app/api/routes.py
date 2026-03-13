@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from apps.api.app.api.deps import get_db
 from apps.api.app.core.settings import settings
 from apps.api.app.observability.metrics import api_metrics
+from apps.api.app.schemas.backtesting import BacktestRunRequest, BacktestRunResponse
 from apps.api.app.schemas.dashboard import DashboardSummary
 from apps.api.app.schemas.execution_parity import ExecutionParityReport
 from apps.api.app.schemas.execution_reconciliation import ReconciliationReport
@@ -21,6 +22,7 @@ from apps.api.app.schemas.trade_plan_read import TradePlanRead
 from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.binance_market_data_service import BinanceMarketDataService
+from apps.api.app.services.backtesting_service import BacktestingService
 from apps.api.app.services.dashboard_service import DashboardService
 from apps.api.app.services.execution_parity_service import ExecutionParityService
 from apps.api.app.services.execution_state_machine_service import ExecutionStateMachineService
@@ -77,6 +79,16 @@ def latest_market_snapshot(symbol: str, db: Session = Depends(get_db)) -> Market
 @router.get("/dashboard/summary", response_model=DashboardSummary)
 def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
     return DashboardService(db).summary()
+
+
+@router.post("/backtesting/run", response_model=BacktestRunResponse)
+def run_backtesting(payload: BacktestRunRequest, db: Session = Depends(get_db)) -> BacktestRunResponse:
+    try:
+        return BacktestingService(db).run(payload)
+    except ValueError as exc:
+        detail = str(exc)
+        status_code = 404 if detail.startswith("No hay candles") else 400
+        raise HTTPException(status_code=status_code, detail=detail) from exc
 
 
 @router.get("/indicators/{symbol}", response_model=IndicatorSnapshot)

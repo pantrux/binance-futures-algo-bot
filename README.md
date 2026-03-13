@@ -153,9 +153,35 @@ El sistema incorpora límites multicapa:
 1. Integración Binance Futures Testnet
 2. Persistencia PostgreSQL + Alembic
 3. Websockets de mercado
-4. Backtesting / paper trading
+4. Backtesting / walk-forward con benchmark
 5. Sincronización completa con Outline
 6. Alertas y observabilidad avanzada
+
+## Backtesting baseline (PR-33)
+
+La API expone un backtest mínimo reproducible sobre candles persistidos en `market_candles`.
+
+- Estrategia baseline: `ema_rsi_baseline` long-only.
+- Benchmark: `buy_and_hold` del mismo activo y periodo.
+- Walk-forward: ventanas de entrenamiento y prueba con selección explícita de parámetros.
+
+Ejemplo:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/backtesting/run" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "candles_limit": 600,
+    "training_window": 200,
+    "testing_window": 100,
+    "initial_capital": 1000,
+    "fee_rate": 0.0004
+  }'
+```
+
+La respuesta incluye métricas del periodo completo y un resumen walk-forward con ventanas `in_sample` y `out_of_sample`.
 
 ## Documentación
 

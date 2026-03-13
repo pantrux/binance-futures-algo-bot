@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 5 cerrada en operación controlada (Synology) + `PR-19`..`PR-23` mergeados.
-- **PR activo:** `PR-24` — resiliencia, recuperación y hardening operacional.
-- **Etapa actual:** **Fase 6 — Infraestructura recurrente y continuidad operacional** (`PR-22` a `PR-24`).
+- **Estado global actual:** Fase 8 avanzada con baseline de ejecución exchange ya entregado y arranque de validación cuantitativa de go-live readiness.
+- **PR activo:** `PR-33` — backtesting y walk-forward.
+- **Etapa actual:** **Fase 9 — Go-live readiness** (`PR-33` a `PR-35`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -32,8 +32,8 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 5 — Operación controlada | ✅ Completada | 100% | PR-8..PR-18 | Cadena operativa auditable completa |
 | Fase 6 — Infraestructura recurrente | 🟡 En progreso | 85% | PR-22..PR-24 | Operación continua endurecida (SRE + continuidad) |
 | Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
-| Fase 8 — Ejecución exchange robusta | 🔵 Planificada | 0% | PR-29..PR-31 | Router testnet + reconciliación + paridad paper/testnet |
-| Fase 9 — Go-live readiness | 🔵 Planificada | 0% | PR-33..PR-35 | Criterios formales de transición y rampa controlada |
+| Fase 8 — Ejecución exchange robusta | 🟡 En progreso | 75% | PR-29..PR-32 | Router testnet + reconciliación + paridad paper/testnet + reporting operativo |
+| Fase 9 — Go-live readiness | 🟡 En progreso | 35% | PR-33..PR-35 | Validación cuantitativa y gates formales de transición |
 
 ---
 
@@ -98,7 +98,13 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 
 ## Fase 9 — Go-live readiness
 
-### PR-33 — Backtesting/walk-forward y benchmark de estrategia
+### PR-33 — Backtesting/walk-forward y benchmark de estrategia 🟡
+- servicio `BacktestingService` con estrategia baseline `ema_rsi_baseline`
+- benchmark `buy_and_hold` del mismo activo y periodo
+- endpoint `POST /backtesting/run`
+- métricas reproducibles: retorno, win rate, profit factor, drawdown y trades
+- walk-forward simple con ventanas in-sample / out-of-sample y selección explícita de parámetros
+- ADR-034
 ### PR-34 — Checklist formal de transición y política de rampa de capital
 ### PR-35 — Cutover controlado (si y solo si todos los gates pasan)
 
