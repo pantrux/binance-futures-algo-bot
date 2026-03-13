@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from apps.api.app.db.base import Base
 from apps.api.app.db.models import RiskEvent, TradePlan
@@ -9,7 +10,7 @@ from apps.api.app.services.production_reporting_service import ProductionReporti
 
 
 def build_db():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine)()
 

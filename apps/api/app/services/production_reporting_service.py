@@ -28,7 +28,7 @@ class ProductionReportingService:
             .all()
         }
 
-        avg_score = self.db.query(func.avg(TradePlan.aggregate_score)).scalar()
+        avg_score = self.db.query(func.avg(TradePlan.aggregate_score)).filter(TradePlan.created_at >= cutoff).scalar()
         risk_event_counts_24h = {
             str(severity): int(count)
             for severity, count in self.db.query(RiskEvent.severity, func.count(RiskEvent.id))

@@ -183,10 +183,10 @@ def execution_parity(symbol: str, limit: int = Query(default=50, ge=1, le=500), 
 
 
 @router.get("/reporting/daily-summary", response_model=DailyProductionSummary)
-def reporting_daily_summary(db: Session = Depends(get_db)) -> DailyProductionSummary:
+def reporting_daily_summary(_: None = Depends(require_metrics_auth), db: Session = Depends(get_db)) -> DailyProductionSummary:
     return ProductionReportingService(db).daily_summary()
 
 
 @router.get("/alerts/evaluate", response_model=AlertEvaluationResponse)
-def alerts_evaluate(db: Session = Depends(get_db)) -> AlertEvaluationResponse:
+def alerts_evaluate(_: None = Depends(require_metrics_auth), db: Session = Depends(get_db)) -> AlertEvaluationResponse:
     return ProductionReportingService(db).evaluate_alerts()
