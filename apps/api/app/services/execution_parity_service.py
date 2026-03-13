@@ -1,3 +1,5 @@
+from collections import deque
+
 from sqlalchemy.orm import Session
 
 from apps.api.app.db.models import TradePlan
@@ -27,7 +29,7 @@ class ExecutionParityService:
         )
         plans = list(reversed(query.all()))
 
-        paper_queue = [plan for plan in plans if plan.status == "paper_executed"]
+        paper_queue = deque(plan for plan in plans if plan.status == "paper_executed")
         testnet_queue = [plan for plan in plans if plan.status == "testnet_executed"]
 
         pairs: list[ParityPairDiff] = []
@@ -35,7 +37,7 @@ class ExecutionParityService:
         unmatched_testnet = 0
 
         while paper_queue and testnet_queue:
-            paper = paper_queue.pop(0)
+            paper = paper_queue.popleft()
 
             candidates: list[tuple[int, float]] = []
             for idx, candidate in enumerate(testnet_queue):
