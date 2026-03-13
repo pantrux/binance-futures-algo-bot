@@ -26,6 +26,7 @@ class _SimulationOutput:
 class BacktestingService:
     STRATEGY_NAME = "ema_rsi_baseline"
     BENCHMARK_NAME = "buy_and_hold"
+    RSI_PERIOD = 14
     CANDIDATE_PARAMETERS = (
         BacktestStrategyParameters(ema_fast_period=7, ema_slow_period=21, rsi_entry_min=52, rsi_exit_max=47),
         BacktestStrategyParameters(ema_fast_period=9, ema_slow_period=21, rsi_entry_min=55, rsi_exit_max=45),
@@ -65,7 +66,10 @@ class BacktestingService:
 
         last_window_start = len(rows) - (payload.training_window + payload.testing_window)
         window_index = 1
-        max_warmup = max(parameter.ema_slow_period for parameter in self.CANDIDATE_PARAMETERS)
+        max_warmup = max(
+            max(parameter.ema_slow_period for parameter in self.CANDIDATE_PARAMETERS),
+            self.RSI_PERIOD + 1,
+        )
         for start in range(0, last_window_start + 1, payload.testing_window):
             training_rows = rows[start : start + payload.training_window]
             testing_rows = rows[start + payload.training_window : start + payload.training_window + payload.testing_window]
@@ -264,7 +268,7 @@ class BacktestingService:
     ) -> _SimulationOutput:
         ema_fast = self._ema_series(closes, parameters.ema_fast_period)
         ema_slow = self._ema_series(closes, parameters.ema_slow_period)
-        rsi = self._rsi_series(closes, 14)
+        rsi = self._rsi_series(closes, self.RSI_PERIOD)
 
         entries = [False] * len(closes)
         exits = [False] * len(closes)

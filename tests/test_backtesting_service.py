@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.db.base import Base
-from apps.api.app.schemas.backtesting import BacktestRunRequest
+from apps.api.app.schemas.backtesting import BacktestRunRequest, BacktestStrategyParameters
 from apps.api.app.services.backtesting_service import BacktestingService
 from tests.conftest import seed_walk_forward_candles
 
@@ -72,3 +72,17 @@ def test_backtesting_service_raises_when_walk_forward_windows_do_not_fit():
             raise AssertionError("Se esperaba ValueError por ventanas incompatibles")
     finally:
         db.close()
+
+
+def test_backtest_strategy_parameters_reject_inverted_ema_periods():
+    try:
+        BacktestStrategyParameters(
+            ema_fast_period=21,
+            ema_slow_period=21,
+            rsi_entry_min=55,
+            rsi_exit_max=45,
+        )
+    except ValueError as exc:
+        assert "ema_fast_period debe ser menor" in str(exc)
+    else:
+        raise AssertionError("Se esperaba ValueError para EMA rápida no menor a EMA lenta")

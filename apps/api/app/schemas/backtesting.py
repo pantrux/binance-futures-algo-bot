@@ -7,6 +7,12 @@ class BacktestStrategyParameters(BaseModel):
     rsi_entry_min: float = Field(ge=0, le=100)
     rsi_exit_max: float = Field(ge=0, le=100)
 
+    @model_validator(mode="after")
+    def validate_periods(self) -> "BacktestStrategyParameters":
+        if self.ema_fast_period >= self.ema_slow_period:
+            raise ValueError("ema_fast_period debe ser menor que ema_slow_period")
+        return self
+
 
 class BacktestMetrics(BaseModel):
     total_return_pct: float
