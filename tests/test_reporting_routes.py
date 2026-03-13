@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from starlette.testclient import TestClient
 
-from apps.api.app.api.routes import router
+from apps.api.app.api.routes import require_metrics_auth, router
 from apps.api.app.db.base import Base
 from apps.api.app.db.models import RiskEvent, TradePlan
 from apps.api.app.api.deps import get_db
@@ -22,7 +22,11 @@ def make_client(db_session) -> TestClient:
         finally:
             pass
 
+    def override_require_metrics_auth() -> None:
+        return None
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[require_metrics_auth] = override_require_metrics_auth
     return TestClient(app)
 
 
