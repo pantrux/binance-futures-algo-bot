@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.db.base import Base
-from apps.api.app.db.models import TradePlan
+from apps.api.app.db.models import Position, TradePlan
 from apps.api.app.services.testnet_trading_service import BinanceTestnetTradingService
 
 
@@ -24,16 +24,27 @@ class FakeBinanceClient:
         }
 
 
+class FakeBinanceClientZeroAvgPrice:
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": 123,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "executedQty": "0",
+            "status": "NEW",
+        }
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine)()
 
 
-def _seed_trade_plan(db, *, status: str = "approved") -> TradePlan:
+def _seed_trade_plan(db, *, status: str = "approved", side: str = "long") -> TradePlan:
     plan = TradePlan(
         symbol="BTCUSDT",
-        side="long",
+        side=side,
         timeframe="15m",
         market_regime="tendencia_alcista",
         technical_score=80,
@@ -103,3 +114,38 @@ def test_testnet_trading_blocks_not_approved_trade_plan():
 
     assert result["executed"] is False
     assert result["reason"] == "trade_plan_not_approved"
+
+
+def test_testnet_trading_blocks_invalid_side():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved", side="weird")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClient(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is False
+    assert result["reason"] == "invalid_side"
+
+
+def test_testnet_trading_falls_back_to_trade_plan_price_when_avg_price_is_zero():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientZeroAvgPrice(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    updated = db.get(TradePlan, plan.id)
+    assert updated.status == "testnet_executed"
+
+    position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
+    assert position.entry_price == plan.entry_price
+    assert position.quantity > 0

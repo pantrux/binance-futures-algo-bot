@@ -12,6 +12,7 @@ Introducir `FinalDecisionGate` como capa posterior al `RiskEngine` con:
 1. **Score compuesto final**
    - combina `score` del motor de riesgo, `regime_confidence` y `liquidity_score`.
    - para evitar doble conteo de liquidez, el componente base descuenta la contribución de liquidez ya embebida en `RiskEngine.aggregate_score` antes de aplicar ponderación.
+   - el descuento usa el peso de liquidez efectivo inyectado desde la instancia de `RiskEngine` (sin constantes mágicas locales).
 
 2. **Circuit breakers explícitos**
    - volatilidad extrema,
@@ -25,7 +26,7 @@ Introducir `FinalDecisionGate` como capa posterior al `RiskEngine` con:
    - `RiskDecision` agrega:
      - `final_gate_score`
      - `final_gate_passed`
-     - `final_gate_reason`
+     - `final_gate_reason` (desambiguada cuando viene pre-rechazo del motor)
      - `final_gate_pre_rejected_by_engine`
      - `triggered_breakers`
    - `TradePlanCreateResponse` expone esos campos al caller de API.

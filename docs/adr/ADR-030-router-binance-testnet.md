@@ -32,6 +32,19 @@ Separar ejecución real en un módulo router específico y mantener el `TradePla
    - fallback opcional a paper trading en worker (`testnet_fallback_to_paper`).
 5. Tests unitarios/integración para router y servicio testnet.
 
+## Consecuencias
+### Positivas
+- Separación clara entre planificación (`TradePlanService`) y ejecución (`BinanceTestnetRouter` + `BinanceTestnetTradingService`).
+- Kill-switch explícito reduce riesgo de envíos accidentales en modo real.
+- Persistencia de `Order`/`Position` y `RiskEvent` mejora trazabilidad operacional.
+
+### Negativas
+- Aumenta la superficie de integración (worker ↔ API ↔ Binance).
+- Requiere mantenimiento continuo de compatibilidad con payloads/semántica de Binance Testnet.
+
+### Neutrales
+- El contrato de paper trading no cambia; permanece disponible como fallback.
+
 ## Riesgos
 - Desalineación entre flags de seguridad y path de ejecución.
 - Reintentos no controlados en escenarios de latencia/API errors.

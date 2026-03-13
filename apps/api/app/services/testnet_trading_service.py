@@ -72,6 +72,16 @@ class BinanceTestnetTradingService:
             self.db.commit()
             return {"executed": False, "reason": "invalid_quantity"}
 
+        if trade_plan.side not in {"long", "short"}:
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_execution_invalid_side",
+                severity="critical",
+                message=f"Valor de side inválido: {trade_plan.side!r}",
+            )
+            self.db.commit()
+            return {"executed": False, "reason": "invalid_side"}
+
         side = "BUY" if trade_plan.side == "long" else "SELL"
         client_order_id = f"tp-{trade_plan.id}-{int(time.time() * 1000)}"
 
@@ -92,8 +102,13 @@ class BinanceTestnetTradingService:
             self.db.commit()
             return {"executed": False, "reason": "testnet_api_error"}
 
-        exchange_price = self._to_float(exchange_order.get("avgPrice"), fallback=trade_plan.entry_price)
+        exchange_price = self._to_float(exchange_order.get("avgPrice"), fallback=0.0)
+        if exchange_price <= 0:
+            exchange_price = trade_plan.entry_price
+
         executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=quantity)
+        if executed_qty <= 0:
+            executed_qty = quantity
         order_status = str(exchange_order.get("status") or "FILLED").lower()
         external_order_id = str(exchange_order.get("orderId") or exchange_order.get("clientOrderId") or client_order_id)
 

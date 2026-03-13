@@ -104,6 +104,13 @@ async def process_symbol(
         )
         return True
 
+    log_event(
+        "testnet_trade_execution_failed",
+        symbol=symbol,
+        reason=testnet_execution.get("reason"),
+        trade_plan_id=trade_plan_id,
+    )
+
     return testnet_execution.get("reason") in {
         "testnet_execution_disabled",
         "global_kill_switch_enabled",
