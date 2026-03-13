@@ -84,8 +84,6 @@ class ExecutionStateMachineService:
             recommended_actions.append("review_order_rejections")
 
         healthy = len(drift_events) == 0
-        if healthy:
-            recommended_actions.append("none")
 
         return ReconciliationReport(
             trade_plan_id=trade_plan.id,

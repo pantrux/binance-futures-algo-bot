@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -77,7 +78,7 @@ def test_reconcile_reports_healthy_when_order_and_position_match():
     report = ExecutionStateMachineService(db).reconcile_trade_plan(plan.id)
 
     assert report.healthy is True
-    assert report.recommended_actions == ["none"]
+    assert report.recommended_actions == []
 
 
 def test_reconcile_detects_missing_position_and_order_for_executed_plan():
@@ -213,18 +214,14 @@ def test_reconcile_returns_healthy_for_non_executed_plan_without_orders():
     report = ExecutionStateMachineService(db).reconcile_trade_plan(plan.id)
 
     assert report.healthy is True
-    assert report.recommended_actions == ["none"]
+    assert report.recommended_actions == []
 
 
 def test_reconcile_raises_for_missing_trade_plan():
     db = build_db()
 
-    try:
+    with pytest.raises(ValueError, match="Trade plan no encontrado"):
         ExecutionStateMachineService(db).reconcile_trade_plan(999)
-    except ValueError as exc:
-        assert "Trade plan no encontrado" in str(exc)
-    else:
-        raise AssertionError("Se esperaba ValueError para trade plan inexistente")
 
 
 def test_reconcile_warns_when_position_was_closed_but_plan_stays_executed():
