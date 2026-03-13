@@ -50,8 +50,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-25 | Clasificador de régimen de mercado | ✅ Mergeado | clasificación de contexto de mercado para gating |
 | PR-26 | Sizing dinámico por volatilidad/riesgo | ✅ Mergeado | position sizing adaptativo por riesgo cuantitativo |
 | PR-27 | Riesgo de portafolio y correlación | ✅ Mergeado | límites de exposición multi-símbolo y correlación |
-| PR-28 | Gate de decisión final y circuit breakers avanzados | 🟡 En progreso | capa final de decisión y apagado seguro |
-| PR-29 | Router Binance Testnet | 🔵 Planificado | ejecución real en testnet con trazabilidad de órdenes |
+| PR-28 | Gate de decisión final y circuit breakers avanzados | ✅ Mergeado | capa final de decisión y apagado seguro |
+| PR-29 | Router Binance Testnet | 🟡 En progreso | ejecución real en testnet con trazabilidad de órdenes |
 | PR-30 | Reconciliación y máquina de estados de ejecución | 🔵 Planificado | consistencia entre órdenes/posiciones/eventos |
 | PR-31 | Paridad paper vs testnet (shadow run) | 🔵 Planificado | reporte comparativo y brechas de comportamiento |
 | PR-32 | Backtesting y walk-forward | 🔵 Planificado | validación cuantitativa de estrategias y robustez |
@@ -468,7 +468,7 @@ Evitar sobreexposición agregada por posiciones correlacionadas.
 ---
 
 ### PR-28 — Gate de decisión final y circuit breakers avanzados
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Consolidar una capa final de autorización/rechazo de trade plan.
@@ -481,7 +481,7 @@ Consolidar una capa final de autorización/rechazo de trade plan.
 ---
 
 ### PR-29 — Router Binance Testnet
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Conectar ejecución a Binance Testnet manteniendo control y trazabilidad completos.
