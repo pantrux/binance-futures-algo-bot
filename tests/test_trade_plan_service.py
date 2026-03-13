@@ -64,6 +64,7 @@ def test_trade_plan_service_blocks_when_final_gate_triggers_breaker():
 
     assert result.status == 'blocked'
     assert result.max_position_notional == 0
+    assert result.applied_risk_pct == 0
 
     events = db.query(RiskEvent).filter(RiskEvent.trade_plan_id == result.id).all()
     assert any(event.event_type == 'circuit_breaker_extreme_volatility' for event in events)

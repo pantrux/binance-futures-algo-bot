@@ -18,6 +18,7 @@ Introducir `FinalDecisionGate` como capa posterior al `RiskEngine` con:
    - liquidez crítica,
    - sobrecalentamiento de portafolio,
    - riesgo de portafolio desconocido (fail-safe),
+   - confianza de régimen desconocida (fail-safe),
    - incertidumbre de régimen.
 
 3. **Contrato de salida enriquecido**
