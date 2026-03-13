@@ -53,10 +53,11 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-28 | Gate de decisión final y circuit breakers avanzados | ✅ Mergeado | capa final de decisión y apagado seguro |
 | PR-29 | Router Binance Testnet | ✅ Mergeado | ejecución real en testnet con trazabilidad de órdenes |
 | PR-30 | Reconciliación y máquina de estados de ejecución | ✅ Mergeado | consistencia entre órdenes/posiciones/eventos |
-| PR-31 | Paridad paper vs testnet (shadow run) | 🟡 En progreso | reporte comparativo y brechas de comportamiento |
-| PR-32 | Backtesting y walk-forward | 🔵 Planificado | validación cuantitativa de estrategias y robustez |
-| PR-33 | Checklist de transición y rampa de capital | 🔵 Planificado | criterios formales para eventual salida de paper |
-| PR-34 | Cutover controlado y monitoreo post-cutover | 🔵 Planificado | transición asistida con gates y rollback explícito |
+| PR-31 | Paridad paper vs testnet (shadow run) | ✅ Mergeado | reporte comparativo y brechas de comportamiento |
+| PR-32 | Alerting y reporting de producción | 🟡 En progreso | resumen diario operativo y evaluación temprana de alertas |
+| PR-33 | Backtesting y walk-forward | 🔵 Planificado | validación cuantitativa de estrategias y robustez |
+| PR-34 | Checklist de transición y rampa de capital | 🔵 Planificado | criterios formales para eventual salida de paper |
+| PR-35 | Cutover controlado y monitoreo post-cutover | 🔵 Planificado | transición asistida con gates y rollback explícito |
 
 ## Secuencia de PRs actualizada
 
@@ -507,7 +508,7 @@ Alinear estado interno del bot con estado real de órdenes/posiciones del exchan
 ---
 
 ### PR-31 — Paridad paper vs testnet (shadow run)
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Medir brecha entre comportamiento esperado (paper) y real (testnet) antes de cualquier transición.
@@ -519,7 +520,22 @@ Medir brecha entre comportamiento esperado (paper) y real (testnet) antes de cua
 
 ---
 
-### PR-32 — Backtesting y walk-forward
+### PR-32 — Alerting y reporting de producción
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Agregar una capa mínima de visibilidad operativa diaria para detectar degradación temprana antes de la etapa formal de go-live readiness.
+
+**Entregables**
+- servicio `ProductionReportingService`
+- endpoint `GET /reporting/daily-summary`
+- endpoint `GET /alerts/evaluate`
+- ADR-033
+- tests unitarios y de rutas para reporting/alertas
+
+---
+
+### PR-33 — Backtesting y walk-forward
 **Estado:** 🔵 Planificado
 
 **Objetivo**
@@ -532,7 +548,7 @@ Validar robustez estadística de estrategias bajo distintos periodos y condicion
 
 ---
 
-### PR-33 — Checklist de transición y rampa de capital
+### PR-34 — Checklist de transición y rampa de capital
 **Estado:** 🔵 Planificado
 
 **Objetivo**
@@ -545,7 +561,7 @@ Definir formalmente condiciones para eventual transición fuera de paper.
 
 ---
 
-### PR-34 — Cutover controlado y monitoreo post-cutover
+### PR-35 — Cutover controlado y monitoreo post-cutover
 **Estado:** 🔵 Planificado
 
 **Objetivo**

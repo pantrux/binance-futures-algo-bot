@@ -34,6 +34,7 @@
 - `ADR-030-router-binance-testnet.md`
 - `ADR-031-execution-reconciliation-state-machine.md`
 - `ADR-032-paper-vs-testnet-parity-shadow-run.md`
+- `ADR-033-production-alerting-and-daily-reporting.md`
 
 ## Archivados
 
