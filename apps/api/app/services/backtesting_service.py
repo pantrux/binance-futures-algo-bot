@@ -102,13 +102,10 @@ class BacktestingService:
             oos_trade_pnls.extend(out_of_sample_strategy.trade_pnls)
             oos_equity_curve.extend(out_of_sample_strategy.equity_curve[1:])
 
-            if not full_oos_benchmark_closes:
-                full_oos_benchmark_closes.extend(testing_closes)
-            else:
-                full_oos_benchmark_closes.extend(testing_closes[1:])
+            full_oos_benchmark_closes.extend(testing_closes)
             out_of_sample_benchmark = self._simulate_buy_and_hold(
                 closes=testing_closes,
-                initial_capital=payload.initial_capital,
+                initial_capital=oos_capital,
                 fee_rate=payload.fee_rate,
             )
 
@@ -324,8 +321,7 @@ class BacktestingService:
         units = 0.0
         entry_cost = 0.0
         trade_pnls: list[float] = []
-        baseline_equity = initial_capital if start_index == 0 else initial_capital
-        equity_curve = [baseline_equity]
+        equity_curve = [initial_capital]
 
         for index, price in enumerate(closes):
             if index < start_index:
