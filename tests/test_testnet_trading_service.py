@@ -35,6 +35,11 @@ class FakeBinanceClientZeroAvgPrice:
         }
 
 
+class FakeBinanceClientMissingCredentials:
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        raise RuntimeError("binance_credentials_missing")
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -149,3 +154,18 @@ def test_testnet_trading_falls_back_to_trade_plan_price_when_avg_price_is_zero()
     position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
     assert position.entry_price == plan.entry_price
     assert position.quantity > 0
+
+
+def test_testnet_trading_returns_explicit_reason_when_credentials_are_missing():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientMissingCredentials(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is False
+    assert result["reason"] == "testnet_credentials_missing"

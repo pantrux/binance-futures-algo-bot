@@ -47,4 +47,11 @@ class BinanceTestnetRouter:
             return {"executed": False, "reason": decision.reason}
 
         trade_plan_id = int(trade_plan["id"])
-        return await self.api_client.execute_testnet_trade(trade_plan_id)
+        try:
+            return await self.api_client.execute_testnet_trade(trade_plan_id)
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "executed": False,
+                "reason": "testnet_router_api_error",
+                "error": str(exc),
+            }

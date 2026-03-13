@@ -14,6 +14,13 @@ class BinanceFuturesClient:
         self.api_key = settings.binance_api_key.get_secret_value()
         self.api_secret = settings.binance_api_secret.get_secret_value()
 
+    def has_credentials(self) -> bool:
+        return bool(self.api_key and self.api_secret)
+
+    def ensure_credentials(self) -> None:
+        if not self.has_credentials():
+            raise RuntimeError("binance_credentials_missing")
+
     async def ping(self) -> dict:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(f"{self.base_url}/fapi/v1/ping")
@@ -21,14 +28,12 @@ class BinanceFuturesClient:
             return {"status": "ok", "base_url": self.base_url}
 
     def _sign(self, params: dict[str, str]) -> str:
-        if not self.api_secret:
-            raise RuntimeError("binance_api_secret no configurado")
+        self.ensure_credentials()
         query = urlencode(params)
         return hmac.new(self.api_secret.encode("utf-8"), query.encode("utf-8"), hashlib.sha256).hexdigest()
 
     def _auth_headers(self) -> dict[str, str]:
-        if not self.api_key:
-            raise RuntimeError("binance_api_key no configurado")
+        self.ensure_credentials()
         return {"X-MBX-APIKEY": self.api_key}
 
     async def place_market_order(

@@ -92,6 +92,25 @@ class BinanceTestnetTradingService:
                 quantity=quantity,
                 client_order_id=client_order_id,
             )
+        except RuntimeError as exc:
+            if str(exc) == "binance_credentials_missing":
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_execution_missing_credentials",
+                    severity="critical",
+                    message="Credenciales Binance faltantes para ejecución testnet",
+                )
+                self.db.commit()
+                return {"executed": False, "reason": "testnet_credentials_missing"}
+
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_execution_runtime_error",
+                severity="critical",
+                message=f"Error runtime en envío testnet: {exc}",
+            )
+            self.db.commit()
+            return {"executed": False, "reason": "testnet_api_error"}
         except Exception as exc:  # noqa: BLE001
             self._log_risk_event(
                 trade_plan_id=trade_plan.id,

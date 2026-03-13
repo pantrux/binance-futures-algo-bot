@@ -52,4 +52,5 @@ Separar ejecución real en un módulo router específico y mantener el `TradePla
 ## Mitigaciones
 - defaults deny-by-default para ejecución real,
 - idempotencia por client order id,
-- logging estructurado por ciclo de decisión/ejecución.
+- logging estructurado por ciclo de decisión/ejecución,
+- errores de credenciales con razón explícita (`testnet_credentials_missing`) y fallback controlado.
