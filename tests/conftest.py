@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+# pytest en modo importlib no garantiza que el root del repo quede en sys.path.
+# Se mantiene explícito para que imports tipo `apps.api...` sigan siendo reproducibles.
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
