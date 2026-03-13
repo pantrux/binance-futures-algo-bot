@@ -67,6 +67,8 @@ def test_daily_summary_aggregates_counts_and_scores():
     summary = ProductionReportingService(db).daily_summary()
 
     assert summary.total_trade_plans == 4
+    assert summary.draft_trade_plans == 0
+    assert summary.other_trade_plans == 0
     assert summary.approved_trade_plans == 1
     assert summary.blocked_trade_plans == 1
     assert summary.paper_executed_trade_plans == 1
@@ -101,3 +103,12 @@ def test_alerts_evaluate_flags_expected_conditions():
     assert "trade_plan_conversion" in categories
     assert "execution_mode" in categories
     assert "signal_quality" in categories
+
+
+def test_alerts_evaluate_flags_total_inactivity():
+    db = build_db()
+
+    result = ProductionReportingService(db).evaluate_alerts()
+
+    assert result.healthy is False
+    assert any(alert.category == "system_activity" for alert in result.alerts)

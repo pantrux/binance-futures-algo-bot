@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 AlertSeverity = Literal["critical", "warning"]
-AlertCategory = Literal["risk_events", "trade_plan_conversion", "execution_mode", "signal_quality"]
+AlertCategory = Literal["risk_events", "trade_plan_conversion", "execution_mode", "signal_quality", "system_activity"]
 
 
 class AlertItem(BaseModel):
@@ -14,6 +14,8 @@ class AlertItem(BaseModel):
 
 class DailyProductionSummary(BaseModel):
     total_trade_plans: int
+    draft_trade_plans: int
+    other_trade_plans: int
     approved_trade_plans: int
     blocked_trade_plans: int
     paper_executed_trade_plans: int

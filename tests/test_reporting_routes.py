@@ -71,6 +71,8 @@ def test_reporting_daily_summary_route_returns_payload():
     assert response.status_code == 200
     payload = response.json()
     assert payload["total_trade_plans"] == 2
+    assert payload["draft_trade_plans"] == 0
+    assert payload["other_trade_plans"] == 0
     assert payload["approved_trade_plans"] == 1
     assert payload["blocked_trade_plans"] == 1
     assert payload["approved_trade_plans_24h"] == 1

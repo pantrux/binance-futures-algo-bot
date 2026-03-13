@@ -37,8 +37,12 @@ class ProductionReportingService:
             .all()
         }
 
+        known_statuses = {"draft", "approved", "blocked", "paper_executed", "testnet_executed"}
+
         return DailyProductionSummary(
             total_trade_plans=sum(trade_plan_counts.values()),
+            draft_trade_plans=trade_plan_counts.get("draft", 0),
+            other_trade_plans=sum(count for status, count in trade_plan_counts.items() if status not in known_statuses),
             approved_trade_plans=trade_plan_counts.get("approved", 0),
             blocked_trade_plans=trade_plan_counts.get("blocked", 0),
             paper_executed_trade_plans=trade_plan_counts.get("paper_executed", 0),
@@ -62,6 +66,21 @@ class ProductionReportingService:
                     severity="critical",
                     category="risk_events",
                     message=f"Se detectaron {summary.critical_risk_events_24h} eventos críticos en las últimas 24h",
+                )
+            )
+
+        recent_activity = (
+            summary.approved_trade_plans_24h
+            + summary.blocked_trade_plans_24h
+            + summary.paper_executed_trade_plans_24h
+            + summary.testnet_executed_trade_plans_24h
+        )
+        if recent_activity == 0:
+            alerts.append(
+                AlertItem(
+                    severity="warning",
+                    category="system_activity",
+                    message="No hubo actividad de trade plans ni ejecuciones en las últimas 24h",
                 )
             )
 
