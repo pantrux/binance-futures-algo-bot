@@ -89,6 +89,20 @@ def test_backtest_strategy_parameters_reject_inverted_ema_periods():
         raise AssertionError("Se esperaba ValueError para EMA rápida no menor a EMA lenta")
 
 
+def test_backtest_strategy_parameters_require_entry_rsi_above_exit_rsi():
+    try:
+        BacktestStrategyParameters(
+            ema_fast_period=9,
+            ema_slow_period=21,
+            rsi_entry_min=45,
+            rsi_exit_max=45,
+        )
+    except ValueError as exc:
+        assert "rsi_entry_min debe ser mayor" in str(exc)
+    else:
+        raise AssertionError("Se esperaba ValueError para umbral RSI de entrada no mayor al de salida")
+
+
 def test_is_better_result_uses_tolerance_before_drawdown_tiebreak():
     candidate = _SimulationOutput(
         metrics=BacktestMetrics(
@@ -109,6 +123,35 @@ def test_is_better_result_uses_tolerance_before_drawdown_tiebreak():
             profit_factor=1.2,
             max_drawdown_pct=9.0,
             trades_count=4,
+            ending_capital=1100.0,
+        ),
+        trade_pnls=[10.0],
+        equity_curve=[1000.0, 1100.0],
+    )
+
+    assert BacktestingService._is_better_result(candidate, current) is True
+
+
+def test_is_better_result_prefers_fewer_trades_when_return_and_drawdown_tie():
+    candidate = _SimulationOutput(
+        metrics=BacktestMetrics(
+            total_return_pct=10.0,
+            win_rate_pct=50.0,
+            profit_factor=1.2,
+            max_drawdown_pct=8.0,
+            trades_count=3,
+            ending_capital=1100.0,
+        ),
+        trade_pnls=[10.0],
+        equity_curve=[1000.0, 1100.0],
+    )
+    current = _SimulationOutput(
+        metrics=BacktestMetrics(
+            total_return_pct=10.0,
+            win_rate_pct=50.0,
+            profit_factor=1.2,
+            max_drawdown_pct=8.0,
+            trades_count=5,
             ending_capital=1100.0,
         ),
         trade_pnls=[10.0],

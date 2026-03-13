@@ -277,7 +277,7 @@ class BacktestingService:
             abs_tol=cls.FLOAT_COMPARISON_ABS_TOL,
         ):
             return candidate.metrics.max_drawdown_pct < current.metrics.max_drawdown_pct
-        return candidate.metrics.trades_count > current.metrics.trades_count
+        return candidate.metrics.trades_count < current.metrics.trades_count
 
     def _simulate_strategy(
         self,

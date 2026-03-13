@@ -11,6 +11,8 @@ class BacktestStrategyParameters(BaseModel):
     def validate_periods(self) -> "BacktestStrategyParameters":
         if self.ema_fast_period >= self.ema_slow_period:
             raise ValueError("ema_fast_period debe ser menor que ema_slow_period")
+        if self.rsi_entry_min <= self.rsi_exit_max:
+            raise ValueError("rsi_entry_min debe ser mayor que rsi_exit_max")
         return self
 
 
