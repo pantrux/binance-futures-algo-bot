@@ -82,7 +82,11 @@ def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
 
 
 @router.post("/backtesting/run", response_model=BacktestRunResponse)
-def run_backtesting(payload: BacktestRunRequest, db: Session = Depends(get_db)) -> BacktestRunResponse:
+def run_backtesting(
+    payload: BacktestRunRequest,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_metrics_auth),
+) -> BacktestRunResponse:
     try:
         return BacktestingService(db).run(payload)
     except BacktestingError as exc:
