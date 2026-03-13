@@ -74,5 +74,7 @@ class BacktestRunResponse(BaseModel):
     candles_used: int
     candidate_parameters: list[BacktestStrategyParameters]
     full_period_strategy: BacktestMetrics
+    full_period_strategy_is_in_sample: bool
+    full_period_strategy_note: str
     full_period_benchmark: BacktestMetrics
     walk_forward: WalkForwardSummary

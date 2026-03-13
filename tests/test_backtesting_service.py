@@ -37,6 +37,8 @@ def test_backtesting_service_returns_metrics_and_walk_forward_windows():
         assert len(response.candidate_parameters) == 3
         assert response.full_period_strategy.trades_count > 0
         assert response.full_period_strategy.max_drawdown_pct >= 0
+        assert response.full_period_strategy_is_in_sample is True
+        assert "in-sample" in response.full_period_strategy_note
         assert response.full_period_benchmark.trades_count == 1
         assert response.walk_forward.windows_count >= 2
         assert len(response.walk_forward.windows) == response.walk_forward.windows_count

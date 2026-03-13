@@ -169,6 +169,11 @@ class BacktestingService:
             candles_used=len(rows),
             candidate_parameters=list(self.CANDIDATE_PARAMETERS),
             full_period_strategy=full_period_strategy,
+            full_period_strategy_is_in_sample=True,
+            full_period_strategy_note=(
+                "Las métricas de full_period_strategy usan parámetros seleccionados sobre el periodo completo "
+                "y deben interpretarse como referencia in-sample, no como resultado out-of-sample."
+            ),
             full_period_benchmark=full_period_benchmark,
             walk_forward=walk_forward,
         )
@@ -357,6 +362,10 @@ class BacktestingService:
             if index < start_index:
                 continue
 
+            # Nota: la entrada tiene prioridad sobre la salida cuando ambas señales
+            # coinciden en el mismo candle. Con la estrategia EMA+RSI actual esto no
+            # ocurre por la invariante `rsi_entry_min > rsi_exit_max`, pero conviene
+            # dejarlo explícito si en el futuro se agregan estrategias con otra lógica.
             if entries[index] and units == 0.0 and cash > 0:
                 units = (cash * (1 - fee_rate)) / price
                 entry_cost = cash
