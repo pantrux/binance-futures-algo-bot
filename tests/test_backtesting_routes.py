@@ -89,3 +89,27 @@ def test_backtesting_route_returns_400_when_windows_do_not_fit_available_candles
             raise AssertionError("Se esperaba HTTPException 400 por candles insuficientes")
     finally:
         db.close()
+
+
+def test_backtesting_route_returns_400_when_db_only_allows_one_oos_window():
+    db = _make_db()
+    try:
+        seed_walk_forward_candles(db, candles=170)
+        try:
+            run_backtesting(
+                BacktestRunRequest(
+                    symbol="BTCUSDT",
+                    timeframe="15m",
+                    candles_limit=240,
+                    training_window=120,
+                    testing_window=30,
+                ),
+                db,
+            )
+        except HTTPException as exc:
+            assert exc.status_code == 400
+            assert "Candles insuficientes" in exc.detail
+        else:
+            raise AssertionError("Se esperaba HTTPException 400 cuando la BD solo permite una ventana OOS")
+    finally:
+        db.close()

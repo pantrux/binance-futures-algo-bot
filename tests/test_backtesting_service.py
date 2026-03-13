@@ -77,6 +77,32 @@ def test_backtesting_service_raises_when_walk_forward_windows_do_not_fit():
         db.close()
 
 
+def test_backtesting_service_raises_when_database_has_only_one_possible_oos_window():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    try:
+        seed_walk_forward_candles(db, candles=170)
+
+        try:
+            BacktestingService(db).run(
+                BacktestRunRequest(
+                    symbol="BTCUSDT",
+                    timeframe="15m",
+                    candles_limit=240,
+                    training_window=120,
+                    testing_window=30,
+                )
+            )
+        except ValueError as exc:
+            assert "Candles insuficientes" in str(exc)
+        else:
+            raise AssertionError("Se esperaba ValueError cuando la base solo permite una ventana OOS")
+    finally:
+        db.close()
+
+
 def test_backtest_strategy_parameters_reject_inverted_ema_periods():
     try:
         BacktestStrategyParameters(

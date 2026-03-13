@@ -51,7 +51,8 @@ class BacktestingService:
             raise BacktestingDataNotFoundError(
                 f"No hay candles para {payload.symbol.upper()} en timeframe {payload.timeframe}"
             )
-        if len(rows) < payload.training_window + payload.testing_window:
+        minimum_required_candles = payload.training_window + (2 * payload.testing_window)
+        if len(rows) < minimum_required_candles:
             raise BacktestingError(
                 "Candles insuficientes para ejecutar walk-forward con las ventanas solicitadas"
             )
