@@ -65,3 +65,27 @@ def test_backtesting_route_returns_404_when_symbol_has_no_candles():
             raise AssertionError("Se esperaba HTTPException para símbolo sin candles")
     finally:
         db.close()
+
+
+def test_backtesting_route_returns_400_when_windows_do_not_fit_available_candles():
+    db = _make_db()
+    try:
+        seed_walk_forward_candles(db, candles=65)
+        try:
+            run_backtesting(
+                BacktestRunRequest(
+                    symbol="BTCUSDT",
+                    timeframe="15m",
+                    candles_limit=80,
+                    training_window=50,
+                    testing_window=20,
+                ),
+                db,
+            )
+        except HTTPException as exc:
+            assert exc.status_code == 400
+            assert "Candles insuficientes" in exc.detail
+        else:
+            raise AssertionError("Se esperaba HTTPException 400 por candles insuficientes")
+    finally:
+        db.close()

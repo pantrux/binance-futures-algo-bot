@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import isclose
 from statistics import fmean
 
 from sqlalchemy import select
@@ -15,6 +16,14 @@ from apps.api.app.schemas.backtesting import (
 )
 
 
+class BacktestingError(ValueError):
+    status_code = 400
+
+
+class BacktestingDataNotFoundError(BacktestingError):
+    status_code = 404
+
+
 @dataclass(frozen=True)
 class _SimulationOutput:
     metrics: BacktestMetrics
@@ -27,6 +36,7 @@ class BacktestingService:
     STRATEGY_NAME = "ema_rsi_baseline"
     BENCHMARK_NAME = "buy_and_hold"
     RSI_PERIOD = 14
+    FLOAT_COMPARISON_ABS_TOL = 1e-9
     CANDIDATE_PARAMETERS = (
         BacktestStrategyParameters(ema_fast_period=7, ema_slow_period=21, rsi_entry_min=52, rsi_exit_max=47),
         BacktestStrategyParameters(ema_fast_period=9, ema_slow_period=21, rsi_entry_min=55, rsi_exit_max=45),
@@ -39,9 +49,11 @@ class BacktestingService:
     def run(self, payload: BacktestRunRequest) -> BacktestRunResponse:
         rows = self._load_rows(payload.symbol.upper(), payload.timeframe, payload.candles_limit)
         if not rows:
-            raise ValueError(f"No hay candles para {payload.symbol.upper()} en timeframe {payload.timeframe}")
+            raise BacktestingDataNotFoundError(
+                f"No hay candles para {payload.symbol.upper()} en timeframe {payload.timeframe}"
+            )
         if len(rows) < payload.training_window + payload.testing_window:
-            raise ValueError(
+            raise BacktestingError(
                 "Candles insuficientes para ejecutar walk-forward con las ventanas solicitadas"
             )
 
@@ -250,11 +262,21 @@ class BacktestingService:
                 best_result = candidate_result
         return best_parameters, best_result
 
-    @staticmethod
-    def _is_better_result(candidate: _SimulationOutput, current: _SimulationOutput) -> bool:
-        if candidate.metrics.total_return_pct != current.metrics.total_return_pct:
+    @classmethod
+    def _is_better_result(cls, candidate: _SimulationOutput, current: _SimulationOutput) -> bool:
+        if not isclose(
+            candidate.metrics.total_return_pct,
+            current.metrics.total_return_pct,
+            rel_tol=0.0,
+            abs_tol=cls.FLOAT_COMPARISON_ABS_TOL,
+        ):
             return candidate.metrics.total_return_pct > current.metrics.total_return_pct
-        if candidate.metrics.max_drawdown_pct != current.metrics.max_drawdown_pct:
+        if not isclose(
+            candidate.metrics.max_drawdown_pct,
+            current.metrics.max_drawdown_pct,
+            rel_tol=0.0,
+            abs_tol=cls.FLOAT_COMPARISON_ABS_TOL,
+        ):
             return candidate.metrics.max_drawdown_pct < current.metrics.max_drawdown_pct
         return candidate.metrics.trades_count > current.metrics.trades_count
 

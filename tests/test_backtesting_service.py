@@ -2,8 +2,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.db.base import Base
-from apps.api.app.schemas.backtesting import BacktestRunRequest, BacktestStrategyParameters
-from apps.api.app.services.backtesting_service import BacktestingService
+from apps.api.app.schemas.backtesting import BacktestMetrics, BacktestRunRequest, BacktestStrategyParameters
+from apps.api.app.services.backtesting_service import BacktestingService, _SimulationOutput
 from tests.conftest import seed_walk_forward_candles
 
 
@@ -86,3 +86,34 @@ def test_backtest_strategy_parameters_reject_inverted_ema_periods():
         assert "ema_fast_period debe ser menor" in str(exc)
     else:
         raise AssertionError("Se esperaba ValueError para EMA rápida no menor a EMA lenta")
+
+
+def test_is_better_result_uses_tolerance_before_drawdown_tiebreak():
+    candidate = _SimulationOutput(
+        metrics=BacktestMetrics(
+            total_return_pct=10.0 + 1e-10,
+            win_rate_pct=50.0,
+            profit_factor=1.2,
+            max_drawdown_pct=8.0,
+            trades_count=4,
+            ending_capital=1100.0,
+        ),
+        ending_capital=1100.0,
+        trade_pnls=[10.0],
+        equity_curve=[1000.0, 1100.0],
+    )
+    current = _SimulationOutput(
+        metrics=BacktestMetrics(
+            total_return_pct=10.0,
+            win_rate_pct=50.0,
+            profit_factor=1.2,
+            max_drawdown_pct=9.0,
+            trades_count=4,
+            ending_capital=1100.0,
+        ),
+        ending_capital=1100.0,
+        trade_pnls=[10.0],
+        equity_curve=[1000.0, 1100.0],
+    )
+
+    assert BacktestingService._is_better_result(candidate, current) is True

@@ -22,7 +22,7 @@ from apps.api.app.schemas.trade_plan_read import TradePlanRead
 from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.binance_market_data_service import BinanceMarketDataService
-from apps.api.app.services.backtesting_service import BacktestingService
+from apps.api.app.services.backtesting_service import BacktestingError, BacktestingService
 from apps.api.app.services.dashboard_service import DashboardService
 from apps.api.app.services.execution_parity_service import ExecutionParityService
 from apps.api.app.services.execution_state_machine_service import ExecutionStateMachineService
@@ -85,10 +85,8 @@ def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
 def run_backtesting(payload: BacktestRunRequest, db: Session = Depends(get_db)) -> BacktestRunResponse:
     try:
         return BacktestingService(db).run(payload)
-    except ValueError as exc:
-        detail = str(exc)
-        status_code = 404 if detail.startswith("No hay candles") else 400
-        raise HTTPException(status_code=status_code, detail=detail) from exc
+    except BacktestingError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
 @router.get("/indicators/{symbol}", response_model=IndicatorSnapshot)
