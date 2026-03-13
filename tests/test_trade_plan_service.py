@@ -2,7 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.db.base import Base
-from apps.api.app.db.models import RiskEvent
+import json
+
+from apps.api.app.db.models import RiskEvent, TradePlan
 from apps.api.app.schemas.trade_plan import TradePlanCreateRequest
 from apps.api.app.schemas.trading import MarketState, PortfolioState, PositionExposure, SignalSnapshot
 from apps.api.app.services.trade_plan_service import TradePlanService
@@ -50,10 +52,18 @@ def test_trade_plan_service_persists_and_returns_outline_url():
     assert result.id == 1
     assert result.status == 'approved'
     assert result.outline_url == '/doc/fake-trade-plan'
+    assert result.final_gate_passed is True
+    assert result.final_gate_score is not None
+    assert result.final_gate_reason == 'Gate final aprobado'
 
     events = db.query(RiskEvent).filter(RiskEvent.trade_plan_id == result.id).all()
     assert len(events) >= 1
     assert any(event.event_type in {'portfolio_risk_approved', 'correlation_pressure', 'final_gate_pass'} for event in events)
+
+    persisted = db.query(TradePlan).filter(TradePlan.id == result.id).one()
+    assert persisted.final_gate_passed is True
+    assert persisted.final_gate_reason == 'Gate final aprobado'
+    assert json.loads(persisted.triggered_breakers or '[]') == []
 
 
 def test_trade_plan_service_blocks_when_final_gate_triggers_breaker():
@@ -65,6 +75,13 @@ def test_trade_plan_service_blocks_when_final_gate_triggers_breaker():
     assert result.status == 'blocked'
     assert result.max_position_notional == 0
     assert result.applied_risk_pct == 0
+    assert result.final_gate_passed is False
+    assert 'Bloqueado por circuit breaker' in (result.final_gate_reason or '')
+    assert 'extreme_volatility' in result.triggered_breakers
 
     events = db.query(RiskEvent).filter(RiskEvent.trade_plan_id == result.id).all()
     assert any(event.event_type == 'circuit_breaker_extreme_volatility' for event in events)
+
+    persisted = db.query(TradePlan).filter(TradePlan.id == result.id).one()
+    assert persisted.final_gate_passed is False
+    assert 'extreme_volatility' in json.loads(persisted.triggered_breakers or '[]')

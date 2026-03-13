@@ -27,9 +27,15 @@ Introducir `FinalDecisionGate` como capa posterior al `RiskEngine` con:
      - `final_gate_passed`
      - `final_gate_reason`
      - `triggered_breakers`
+   - `TradePlanCreateResponse` expone esos campos al caller de API.
 
 4. **Persistencia auditable**
-   - eventos del gate final se anexan a `risk_events` y se persisten junto al trade plan.
+   - eventos del gate final se anexan a `risk_events`.
+   - `trade_plans` persiste campos estructurados del gate:
+     - `final_gate_score`
+     - `final_gate_passed`
+     - `final_gate_reason`
+     - `triggered_breakers`
 
 ## Consecuencias
 - Mayor control antes de ejecutar el trade plan.

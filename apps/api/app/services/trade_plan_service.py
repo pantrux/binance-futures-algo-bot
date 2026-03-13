@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy.orm import Session
 
 from apps.api.app.db.models import RiskEvent, TradePlan
@@ -75,6 +77,10 @@ class TradePlanService:
             capital_usdt=payload.capital_usdt,
             applied_risk_pct=decision.suggested_risk_pct,
             max_position_notional=decision.max_position_notional,
+            final_gate_score=decision.final_gate_score,
+            final_gate_passed=decision.final_gate_passed,
+            final_gate_reason=decision.final_gate_reason,
+            triggered_breakers=json.dumps(decision.triggered_breakers, ensure_ascii=False),
             thesis=payload.thesis,
             status="approved" if decision.approved else "blocked",
             is_testnet=True,
@@ -139,4 +145,8 @@ class TradePlanService:
             aggregate_score=trade_plan.aggregate_score,
             applied_risk_pct=trade_plan.applied_risk_pct,
             max_position_notional=trade_plan.max_position_notional,
+            final_gate_score=decision.final_gate_score,
+            final_gate_passed=decision.final_gate_passed,
+            final_gate_reason=decision.final_gate_reason,
+            triggered_breakers=decision.triggered_breakers,
         )
