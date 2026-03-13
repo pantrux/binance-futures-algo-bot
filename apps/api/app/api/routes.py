@@ -7,6 +7,7 @@ from apps.api.app.api.deps import get_db
 from apps.api.app.core.settings import settings
 from apps.api.app.observability.metrics import api_metrics
 from apps.api.app.schemas.dashboard import DashboardSummary
+from apps.api.app.schemas.execution_parity import ExecutionParityReport
 from apps.api.app.schemas.execution_reconciliation import ReconciliationReport
 from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.market_data import MarketCandleRead, MarketIngestionResponse, MarketSnapshotRead
@@ -20,6 +21,7 @@ from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.binance_market_data_service import BinanceMarketDataService
 from apps.api.app.services.dashboard_service import DashboardService
+from apps.api.app.services.execution_parity_service import ExecutionParityService
 from apps.api.app.services.execution_state_machine_service import ExecutionStateMachineService
 from apps.api.app.services.indicator_service import IndicatorService
 from apps.api.app.services.market_regime_service import MarketRegimeService
@@ -171,3 +173,8 @@ def reconcile_execution(trade_plan_id: int, db: Session = Depends(get_db)) -> Re
         return ExecutionStateMachineService(db).reconcile_trade_plan(trade_plan_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/execution/parity/{symbol}", response_model=ExecutionParityReport)
+def execution_parity(symbol: str, limit: int = Query(default=50, ge=1, le=500), db: Session = Depends(get_db)) -> ExecutionParityReport:
+    return ExecutionParityService(db).build_report(symbol=symbol.upper(), limit=limit)
