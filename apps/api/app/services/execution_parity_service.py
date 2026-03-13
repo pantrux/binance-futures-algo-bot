@@ -10,7 +10,11 @@ class ExecutionParityService:
 
     @staticmethod
     def _pct_diff(lhs: float, rhs: float) -> float:
-        baseline = abs(lhs) if lhs != 0 else max(abs(rhs), 1.0)
+        if lhs == 0 and rhs == 0:
+            return 0.0
+        if lhs == 0 or rhs == 0:
+            return 100.0
+        baseline = abs(lhs)
         return round(abs(lhs - rhs) / baseline * 100, 4)
 
     def build_report(self, *, symbol: str, limit: int = 50) -> ExecutionParityReport:
@@ -33,11 +37,18 @@ class ExecutionParityService:
         while paper_queue and testnet_queue:
             paper = paper_queue.pop(0)
 
-            match_index = next((idx for idx, candidate in enumerate(testnet_queue) if candidate.side == paper.side), None)
-            if match_index is None:
+            candidates: list[tuple[int, float]] = []
+            for idx, candidate in enumerate(testnet_queue):
+                if candidate.side != paper.side:
+                    continue
+                delta_seconds = abs((candidate.created_at - paper.created_at).total_seconds())
+                candidates.append((idx, delta_seconds))
+
+            if not candidates:
                 unmatched_paper += 1
                 continue
 
+            match_index = min(candidates, key=lambda item: item[1])[0]
             testnet = testnet_queue.pop(match_index)
             pairs.append(
                 ParityPairDiff(
