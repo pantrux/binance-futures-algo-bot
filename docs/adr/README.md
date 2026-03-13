@@ -33,6 +33,7 @@
 - `ADR-029-final-decision-gate-and-circuit-breakers.md`
 - `ADR-030-router-binance-testnet.md`
 - `ADR-031-execution-reconciliation-state-machine.md`
+- `ADR-032-paper-vs-testnet-parity-shadow-run.md`
 
 ## Archivados
 

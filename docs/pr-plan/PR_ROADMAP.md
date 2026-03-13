@@ -52,8 +52,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-27 | Riesgo de portafolio y correlación | ✅ Mergeado | límites de exposición multi-símbolo y correlación |
 | PR-28 | Gate de decisión final y circuit breakers avanzados | ✅ Mergeado | capa final de decisión y apagado seguro |
 | PR-29 | Router Binance Testnet | ✅ Mergeado | ejecución real en testnet con trazabilidad de órdenes |
-| PR-30 | Reconciliación y máquina de estados de ejecución | 🟡 En progreso | consistencia entre órdenes/posiciones/eventos |
-| PR-31 | Paridad paper vs testnet (shadow run) | 🔵 Planificado | reporte comparativo y brechas de comportamiento |
+| PR-30 | Reconciliación y máquina de estados de ejecución | ✅ Mergeado | consistencia entre órdenes/posiciones/eventos |
+| PR-31 | Paridad paper vs testnet (shadow run) | 🟡 En progreso | reporte comparativo y brechas de comportamiento |
 | PR-32 | Backtesting y walk-forward | 🔵 Planificado | validación cuantitativa de estrategias y robustez |
 | PR-33 | Checklist de transición y rampa de capital | 🔵 Planificado | criterios formales para eventual salida de paper |
 | PR-34 | Cutover controlado y monitoreo post-cutover | 🔵 Planificado | transición asistida con gates y rollback explícito |
@@ -494,7 +494,7 @@ Conectar ejecución a Binance Testnet manteniendo control y trazabilidad complet
 ---
 
 ### PR-30 — Reconciliación y máquina de estados de ejecución
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Alinear estado interno del bot con estado real de órdenes/posiciones del exchange.
@@ -507,7 +507,7 @@ Alinear estado interno del bot con estado real de órdenes/posiciones del exchan
 ---
 
 ### PR-31 — Paridad paper vs testnet (shadow run)
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Medir brecha entre comportamiento esperado (paper) y real (testnet) antes de cualquier transición.
