@@ -52,7 +52,7 @@ def test_backtesting_route_returns_404_when_symbol_has_no_candles():
                 BacktestRunRequest(
                     symbol="ETHUSDT",
                     timeframe="15m",
-                    candles_limit=200,
+                    candles_limit=240,
                     training_window=120,
                     testing_window=60,
                 ),
@@ -76,7 +76,7 @@ def test_backtesting_route_returns_400_when_windows_do_not_fit_available_candles
                 BacktestRunRequest(
                     symbol="BTCUSDT",
                     timeframe="15m",
-                    candles_limit=80,
+                    candles_limit=110,
                     training_window=50,
                     testing_window=20,
                 ),

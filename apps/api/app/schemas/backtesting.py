@@ -61,6 +61,8 @@ class BacktestRunRequest(BaseModel):
             raise ValueError("training_window debe ser menor que candles_limit")
         if self.training_window + self.testing_window > self.candles_limit:
             raise ValueError("training_window + testing_window no puede exceder candles_limit")
+        if self.training_window + (2 * self.testing_window) > self.candles_limit:
+            raise ValueError("Se requieren al menos dos ventanas out-of-sample para ejecutar walk-forward")
         return self
 
 

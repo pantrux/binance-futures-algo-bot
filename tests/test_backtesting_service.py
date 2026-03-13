@@ -1,10 +1,12 @@
+from types import SimpleNamespace
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from apps.api.app.db.base import Base
 from apps.api.app.schemas.backtesting import BacktestMetrics, BacktestRunRequest, BacktestStrategyParameters
-from apps.api.app.services.backtesting_service import BacktestingService, _SimulationOutput
+from apps.api.app.services.backtesting_service import BacktestingService
 from tests.conftest import seed_walk_forward_candles
 
 
@@ -62,7 +64,7 @@ def test_backtesting_service_raises_when_walk_forward_windows_do_not_fit():
                 BacktestRunRequest(
                     symbol="BTCUSDT",
                     timeframe="15m",
-                    candles_limit=80,
+                    candles_limit=110,
                     training_window=50,
                     testing_window=20,
                 )
@@ -103,8 +105,23 @@ def test_backtest_strategy_parameters_require_entry_rsi_above_exit_rsi():
         raise AssertionError("Se esperaba ValueError para umbral RSI de entrada no mayor al de salida")
 
 
+def test_backtest_run_request_requires_at_least_two_walk_forward_windows():
+    try:
+        BacktestRunRequest(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            candles_limit=180,
+            training_window=120,
+            testing_window=60,
+        )
+    except ValueError as exc:
+        assert "al menos dos ventanas out-of-sample" in str(exc)
+    else:
+        raise AssertionError("Se esperaba ValueError para walk-forward degenerado de una sola ventana")
+
+
 def test_is_better_result_uses_tolerance_before_drawdown_tiebreak():
-    candidate = _SimulationOutput(
+    candidate = SimpleNamespace(
         metrics=BacktestMetrics(
             total_return_pct=10.0 + 1e-10,
             win_rate_pct=50.0,
@@ -112,11 +129,9 @@ def test_is_better_result_uses_tolerance_before_drawdown_tiebreak():
             max_drawdown_pct=8.0,
             trades_count=4,
             ending_capital=1100.0,
-        ),
-        trade_pnls=[10.0],
-        equity_curve=[1000.0, 1100.0],
+        )
     )
-    current = _SimulationOutput(
+    current = SimpleNamespace(
         metrics=BacktestMetrics(
             total_return_pct=10.0,
             win_rate_pct=50.0,
@@ -124,16 +139,14 @@ def test_is_better_result_uses_tolerance_before_drawdown_tiebreak():
             max_drawdown_pct=9.0,
             trades_count=4,
             ending_capital=1100.0,
-        ),
-        trade_pnls=[10.0],
-        equity_curve=[1000.0, 1100.0],
+        )
     )
 
     assert BacktestingService._is_better_result(candidate, current) is True
 
 
 def test_is_better_result_prefers_fewer_trades_when_return_and_drawdown_tie():
-    candidate = _SimulationOutput(
+    candidate = SimpleNamespace(
         metrics=BacktestMetrics(
             total_return_pct=10.0,
             win_rate_pct=50.0,
@@ -141,11 +154,9 @@ def test_is_better_result_prefers_fewer_trades_when_return_and_drawdown_tie():
             max_drawdown_pct=8.0,
             trades_count=3,
             ending_capital=1100.0,
-        ),
-        trade_pnls=[10.0],
-        equity_curve=[1000.0, 1100.0],
+        )
     )
-    current = _SimulationOutput(
+    current = SimpleNamespace(
         metrics=BacktestMetrics(
             total_return_pct=10.0,
             win_rate_pct=50.0,
@@ -153,9 +164,7 @@ def test_is_better_result_prefers_fewer_trades_when_return_and_drawdown_tie():
             max_drawdown_pct=8.0,
             trades_count=5,
             ending_capital=1100.0,
-        ),
-        trade_pnls=[10.0],
-        equity_curve=[1000.0, 1100.0],
+        )
     )
 
     assert BacktestingService._is_better_result(candidate, current) is True
