@@ -370,7 +370,8 @@ class BacktestingService:
             equity_curve.append(round(equity, 6))
 
         if units > 0.0:
-            assert closes, "closes no puede estar vacío si hay unidades abiertas"
+            if not closes:
+                raise RuntimeError("closes no puede estar vacío si hay unidades abiertas")
             final_cash = units * closes[-1] * (1 - fee_rate)
             trade_pnls.append(final_cash - entry_cost)
             cash = final_cash
