@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from apps.api.app.schemas.trading import MarketState, RiskDecision, RiskEventDetail
+from apps.api.app.services.risk_engine import RiskEngine
 
 
 @dataclass
@@ -26,9 +27,12 @@ class FinalDecisionGate:
         self.policy = policy or FinalGatePolicy()
 
     def _score_components(self, *, risk_decision: RiskDecision, market_state: MarketState) -> tuple[float, float, float]:
-        # `risk_decision.score` ya incluye 5% de liquidez desde `RiskEngine.aggregate_score`.
-        # Lo descontamos para que el 20% de liquidez del gate final no se duplique.
-        base_score_wo_liquidity = max(0.0, min(100.0, risk_decision.score - (market_state.liquidity_score * 0.05)))
+        # `risk_decision.score` ya incluye liquidez desde `RiskEngine.aggregate_score`.
+        # Usamos la misma constante del motor para evitar acoplamiento frágil.
+        base_score_wo_liquidity = max(
+            0.0,
+            min(100.0, risk_decision.score - (market_state.liquidity_score * RiskEngine.LIQUIDITY_WEIGHT)),
+        )
         score_component = base_score_wo_liquidity * 0.5
 
         # Fallback conservador: si no hay confianza de régimen, no se bonifica el score final.
