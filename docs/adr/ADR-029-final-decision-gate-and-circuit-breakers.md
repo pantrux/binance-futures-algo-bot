@@ -26,6 +26,7 @@ Introducir `FinalDecisionGate` como capa posterior al `RiskEngine` con:
      - `final_gate_score`
      - `final_gate_passed`
      - `final_gate_reason`
+     - `final_gate_pre_rejected_by_engine`
      - `triggered_breakers`
    - `TradePlanCreateResponse` expone esos campos al caller de API.
 
@@ -35,6 +36,7 @@ Introducir `FinalDecisionGate` como capa posterior al `RiskEngine` con:
      - `final_gate_score`
      - `final_gate_passed`
      - `final_gate_reason`
+     - `final_gate_pre_rejected_by_engine`
      - `triggered_breakers`
 
 ## Consecuencias

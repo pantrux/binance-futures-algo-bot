@@ -20,18 +20,31 @@ class FinalGateDecision:
     reason: str
     triggered_breakers: list[str]
     events: list[RiskEventDetail]
+    pre_rejected_by_engine: bool = False
 
 
 class FinalDecisionGate:
-    def __init__(self, policy: FinalGatePolicy | None = None):
+    def __init__(
+        self,
+        policy: FinalGatePolicy | None = None,
+        *,
+        risk_engine: RiskEngine | None = None,
+        liquidity_weight: float | None = None,
+    ):
         self.policy = policy or FinalGatePolicy()
+        if liquidity_weight is not None:
+            self._liquidity_weight = liquidity_weight
+        elif risk_engine is not None:
+            self._liquidity_weight = risk_engine.LIQUIDITY_WEIGHT
+        else:
+            self._liquidity_weight = RiskEngine.LIQUIDITY_WEIGHT
 
     def _score_components(self, *, risk_decision: RiskDecision, market_state: MarketState) -> tuple[float, float, float]:
         # `risk_decision.score` ya incluye liquidez desde `RiskEngine.aggregate_score`.
-        # Usamos la misma constante del motor para evitar acoplamiento frágil.
+        # Descontamos usando el peso efectivo del motor inyectado para evitar doble conteo.
         base_score_wo_liquidity = max(
             0.0,
-            min(100.0, risk_decision.score - (market_state.liquidity_score * RiskEngine.LIQUIDITY_WEIGHT)),
+            min(100.0, risk_decision.score - (market_state.liquidity_score * self._liquidity_weight)),
         )
         score_component = base_score_wo_liquidity * 0.5
 
@@ -132,9 +145,10 @@ class FinalDecisionGate:
             return FinalGateDecision(
                 passed=False,
                 final_score=final_score,
-                reason=risk_decision.reason,
+                reason="Pre-rechazado por el motor de riesgo",
                 triggered_breakers=triggered_breakers,
                 events=events,
+                pre_rejected_by_engine=True,
             )
 
         if triggered_breakers:

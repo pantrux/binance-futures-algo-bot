@@ -57,6 +57,29 @@ def test_final_gate_score_does_not_double_count_liquidity_component() -> None:
     assert out.final_score == 79.28
 
 
+def test_final_gate_uses_injected_risk_engine_liquidity_weight() -> None:
+    class CustomRiskEngine:
+        LIQUIDITY_WEIGHT = 0.08
+
+    gate = FinalDecisionGate(risk_engine=CustomRiskEngine())
+    decision = _base_decision()
+    market_state = MarketState(
+        symbol="BTCUSDT",
+        timeframe="15m",
+        volatility_pct=2.0,
+        trend_strength=75.0,
+        liquidity_score=85.0,
+        market_regime="tendencia_alcista",
+        regime_confidence=78.0,
+    )
+
+    out = gate.evaluate(risk_decision=decision, market_state=market_state)
+
+    # score_wo_liq = 82 - (85 * 0.08) = 75.2
+    # final = (75.2 * 0.5) + (78 * 0.3) + (85 * 0.2) = 78.0
+    assert out.final_score == 78.0
+
+
 def test_final_gate_blocks_on_extreme_volatility_breaker() -> None:
     gate = FinalDecisionGate()
     decision = _base_decision()
@@ -236,7 +259,7 @@ def test_final_gate_blocks_on_low_composed_score_without_breakers() -> None:
     assert any(event.event_type == "final_gate_low_score" for event in out.events)
 
 
-def test_final_gate_keeps_risk_engine_reason_when_pre_rejected_and_preserves_breakers() -> None:
+def test_final_gate_marks_pre_rejected_by_engine_and_preserves_breakers() -> None:
     gate = FinalDecisionGate()
     decision = _base_decision().model_copy(
         update={"approved": False, "reason": "Bloqueado por riesgo base", "regime_confidence": 20.0}
@@ -254,5 +277,6 @@ def test_final_gate_keeps_risk_engine_reason_when_pre_rejected_and_preserves_bre
     out = gate.evaluate(risk_decision=decision, market_state=market_state)
 
     assert out.passed is False
-    assert out.reason == "Bloqueado por riesgo base"
+    assert out.pre_rejected_by_engine is True
+    assert out.reason == "Pre-rechazado por el motor de riesgo"
     assert {"extreme_volatility", "low_liquidity", "regime_uncertainty"}.issubset(set(out.triggered_breakers))

@@ -27,6 +27,7 @@ class TradePlan(Base):
     final_gate_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     final_gate_passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     final_gate_reason: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    final_gate_pre_rejected_by_engine: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     triggered_breakers: Mapped[str | None] = mapped_column(Text, nullable=True)
     thesis: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(24), default="draft", index=True)

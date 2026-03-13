@@ -87,5 +87,6 @@ class RiskDecision(BaseModel):
     final_gate_score: float | None = None
     final_gate_passed: bool | None = None
     final_gate_reason: str | None = None
+    final_gate_pre_rejected_by_engine: bool | None = None
     triggered_breakers: list[str] = Field(default_factory=list)
     risk_events: list[RiskEventDetail] = Field(default_factory=list)

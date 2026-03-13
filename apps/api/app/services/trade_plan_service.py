@@ -19,7 +19,7 @@ class TradePlanService:
     ) -> None:
         self.db = db
         self.risk_engine = risk_engine or RiskEngine()
-        self.final_gate = final_gate or FinalDecisionGate()
+        self.final_gate = final_gate or FinalDecisionGate(risk_engine=self.risk_engine)
         self.outline_service = outline_service or OutlineService()
 
     async def create_trade_plan(self, payload: TradePlanCreateRequest) -> TradePlanCreateResponse:
@@ -56,6 +56,7 @@ class TradePlanService:
                 "final_gate_score": final_gate_decision.final_score,
                 "final_gate_passed": final_gate_decision.passed,
                 "final_gate_reason": final_gate_decision.reason,
+                "final_gate_pre_rejected_by_engine": final_gate_decision.pre_rejected_by_engine,
                 "triggered_breakers": final_gate_decision.triggered_breakers,
                 "risk_events": combined_events,
             }
@@ -80,6 +81,7 @@ class TradePlanService:
             final_gate_score=decision.final_gate_score,
             final_gate_passed=decision.final_gate_passed,
             final_gate_reason=decision.final_gate_reason,
+            final_gate_pre_rejected_by_engine=decision.final_gate_pre_rejected_by_engine,
             triggered_breakers=json.dumps(decision.triggered_breakers, ensure_ascii=False),
             thesis=payload.thesis,
             status="approved" if decision.approved else "blocked",
@@ -128,6 +130,7 @@ class TradePlanService:
                 "final_gate_score": decision.final_gate_score,
                 "final_gate_passed": decision.final_gate_passed,
                 "final_gate_reason": decision.final_gate_reason,
+                "final_gate_pre_rejected_by_engine": decision.final_gate_pre_rejected_by_engine,
                 "triggered_breakers": decision.triggered_breakers,
             },
         )
@@ -148,5 +151,6 @@ class TradePlanService:
             final_gate_score=decision.final_gate_score,
             final_gate_passed=decision.final_gate_passed,
             final_gate_reason=decision.final_gate_reason,
+            final_gate_pre_rejected_by_engine=decision.final_gate_pre_rejected_by_engine,
             triggered_breakers=decision.triggered_breakers,
         )
