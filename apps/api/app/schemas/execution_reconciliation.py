@@ -1,9 +1,21 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
+ExecutionDriftType = Literal[
+    "missing_filled_order",
+    "missing_position_association",
+    "position_closed_but_plan_still_executed",
+    "multiple_open_positions",
+    "executed_with_rejected_orders",
+]
+ExecutionSeverity = Literal["critical", "warning", "info"]
+
+
 class ExecutionDriftEvent(BaseModel):
-    event_type: str
-    severity: str
+    event_type: ExecutionDriftType
+    severity: ExecutionSeverity
     message: str
 
 

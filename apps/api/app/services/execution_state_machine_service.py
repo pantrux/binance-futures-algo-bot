@@ -27,6 +27,7 @@ class ExecutionStateMachineService:
         )
 
         open_positions = [position for position in positions if position.status == "open"]
+        closed_positions = [position for position in positions if position.status == "closed"]
         filled_orders = [order for order in orders if order.status in {"filled", "partially_filled"}]
 
         drift_events: list[ExecutionDriftEvent] = []
@@ -43,15 +44,24 @@ class ExecutionStateMachineService:
                 )
                 recommended_actions.append("replay_execution_audit")
 
-            if not open_positions:
+            if not positions:
                 drift_events.append(
                     ExecutionDriftEvent(
-                        event_type="missing_open_position",
+                        event_type="missing_position_association",
                         severity="critical",
-                        message="Trade plan ejecutado sin posición abierta asociada",
+                        message="Trade plan ejecutado sin posición asociada registrada",
                     )
                 )
                 recommended_actions.append("rebuild_position_state")
+            elif not open_positions and closed_positions:
+                drift_events.append(
+                    ExecutionDriftEvent(
+                        event_type="position_closed_but_plan_still_executed",
+                        severity="warning",
+                        message="La posición fue cerrada pero el trade plan sigue en estado ejecutado",
+                    )
+                )
+                recommended_actions.append("sync_trade_plan_terminal_status")
 
         if len(open_positions) > 1:
             drift_events.append(

@@ -12,7 +12,8 @@ Agregar `ExecutionStateMachineService` con reconciliación por trade plan:
 - valida presencia de órdenes fill cuando el plan está ejecutado,
 - valida presencia de posición abierta asociada,
 - detecta condiciones de drift (múltiples posiciones abiertas, órdenes rechazadas con plan ejecutado),
-- emite `ReconciliationReport` con `drift_events` y `recommended_actions`.
+- diferencia entre error crítico por ausencia total de posición y warning por posición ya cerrada con plan aún ejecutado,
+- emite `ReconciliationReport` con `drift_events` tipados y `recommended_actions`.
 
 ## API
 - `GET /execution/reconcile/{trade_plan_id}`
