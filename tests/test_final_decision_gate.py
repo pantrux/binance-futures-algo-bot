@@ -117,9 +117,9 @@ def test_final_gate_blocks_on_portfolio_overheat_breaker() -> None:
     assert any(event.event_type == "circuit_breaker_portfolio_overheat" for event in out.events)
 
 
-def test_final_gate_blocks_on_regime_uncertainty_breaker() -> None:
+def test_final_gate_blocks_on_regime_uncertainty_breaker_at_threshold() -> None:
     gate = FinalDecisionGate()
-    decision = _base_decision().model_copy(update={"regime_confidence": 25.0})
+    decision = _base_decision().model_copy(update={"regime_confidence": 30.0})
     market_state = MarketState(
         symbol="BTCUSDT",
         timeframe="15m",
@@ -127,7 +127,7 @@ def test_final_gate_blocks_on_regime_uncertainty_breaker() -> None:
         trend_strength=70.0,
         liquidity_score=84.0,
         market_regime="transicion",
-        regime_confidence=25.0,
+        regime_confidence=30.0,
     )
 
     out = gate.evaluate(risk_decision=decision, market_state=market_state)
@@ -135,6 +135,26 @@ def test_final_gate_blocks_on_regime_uncertainty_breaker() -> None:
     assert out.passed is False
     assert "regime_uncertainty" in out.triggered_breakers
     assert any(event.event_type == "circuit_breaker_regime_uncertainty" for event in out.events)
+
+
+def test_final_gate_blocks_when_regime_confidence_is_unknown() -> None:
+    gate = FinalDecisionGate()
+    decision = _base_decision().model_copy(update={"regime_confidence": None})
+    market_state = MarketState(
+        symbol="BTCUSDT",
+        timeframe="15m",
+        volatility_pct=2.0,
+        trend_strength=70.0,
+        liquidity_score=84.0,
+        market_regime="transicion",
+        regime_confidence=None,
+    )
+
+    out = gate.evaluate(risk_decision=decision, market_state=market_state)
+
+    assert out.passed is False
+    assert "regime_confidence_unknown" in out.triggered_breakers
+    assert any(event.event_type == "circuit_breaker_regime_confidence_unknown" for event in out.events)
 
 
 def test_final_gate_blocks_on_low_composed_score_without_breakers() -> None:

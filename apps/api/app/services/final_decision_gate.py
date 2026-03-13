@@ -27,7 +27,8 @@ class FinalDecisionGate:
 
     def _score_components(self, *, risk_decision: RiskDecision, market_state: MarketState) -> tuple[float, float, float]:
         score_component = risk_decision.score * 0.5
-        regime_component = (risk_decision.regime_confidence if risk_decision.regime_confidence is not None else 50.0) * 0.3
+        # Fallback conservador: si no hay confianza de régimen, no se bonifica el score final.
+        regime_component = (risk_decision.regime_confidence if risk_decision.regime_confidence is not None else 0.0) * 0.3
         liquidity_component = market_state.liquidity_score * 0.2
         return score_component, regime_component, liquidity_component
 
@@ -94,8 +95,18 @@ class FinalDecisionGate:
                 )
             )
 
-        regime_confidence = risk_decision.regime_confidence if risk_decision.regime_confidence is not None else 50.0
-        if regime_confidence < self.policy.min_regime_confidence:
+        regime_confidence = risk_decision.regime_confidence
+        if regime_confidence is None:
+            triggered_breakers.append("regime_confidence_unknown")
+            events.append(
+                RiskEventDetail(
+                    event_type="circuit_breaker_regime_confidence_unknown",
+                    severity="critical",
+                    message="Circuit breaker activado por confianza de régimen desconocida",
+                    context={"threshold": self.policy.min_regime_confidence},
+                )
+            )
+        elif regime_confidence <= self.policy.min_regime_confidence:
             triggered_breakers.append("regime_uncertainty")
             events.append(
                 RiskEventDetail(
