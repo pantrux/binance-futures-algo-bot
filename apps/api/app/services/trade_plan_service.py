@@ -1,15 +1,25 @@
+import json
+
 from sqlalchemy.orm import Session
 
 from apps.api.app.db.models import RiskEvent, TradePlan
 from apps.api.app.schemas.trade_plan import TradePlanCreateRequest, TradePlanCreateResponse
+from apps.api.app.services.final_decision_gate import FinalDecisionGate
 from apps.api.app.services.outline_service import OutlineService
 from apps.api.app.services.risk_engine import RiskEngine
 
 
 class TradePlanService:
-    def __init__(self, db: Session, risk_engine: RiskEngine | None = None, outline_service: OutlineService | None = None) -> None:
+    def __init__(
+        self,
+        db: Session,
+        risk_engine: RiskEngine | None = None,
+        final_gate: FinalDecisionGate | None = None,
+        outline_service: OutlineService | None = None,
+    ) -> None:
         self.db = db
         self.risk_engine = risk_engine or RiskEngine()
+        self.final_gate = final_gate or FinalDecisionGate(risk_engine=self.risk_engine)
         self.outline_service = outline_service or OutlineService()
 
     async def create_trade_plan(self, payload: TradePlanCreateRequest) -> TradePlanCreateResponse:
@@ -24,6 +34,34 @@ class TradePlanService:
             side=payload.side,
             portfolio_state=payload.portfolio_state,
         )
+        final_gate_decision = self.final_gate.evaluate(risk_decision=decision, market_state=payload.market_state)
+        combined_events = [*decision.risk_events, *final_gate_decision.events]
+
+        approved_after_gate = decision.approved and final_gate_decision.passed
+        if approved_after_gate:
+            effective_reason = decision.reason
+            effective_risk_pct = decision.suggested_risk_pct
+            effective_notional = decision.max_position_notional
+        else:
+            effective_reason = final_gate_decision.reason if decision.approved else decision.reason
+            effective_risk_pct = 0.0
+            effective_notional = 0.0
+
+        decision = decision.model_copy(
+            update={
+                "approved": approved_after_gate,
+                "reason": effective_reason,
+                "suggested_risk_pct": effective_risk_pct,
+                "max_position_notional": effective_notional,
+                "final_gate_score": final_gate_decision.final_score,
+                "final_gate_passed": final_gate_decision.passed,
+                "final_gate_reason": final_gate_decision.reason,
+                "final_gate_pre_rejected_by_engine": final_gate_decision.pre_rejected_by_engine,
+                "triggered_breakers": final_gate_decision.triggered_breakers,
+                "risk_events": combined_events,
+            }
+        )
+
         trade_plan = TradePlan(
             symbol=payload.symbol,
             side=payload.side,
@@ -40,6 +78,11 @@ class TradePlanService:
             capital_usdt=payload.capital_usdt,
             applied_risk_pct=decision.suggested_risk_pct,
             max_position_notional=decision.max_position_notional,
+            final_gate_score=decision.final_gate_score,
+            final_gate_passed=decision.final_gate_passed,
+            final_gate_reason=decision.final_gate_reason,
+            final_gate_pre_rejected_by_engine=decision.final_gate_pre_rejected_by_engine,
+            triggered_breakers=json.dumps(decision.triggered_breakers, ensure_ascii=False),
             thesis=payload.thesis,
             status="approved" if decision.approved else "blocked",
             is_testnet=True,
@@ -84,6 +127,11 @@ class TradePlanService:
                 "correlation_multiplier": decision.correlation_multiplier,
                 "portfolio_risk_pct_before": decision.portfolio_risk_pct_before,
                 "portfolio_risk_pct_after": decision.portfolio_risk_pct_after,
+                "final_gate_score": decision.final_gate_score,
+                "final_gate_passed": decision.final_gate_passed,
+                "final_gate_reason": decision.final_gate_reason,
+                "final_gate_pre_rejected_by_engine": decision.final_gate_pre_rejected_by_engine,
+                "triggered_breakers": decision.triggered_breakers,
             },
         )
         outline_url = outline_result.get("data", {}).get("url") if isinstance(outline_result, dict) else None
@@ -100,4 +148,9 @@ class TradePlanService:
             aggregate_score=trade_plan.aggregate_score,
             applied_risk_pct=trade_plan.applied_risk_pct,
             max_position_notional=trade_plan.max_position_notional,
+            final_gate_score=decision.final_gate_score,
+            final_gate_passed=decision.final_gate_passed,
+            final_gate_reason=decision.final_gate_reason,
+            final_gate_pre_rejected_by_engine=decision.final_gate_pre_rejected_by_engine,
+            triggered_breakers=decision.triggered_breakers,
         )

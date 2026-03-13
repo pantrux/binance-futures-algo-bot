@@ -27,3 +27,8 @@ class TradePlanCreateResponse(BaseModel):
     aggregate_score: float
     applied_risk_pct: float
     max_position_notional: float
+    final_gate_score: float | None = None
+    final_gate_passed: bool | None = None
+    final_gate_reason: str | None = None
+    final_gate_pre_rejected_by_engine: bool | None = None
+    triggered_breakers: list[str] = Field(default_factory=list)

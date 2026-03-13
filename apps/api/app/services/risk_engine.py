@@ -34,6 +34,8 @@ class RiskPolicy:
 
 
 class RiskEngine:
+    LIQUIDITY_WEIGHT = 0.05
+
     def __init__(self, policy: RiskPolicy | None = None):
         self.policy = policy or RiskPolicy()
 
@@ -210,7 +212,7 @@ class RiskEngine:
             "fundamental": 0.20,
             "sentiment": 0.20,
             "confidence": 0.15,
-            "liquidity": 0.05,
+            "liquidity": self.LIQUIDITY_WEIGHT,
         }
         return round(
             signals.technical * weights["technical"]

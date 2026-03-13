@@ -30,6 +30,7 @@
 - `ADR-026-market-regime-classifier.md`
 - `ADR-027-dynamic-risk-sizing-by-regime.md`
 - `ADR-028-portfolio-correlation-risk-guards.md`
+- `ADR-029-final-decision-gate-and-circuit-breakers.md`
 
 ## Archivados
 

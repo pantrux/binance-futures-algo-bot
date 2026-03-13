@@ -84,4 +84,9 @@ class RiskDecision(BaseModel):
     symbol_risk_pct_before: float | None = Field(default=None, ge=0, le=100)
     symbol_risk_pct_after: float | None = Field(default=None, ge=0, le=100)
     correlation_multiplier: float | None = Field(default=None, ge=0, le=1.0)
+    final_gate_score: float | None = None
+    final_gate_passed: bool | None = None
+    final_gate_reason: str | None = None
+    final_gate_pre_rejected_by_engine: bool | None = None
+    triggered_breakers: list[str] = Field(default_factory=list)
     risk_events: list[RiskEventDetail] = Field(default_factory=list)
