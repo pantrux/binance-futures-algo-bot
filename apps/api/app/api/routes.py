@@ -10,6 +10,7 @@ from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.market_data import MarketCandleRead, MarketIngestionResponse, MarketSnapshotRead
 from apps.api.app.schemas.market_regime import MarketRegimeSnapshot
 from apps.api.app.services.binance_market_data_service import BinanceMarketDataService
+from apps.api.app.schemas.execution_reconciliation import ReconciliationReport
 from apps.api.app.schemas.paper_trading import PaperExecutionResponse
 from apps.api.app.schemas.testnet_trading import TestnetExecutionResponse
 from apps.api.app.schemas.signals import SignalSnapshot
@@ -23,6 +24,7 @@ from apps.api.app.services.indicator_service import IndicatorService
 from apps.api.app.services.market_regime_service import MarketRegimeService
 from apps.api.app.services.paper_trading_service import PaperTradingService
 from apps.api.app.services.risk_engine import RiskEngine
+from apps.api.app.services.execution_state_machine_service import ExecutionStateMachineService
 from apps.api.app.services.signal_service import SignalService
 from apps.api.app.services.testnet_trading_service import BinanceTestnetTradingService
 from apps.api.app.services.trade_plan_query_service import TradePlanQueryService
@@ -159,5 +161,13 @@ async def testnet_execute(trade_plan_id: int, db: Session = Depends(get_db)) -> 
             execution_enabled=settings.testnet_execution_enabled,
         ).execute_trade_plan(trade_plan_id)
         return TestnetExecutionResponse(**result)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/execution/reconcile/{trade_plan_id}", response_model=ReconciliationReport)
+def reconcile_execution(trade_plan_id: int, db: Session = Depends(get_db)) -> ReconciliationReport:
+    try:
+        return ExecutionStateMachineService(db).reconcile_trade_plan(trade_plan_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
