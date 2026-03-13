@@ -100,8 +100,8 @@ class FinalDecisionGate:
             events.append(
                 RiskEventDetail(
                     event_type="circuit_breaker_regime_uncertainty",
-                    severity="warning",
-                    message="Régimen con confianza baja; degradación a bloqueo preventivo",
+                    severity="critical",
+                    message="Circuit breaker activado por incertidumbre de régimen",
                     context={
                         "regime_confidence": regime_confidence,
                         "threshold": self.policy.min_regime_confidence,
