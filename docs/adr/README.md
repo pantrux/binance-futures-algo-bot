@@ -31,6 +31,7 @@
 - `ADR-027-dynamic-risk-sizing-by-regime.md`
 - `ADR-028-portfolio-correlation-risk-guards.md`
 - `ADR-029-final-decision-gate-and-circuit-breakers.md`
+- `ADR-030-router-binance-testnet.md`
 
 ## Archivados
 

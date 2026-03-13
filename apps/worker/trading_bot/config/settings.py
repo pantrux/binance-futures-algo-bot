@@ -14,8 +14,12 @@ class WorkerSettings(BaseSettings):
     default_signal_timeframe: str = "15m"
     signal_snapshot_limit: int = 200
     strict_symbol_failures: bool = False
+    testnet_execution_enabled: bool = False
+    testnet_global_kill_switch: bool = False
+    testnet_kill_switch_symbols: tuple[str, ...] = ()
+    testnet_fallback_to_paper: bool = True
 
-    @field_validator("symbols", "timeframes", mode="before")
+    @field_validator("symbols", "timeframes", "testnet_kill_switch_symbols", mode="before")
     @classmethod
     def parse_tuple_env(cls, value: object):
         if isinstance(value, str):
