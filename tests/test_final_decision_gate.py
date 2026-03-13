@@ -37,6 +37,26 @@ def test_final_gate_passes_under_normal_conditions() -> None:
     assert any(event.event_type == "final_gate_pass" for event in out.events)
 
 
+def test_final_gate_score_does_not_double_count_liquidity_component() -> None:
+    gate = FinalDecisionGate()
+    decision = _base_decision()
+    market_state = MarketState(
+        symbol="BTCUSDT",
+        timeframe="15m",
+        volatility_pct=2.0,
+        trend_strength=75.0,
+        liquidity_score=85.0,
+        market_regime="tendencia_alcista",
+        regime_confidence=78.0,
+    )
+
+    out = gate.evaluate(risk_decision=decision, market_state=market_state)
+
+    # score_wo_liq = 82 - (85 * 0.05) = 77.75
+    # final = (77.75 * 0.5) + (78 * 0.3) + (85 * 0.2) = 79.275 -> 79.28
+    assert out.final_score == 79.28
+
+
 def test_final_gate_blocks_on_extreme_volatility_breaker() -> None:
     gate = FinalDecisionGate()
     decision = _base_decision()
@@ -55,6 +75,25 @@ def test_final_gate_blocks_on_extreme_volatility_breaker() -> None:
     assert out.passed is False
     assert "extreme_volatility" in out.triggered_breakers
     assert any(event.event_type == "circuit_breaker_extreme_volatility" for event in out.events)
+
+
+def test_final_gate_blocks_on_extreme_volatility_breaker_at_threshold() -> None:
+    gate = FinalDecisionGate()
+    decision = _base_decision()
+    market_state = MarketState(
+        symbol="BTCUSDT",
+        timeframe="15m",
+        volatility_pct=6.0,
+        trend_strength=70.0,
+        liquidity_score=80.0,
+        market_regime="alta_volatilidad",
+        regime_confidence=65.0,
+    )
+
+    out = gate.evaluate(risk_decision=decision, market_state=market_state)
+
+    assert out.passed is False
+    assert "extreme_volatility" in out.triggered_breakers
 
 
 def test_final_gate_blocks_when_portfolio_risk_after_is_unknown() -> None:
@@ -95,6 +134,25 @@ def test_final_gate_blocks_on_low_liquidity_breaker() -> None:
     assert out.passed is False
     assert "low_liquidity" in out.triggered_breakers
     assert any(event.event_type == "circuit_breaker_low_liquidity" for event in out.events)
+
+
+def test_final_gate_blocks_on_low_liquidity_breaker_at_threshold() -> None:
+    gate = FinalDecisionGate()
+    decision = _base_decision()
+    market_state = MarketState(
+        symbol="BTCUSDT",
+        timeframe="15m",
+        volatility_pct=2.0,
+        trend_strength=70.0,
+        liquidity_score=20.0,
+        market_regime="transicion",
+        regime_confidence=60.0,
+    )
+
+    out = gate.evaluate(risk_decision=decision, market_state=market_state)
+
+    assert out.passed is False
+    assert "low_liquidity" in out.triggered_breakers
 
 
 def test_final_gate_blocks_on_portfolio_overheat_breaker() -> None:

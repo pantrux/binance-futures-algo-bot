@@ -26,7 +26,11 @@ class FinalDecisionGate:
         self.policy = policy or FinalGatePolicy()
 
     def _score_components(self, *, risk_decision: RiskDecision, market_state: MarketState) -> tuple[float, float, float]:
-        score_component = risk_decision.score * 0.5
+        # `risk_decision.score` ya incluye 5% de liquidez desde `RiskEngine.aggregate_score`.
+        # Lo descontamos para que el 20% de liquidez del gate final no se duplique.
+        base_score_wo_liquidity = max(0.0, min(100.0, risk_decision.score - (market_state.liquidity_score * 0.05)))
+        score_component = base_score_wo_liquidity * 0.5
+
         # Fallback conservador: si no hay confianza de régimen, no se bonifica el score final.
         regime_component = (risk_decision.regime_confidence if risk_decision.regime_confidence is not None else 0.0) * 0.3
         liquidity_component = market_state.liquidity_score * 0.2

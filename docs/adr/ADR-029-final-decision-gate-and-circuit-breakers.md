@@ -11,6 +11,7 @@ Introducir `FinalDecisionGate` como capa posterior al `RiskEngine` con:
 
 1. **Score compuesto final**
    - combina `score` del motor de riesgo, `regime_confidence` y `liquidity_score`.
+   - para evitar doble conteo de liquidez, el componente base descuenta la contribución de liquidez ya embebida en `RiskEngine.aggregate_score` antes de aplicar ponderación.
 
 2. **Circuit breakers explícitos**
    - volatilidad extrema,
