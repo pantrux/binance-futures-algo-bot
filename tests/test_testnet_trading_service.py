@@ -67,6 +67,23 @@ class FakeBinanceClientNewStatusButExecuted:
         }
 
 
+class FakeBinanceClientRejectedOrder:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 1
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": 789,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "executedQty": "0",
+            "status": "REJECTED",
+        }
+
+
 class FakeBinanceClientMissingCredentials:
     async def get_symbol_step_size(self, symbol: str) -> float:
         return 0.001
@@ -223,6 +240,24 @@ def test_testnet_trading_normalizes_new_status_with_executed_qty_as_filled():
     order = db.query(Order).filter(Order.trade_plan_id == plan.id).one()
     assert order.status == "filled"
     assert order.executed_quantity > 0
+
+
+
+def test_testnet_trading_preserves_rejected_status_without_reclassifying_as_fill():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientRejectedOrder(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    order = db.query(Order).filter(Order.trade_plan_id == plan.id).one()
+    assert order.status == "rejected"
+    assert order.executed_quantity == 0
 
 
 

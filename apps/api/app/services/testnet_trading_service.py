@@ -161,14 +161,15 @@ class BinanceTestnetTradingService:
         if exchange_price <= 0:
             exchange_price = trade_plan.entry_price
 
-        executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=quantity)
-        if executed_qty <= 0:
-            executed_qty = quantity
+        raw_executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
         order_status = self._normalize_order_status(
             exchange_order.get("status"),
-            executed_qty=executed_qty,
+            executed_qty=raw_executed_qty,
             requested_qty=quantity,
         )
+        executed_qty = raw_executed_qty
+        if executed_qty <= 0 and order_status in {"filled", "partially_filled", "new"}:
+            executed_qty = quantity
         external_order_id = str(exchange_order.get("orderId") or exchange_order.get("clientOrderId") or client_order_id)
 
         leverage = 1
