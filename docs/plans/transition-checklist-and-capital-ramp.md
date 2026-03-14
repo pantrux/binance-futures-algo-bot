@@ -88,14 +88,14 @@
 
 ### Etapa 2 — Real (Micro)
 - Exposición: **1× unidad mínima** o **<= 0.25%** del capital objetivo.
-- Duración mínima: **7 días** o **30 trades** (lo que ocurra primero).
+- Duración mínima: **7 días** **y** **>= 30 trades**.
 - Criterio de rollback:
   - 2 eventos de circuit breaker en 24h, o
   - drawdown > **2%** desde el último máximo (medición intra-etapa).
 
 ### Etapa 3 — Real (Small)
-- Exposición: **0.5% → 2%** del capital objetivo, por incrementos.
-- Duración mínima: **14 días** o **>= 60 trades** (lo que ocurra primero).
+- Exposición: **0.5% → 2%** del capital objetivo, por incrementos de **+0.25%** (máximo 1 incremento cada 7 días, condicionado a gates/estabilidad).
+- Duración mínima: **14 días** **y** **>= 60 trades**.
 - Incremento permitido: sólo si métricas y estabilidad operativa cumplen (sin incidentes P0).
 - Criterio de rollback:
   - drawdown > **5%** desde el último máximo, o
