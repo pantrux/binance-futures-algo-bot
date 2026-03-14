@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 9 cerrada con runbook completo de go-live readiness y arranque de ensayos operativos para cutover real.
-- **PR activo:** `PR-36` — drills sintéticos y paquete de evidencia de cutover.
-- **Etapa actual:** **Fase 10 — Ensayos operativos de cutover** (`PR-36`).
+- **Estado global actual:** Fase 10 ya tiene contrato de drills/evidencia mergeado y ahora avanza hacia artefactos operativos reutilizables para cutover.
+- **PR activo:** `PR-37` — templates operativos de artefactos de cutover.
+- **Etapa actual:** **Fase 10 — Ensayos operativos de cutover** (`PR-36` a `PR-37`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -115,9 +115,13 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 
 ## Fase 10 — Ensayos operativos de cutover
 
-### PR-36 — Drills sintéticos y paquete de evidencia de cutover 🟡
+### PR-36 — Drills sintéticos y paquete de evidencia de cutover ✅
 - ver `docs/plans/cutover-drills-and-evidence-package.md`
 - ADR-037
+
+### PR-37 — Templates operativos de artefactos de cutover 🟡
+- ver `docs/templates/README.md`
+- ADR-038
 
 ---
 

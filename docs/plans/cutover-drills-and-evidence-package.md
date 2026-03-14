@@ -110,6 +110,7 @@ Cada cutover o ensayo debe dejar un paquete mínimo con:
    - observaciones
 
 5. **`post-cutover-closeout.md`**
+   - template base: `docs/templates/post-cutover-closeout-template.md`
    - cierre inicial 24 h
    - cierre formal 7 días
    - decisión final: continuar / mantener micro / rollback
@@ -141,3 +142,5 @@ Un ensayo queda **aprobado** solo si:
 - drills sintéticos aprobados
 - paquete de evidencia archivado y enlazable en Outline
 - revisión humana final registrada
+
+revisión humana final registrada
