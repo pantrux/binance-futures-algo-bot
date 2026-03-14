@@ -1,0 +1,120 @@
+# Checklist de transición y rampa de capital (PR-34)
+
+> Objetivo: definir condiciones **go/no-go** y un plan de rampa de capital por etapas para transicionar desde **paper → testnet → real**, con criterios de rollback explícitos.
+
+## Principios
+
+1. **No hay “go-live” sin evidencia.** Cada etapa exige *gates* con métricas mínimas, evidencia persistida y revisión humana.
+2. **Rampa por etapas.** Se aumenta exposición sólo si se cumplen condiciones por una ventana de tiempo (no por una corrida aislada).
+3. **Rollback inmediato.** Si se supera un umbral de pérdida/drawdown o se degrada la calidad operativa, se vuelve a la etapa anterior.
+4. **Reproducibilidad.** Los resultados deben ser reproducibles (mismo input → mismo output) y auditables.
+5. **Seguridad operacional.** Rate limiting, auth, observabilidad y “circuit breakers” deben estar activos antes de real.
+
+## Definiciones
+
+- **Etapa 0 (Paper):** ejecución simulada interna, sin órdenes a exchange.
+- **Etapa 1 (Testnet):** órdenes reales en Binance Futures Testnet, sin riesgo monetario.
+- **Etapa 2 (Real - Micro):** capital real mínimo, tamaño unitario muy bajo.
+- **Etapa 3 (Real - Small):** capital real bajo, incremento gradual.
+- **Etapa 4 (Real - Target):** capital objetivo (según política de riesgo).
+
+## Gates obligatorios por etapa
+
+### Gate A — Calidad operativa (OBLIGATORIO desde Etapa 0)
+
+**Condiciones mínimas:**
+- CI verde y reproducible.
+- `synology-release-gate` OK.
+- Smoke tests Synology OK.
+- Backups verificables (bundle + verify-restore).
+- Observabilidad operacional activa (report diario + alertas).
+- Secretos en NAS (no en repo), rotación documentada.
+
+**Evidencia requerida (artefactos):**
+- Último reporte del release gate.
+- Resumen JSON del gate.
+- Último reporte de backup verify-restore.
+- Último reporte de observabilidad.
+
+### Gate B — Robustez cuantitativa (OBLIGATORIO para salir de Paper)
+
+**Condiciones mínimas:**
+- Backtesting/walk-forward ejecutable vía endpoint y/o servicio.
+- Comparación contra benchmark (buy-and-hold u otro baseline).
+- Resultados estables en múltiples periodos (definir al menos 3 rangos).
+
+**Métricas mínimas sugeridas (ajustables):**
+- Profit factor > 1.1
+- Max drawdown <= 15%
+- Trades suficientes (no “sobreajuste por 3 trades”) — umbral mínimo.
+
+**Evidencia requerida:**
+- Reporte reproducible del backtest (inputs + outputs + versión del código).
+- Semilla/fixtures usadas en tests (si aplica).
+
+### Gate C — Paridad Paper vs Testnet (OBLIGATORIO para salir de Testnet)
+
+**Condiciones mínimas:**
+- Shadow run activo: comparar decisiones paper vs ejecución testnet.
+- Brecha documentada y acotada.
+
+**Métricas sugeridas:**
+- Desvío de slippage vs supuesto <= umbral.
+- Desvío de fill rate <= umbral.
+- Errores operativos (timeouts, rejects) bajo umbral.
+
+**Evidencia requerida:**
+- Reporte de paridad por corrida.
+
+### Gate D — Seguridad + límites de riesgo (OBLIGATORIO para Real)
+
+**Condiciones mínimas:**
+- `RiskEngine` y `FinalDecisionGate` sin bypass.
+- Circuit breakers activos.
+- Límites por símbolo y por portafolio activos.
+- Autenticación y rate limiting en endpoints sensibles.
+
+**Evidencia requerida:**
+- Tests y/o runbook demostrando rechazo por risk limits.
+
+## Política de rampa de capital (propuesta)
+
+> Nota: los porcentajes se calibran contra el **presupuesto de riesgo** y el sizing del `RiskEngine`.
+
+### Etapa 2 — Real (Micro)
+- Exposición: **1× unidad mínima** o **<= 0.25%** del capital objetivo.
+- Duración mínima: **7 días** o **N trades** (definir N).
+- Criterio de rollback:
+  - 2 eventos de circuit breaker en 24h, o
+  - drawdown > **X%** en ventana corta.
+
+### Etapa 3 — Real (Small)
+- Exposición: **0.5% → 2%** del capital objetivo, por incrementos.
+- Duración mínima: **14 días**.
+- Incremento permitido: sólo si métricas y estabilidad operativa cumplen (sin incidentes P0).
+
+### Etapa 4 — Real (Target)
+- Exposición: según presupuesto de riesgo aprobado.
+- Mantener guardrails de crecimiento (p. ej. +10% semanal máximo) si no hay evidencia suficiente.
+
+## Plan de rollback
+
+1. **Congelar nuevas entradas** (permitir sólo gestión de posiciones existentes si corresponde).
+2. **Reducir exposición** a 0 (o a micro) en un máximo de `T` minutos.
+3. **Emitir incidente** (registro y notificación).
+4. **Postmortem** con causa raíz y corrección antes de reintentar.
+
+## Checklist Go/No-Go (resumen)
+
+- [ ] Gate A (calidad operativa) cumplido + evidencia.
+- [ ] Gate B (robustez cuantitativa) cumplido + evidencia.
+- [ ] Gate C (paridad paper vs testnet) cumplido + evidencia.
+- [ ] Gate D (seguridad + límites de riesgo) cumplido + evidencia.
+- [ ] Runbook actualizado con pasos de transición.
+- [ ] Plan de rollback probado (al menos en testnet).
+
+## Próximos pasos
+
+- Convertir “métricas sugeridas” en **umbrales explícitos** por estrategia.
+- Definir formato de reporte reproducible (JSON + Markdown) para transición.
+- Preparar PR-35: cutover controlado + monitoreo post-cutover.

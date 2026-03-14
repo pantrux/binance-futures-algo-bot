@@ -54,9 +54,9 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-29 | Router Binance Testnet | ✅ Mergeado | ejecución real en testnet con trazabilidad de órdenes |
 | PR-30 | Reconciliación y máquina de estados de ejecución | ✅ Mergeado | consistencia entre órdenes/posiciones/eventos |
 | PR-31 | Paridad paper vs testnet (shadow run) | ✅ Mergeado | reporte comparativo y brechas de comportamiento |
-| PR-32 | Alerting y reporting de producción | 🟡 En progreso | resumen diario operativo y evaluación temprana de alertas |
-| PR-33 | Backtesting y walk-forward | 🟡 En progreso | baseline cuantitativo reproducible con benchmark y walk-forward |
-| PR-34 | Checklist de transición y rampa de capital | 🔵 Planificado | criterios formales para eventual salida de paper |
+| PR-32 | Alerting y reporting de producción | ✅ Mergeado | resumen diario operativo y evaluación temprana de alertas |
+| PR-33 | Backtesting y walk-forward | ✅ Mergeado | baseline cuantitativo reproducible con benchmark y walk-forward |
+| PR-34 | Checklist de transición y rampa de capital | 🟡 En progreso | criterios formales para eventual salida de paper |
 | PR-35 | Cutover controlado y monitoreo post-cutover | 🔵 Planificado | transición asistida con gates y rollback explícito |
 
 ## Secuencia de PRs actualizada

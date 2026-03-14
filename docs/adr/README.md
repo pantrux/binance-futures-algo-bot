@@ -36,6 +36,7 @@
 - `ADR-032-paper-vs-testnet-parity-shadow-run.md`
 - `ADR-033-production-alerting-and-daily-reporting.md`
 - `ADR-034-backtesting-walk-forward.md`
+- `ADR-035-transition-checklist-capital-ramp.md`
 
 ## Archivados
 
