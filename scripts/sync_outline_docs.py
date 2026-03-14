@@ -393,6 +393,16 @@ def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, st
         out: List[str] = []
         cursor = 0
         while cursor < len(segment):
+            escaped = cursor > 0 and segment[cursor - 1] == "\\"
+            if escaped and segment.startswith("![", cursor):
+                out.append("![")
+                cursor += 2
+                continue
+            if escaped and segment[cursor] == "[":
+                out.append("[")
+                cursor += 1
+                continue
+
             if segment.startswith("![", cursor):
                 link = parse_markdown_link_at(segment, cursor)
                 if link:
