@@ -57,7 +57,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-32 | Alerting y reporting de producción | ✅ Mergeado | resumen diario operativo y evaluación temprana de alertas |
 | PR-33 | Backtesting y walk-forward | ✅ Mergeado | baseline cuantitativo reproducible con benchmark y walk-forward |
 | PR-34 | Checklist de transición y rampa de capital | ✅ Mergeado | criterios formales para eventual salida de paper |
-| PR-35 | Cutover controlado y monitoreo post-cutover | 🟡 En progreso | transición asistida con gates y rollback explícito |
+| PR-35 | Cutover controlado y monitoreo post-cutover | ✅ Mergeado | transición asistida con gates y rollback explícito |
+| PR-36 | Drills sintéticos y paquete de evidencia de cutover | 🟡 En progreso | ensayos controlados y artifacts previos al cutover real |
 
 ## Secuencia de PRs actualizada
 
@@ -565,7 +566,7 @@ Definir formalmente condiciones para eventual transición fuera de paper.
 ---
 
 ### PR-35 — Cutover controlado y monitoreo post-cutover
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Ejecutar transición asistida únicamente si todos los gates anteriores se cumplen.
@@ -575,6 +576,19 @@ Ejecutar transición asistida únicamente si todos los gates anteriores se cumpl
 - monitoreo intensivo post-cutover
 - criterio de rollback inmediato y comunicación de incidente
 
+---
+
+### PR-36 — Drills sintéticos y paquete de evidencia de cutover
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Formalizar ensayos previos al cutover real y estandarizar la evidencia obligatoria de ejecución/rollback.
+
+**Entregables**
+- catálogo mínimo de drills sintéticos
+- paquete de evidencia estándar de cutover
+- criterio de aprobación/rechazo del ensayo
+
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
 - checks terminados
@@ -582,3 +596,5 @@ No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
 - comentarios/reviews resueltos
 - estado consolidado en memoria
 - roadmap y Gantt actualizados
+
+---

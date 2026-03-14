@@ -7,6 +7,7 @@
 - `phase5-operational-closure.md`
 - `transition-checklist-and-capital-ramp.md`
 - `cutover-and-post-cutover-monitoring.md`
+- `cutover-drills-and-evidence-package.md`
 
 ## Fases de implementación
 
