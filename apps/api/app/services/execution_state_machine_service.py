@@ -31,7 +31,8 @@ class ExecutionStateMachineService:
         filled_orders = [
             order
             for order in orders
-            if order.status in {"filled", "partially_filled"} or (order.executed_quantity or 0) > 0
+            if order.status in {"filled", "partially_filled"}
+            or (order.status not in {"rejected"} and (order.executed_quantity or 0) > 0)
         ]
 
         drift_events: list[ExecutionDriftEvent] = []
