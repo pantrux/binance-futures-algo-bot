@@ -27,6 +27,16 @@ class BinanceTestnetTradingService:
             return fallback
 
     @staticmethod
+    def _normalize_order_status(raw_status: object, *, executed_qty: float, requested_qty: float) -> str:
+        status = str(raw_status or "new").strip().lower()
+        if executed_qty <= 0:
+            return status
+        if status in {"filled", "partially_filled"}:
+            return status
+        tolerance = max(1e-12, requested_qty * 1e-9)
+        return "filled" if executed_qty >= max(0.0, requested_qty - tolerance) else "partially_filled"
+
+    @staticmethod
     def _round_to_step(quantity: float, step_size: float) -> float:
         if step_size <= 0:
             return quantity
@@ -151,10 +161,15 @@ class BinanceTestnetTradingService:
         if exchange_price <= 0:
             exchange_price = trade_plan.entry_price
 
-        executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=quantity)
-        if executed_qty <= 0:
+        raw_executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
+        order_status = self._normalize_order_status(
+            exchange_order.get("status"),
+            executed_qty=raw_executed_qty,
+            requested_qty=quantity,
+        )
+        executed_qty = raw_executed_qty
+        if executed_qty <= 0 and order_status in {"filled", "partially_filled", "new"}:
             executed_qty = quantity
-        order_status = str(exchange_order.get("status") or "FILLED").lower()
         external_order_id = str(exchange_order.get("orderId") or exchange_order.get("clientOrderId") or client_order_id)
 
         leverage = 1

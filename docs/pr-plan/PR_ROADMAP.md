@@ -660,7 +660,7 @@ Automatizar la evidencia del Gate C (paridad paper vs testnet) para decidir si e
 - primer gate real ejecutado: `paper=63`, `testnet=0`, `duration_days=3.0494`, `overall=FAIL`
 
 ### PR-42 — Activación de shadow run testnet en Synology
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Desbloquear la primera ventana útil de shadow run testnet en Synology corrigiendo la configuración real del NAS (credenciales Binance testnet y variables operativas faltantes) y re-ejecutando el Gate C con datos testnet genuinos.
@@ -669,6 +669,19 @@ Desbloquear la primera ventana útil de shadow run testnet en Synology corrigien
 - documentación explícita del bloqueo operativo real detectado en NAS (`BINANCE_API_KEY`/`BINANCE_API_SECRET` vacíos)
 - guía/ajuste para `SYNOLOGY_API_BASE_URL` y ejecución remota del workflow
 - evidencia del primer rerun del Gate C tras habilitar testnet
+- mergeado en `bebf3bb` + sync Outline `docs_synced=60`
+- estado real posterior: 3 ejecuciones `testnet_executed` iniciales (`BTCUSDT`, `ETHUSDT`, `SOLUSDT`)
+
+### PR-43 — Normalización de fills testnet y reconciliación
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Corregir el falso drift crítico cuando Binance Testnet devuelve órdenes con `status=new` pero `executedQty > 0`, de modo que la persistencia y la reconciliación reflejen fills reales.
+
+**Entregables**
+- normalización de estado en `BinanceTestnetTradingService`
+- reconciliación robusta basada también en `executed_quantity`
+- tests para órdenes `NEW` con ejecución efectiva
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

@@ -96,6 +96,48 @@ def test_reconcile_detects_missing_position_and_order_for_executed_plan():
     assert "rebuild_position_state" in report.recommended_actions
 
 
+
+def test_reconcile_treats_executed_quantity_as_fill_even_if_status_is_new():
+    db = build_db()
+    plan = seed_trade_plan(db)
+
+    db.add(
+        Order(
+            trade_plan_id=plan.id,
+            venue="binance_futures_testnet",
+            external_order_id="ord-new",
+            symbol=plan.symbol,
+            side=plan.side,
+            order_type="market",
+            status="new",
+            price=50000,
+            quantity=0.1,
+            executed_quantity=0.1,
+            is_testnet=True,
+        )
+    )
+    db.add(
+        Position(
+            trade_plan_id=plan.id,
+            symbol=plan.symbol,
+            side=plan.side,
+            quantity=0.1,
+            entry_price=50000,
+            mark_price=50000,
+            unrealized_pnl=0,
+            leverage=5,
+            status="open",
+            is_testnet=True,
+        )
+    )
+    db.commit()
+
+    report = ExecutionStateMachineService(db).reconcile_trade_plan(plan.id)
+
+    assert report.healthy is True
+    assert report.filled_order_count == 1
+
+
 def test_reconcile_detects_multiple_open_positions():
     db = build_db()
     plan = seed_trade_plan(db)
