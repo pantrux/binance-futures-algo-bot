@@ -240,23 +240,60 @@ def to_raw_github_base(repo_web_base: str) -> str:
     return repo_web_base
 
 
+def outline_web_base(outline_api_url: str) -> str:
+    parsed = parse.urlparse(outline_api_url)
+    if not parsed.scheme or not parsed.netloc:
+        return ""
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def normalize_outline_doc_url(url: str, outline_base: str) -> str:
+    if not url:
+        return ""
+    if url.startswith("/") and outline_base:
+        return f"{outline_base}{url}"
+    if url.startswith(("http://", "https://")):
+        return url
+    return ""
+
+
 def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, str], repo_web_base: str) -> str:
-    def replace(match: re.Match[str]) -> str:
-        label = match.group(1)
-        href = match.group(2).strip()
-        rel_path, anchor = resolve_repo_relative_path(source_path, href)
-        if not rel_path:
-            return match.group(0)
+    def replace_segment(segment: str) -> str:
+        def replace(match: re.Match[str]) -> str:
+            label = match.group(1)
+            href = match.group(2).strip()
+            rel_path, anchor = resolve_repo_relative_path(source_path, href)
+            if not rel_path:
+                return match.group(0)
 
-        if rel_path in outline_urls:
-            return f"{label}({outline_urls[rel_path]}{anchor})"
-        if not repo_web_base:
-            return match.group(0)
+            if rel_path in outline_urls:
+                return f"{label}({outline_urls[rel_path]}{anchor})"
+            if not repo_web_base:
+                return match.group(0)
 
-        base = to_raw_github_base(repo_web_base) if label.startswith("!") else repo_web_base
-        return f"{label}({base}/{rel_path}{anchor})"
+            base = to_raw_github_base(repo_web_base) if label.startswith("!") else repo_web_base
+            return f"{label}({base}/{rel_path}{anchor})"
 
-    return MARKDOWN_LINK_RE.sub(replace, text)
+        parts = segment.split("`")
+        for i in range(0, len(parts), 2):
+            parts[i] = MARKDOWN_LINK_RE.sub(replace, parts[i])
+        return "`".join(parts)
+
+    lines = text.splitlines(keepends=True)
+    in_fenced_code = False
+    rewritten_lines: List[str] = []
+    for line in lines:
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fenced_code = not in_fenced_code
+            rewritten_lines.append(line)
+            continue
+        if in_fenced_code:
+            rewritten_lines.append(line)
+            continue
+        rewritten_lines.append(replace_segment(line))
+
+    return "".join(rewritten_lines)
 
 
 def ensure_single_doc(client: OutlineClient, docs: List[dict], title: str, text: str, parent_id: str | None = None) -> str:
@@ -336,8 +373,9 @@ def main() -> None:
 
     # Paso 4: segunda pasada para reescribir links locales a Outline/GitHub
     all_docs = client.list_collection_docs()
+    outline_base = outline_web_base(args.outline_url)
     outline_urls_by_title = {
-        d.get("title"): d.get("url", "")
+        d.get("title"): normalize_outline_doc_url(d.get("url", ""), outline_base)
         for d in all_docs
         if d.get("archivedAt") is None and d.get("title")
     }

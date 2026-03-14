@@ -12,8 +12,9 @@ Al publicar ese Markdown en Outline, esos links dejan de apuntar al filesystem/r
 Durante la sincronización a Outline:
 
 1. Los links a documentos que también existen como documentos sincronizados en Outline se reescriben para apuntar a la **URL del documento en Outline**.
-2. Los links a archivos locales del repositorio que **no** tienen equivalente en Outline se reescriben a la **URL web del repositorio** (GitHub `blob/<ref>`).
+2. Los links a archivos locales del repositorio que **no** tienen equivalente en Outline se reescriben a la **URL web del repositorio** (GitHub `blob/<ref>`; para imágenes se usa `raw.githubusercontent.com`).
 3. Los links externos (`https`, `mailto`, etc.) y anchors internos (`#...`) se preservan sin cambios.
+4. La reescritura se aplica solo fuera de bloques de código cercados y respetando spans inline con backticks.
 
 ## Justificación
 - Mantiene navegación útil desde Outline.
