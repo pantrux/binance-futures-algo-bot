@@ -187,12 +187,30 @@ def detect_repo_web_base() -> str:
         print("[WARN] No se pudo detectar remote.origin.url para generar links web", file=sys.stderr)
         return ""
 
-    if remote.startswith("git@github.com:"):
-        repo_path = remote.split(":", 1)[1]
-    elif remote.startswith("https://github.com/"):
-        repo_path = remote.split("https://github.com/", 1)[1]
-    elif remote.startswith("http://github.com/"):
-        repo_path = remote.split("http://github.com/", 1)[1]
+    sanitized_remote = remote
+    if sanitized_remote.startswith(("https://", "http://")):
+        parsed_remote = parse.urlparse(sanitized_remote)
+        if parsed_remote.hostname:
+            netloc = parsed_remote.hostname
+            if parsed_remote.port:
+                netloc = f"{netloc}:{parsed_remote.port}"
+            sanitized_remote = parse.urlunparse(
+                (
+                    parsed_remote.scheme,
+                    netloc,
+                    parsed_remote.path,
+                    parsed_remote.params,
+                    parsed_remote.query,
+                    parsed_remote.fragment,
+                )
+            )
+
+    if sanitized_remote.startswith("git@github.com:"):
+        repo_path = sanitized_remote.split(":", 1)[1]
+    elif sanitized_remote.startswith("https://github.com/"):
+        repo_path = sanitized_remote.split("https://github.com/", 1)[1]
+    elif sanitized_remote.startswith("http://github.com/"):
+        repo_path = sanitized_remote.split("http://github.com/", 1)[1]
     else:
         print(f"[WARN] Remote no soportado para links web: {remote}", file=sys.stderr)
         return ""
@@ -274,8 +292,6 @@ def split_markdown_link_target(target: str) -> tuple[str, str]:
 def parse_markdown_link_at(segment: str, start: int) -> tuple[int, int, str, str, str] | None:
     image = segment.startswith("![", start)
     if image:
-        if start + 1 >= len(segment) or segment[start + 1] != "[":
-            return None
         label_start = start + 2
         prefix = "!"
     elif segment[start] == "[":
