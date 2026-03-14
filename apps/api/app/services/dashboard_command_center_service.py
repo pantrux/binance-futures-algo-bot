@@ -141,16 +141,23 @@ class DashboardCommandCenterService:
                 .order_by(desc(Position.opened_at), desc(Position.id))
                 .all()
             )
-            plan_risk_events = (
+            latest_risk = (
                 self.db.query(RiskEvent)
                 .filter(RiskEvent.trade_plan_id == plan.id)
                 .order_by(desc(RiskEvent.created_at), desc(RiskEvent.id))
-                .all()
+                .first()
+            )
+            risk_event_count = (
+                self.db.scalar(select(func.count()).select_from(RiskEvent).where(RiskEvent.trade_plan_id == plan.id))
+                or 0
             )
             latest_order = plan_orders[0] if plan_orders else None
             latest_position = plan_positions[0] if plan_positions else None
-            latest_risk = plan_risk_events[0] if plan_risk_events else None
-            reconciliation = execution_state_machine.reconcile_trade_plan(plan.id)
+            reconciliation = execution_state_machine.reconcile_loaded_trade_plan(
+                plan,
+                list(reversed(plan_orders)),
+                list(reversed(plan_positions)),
+            )
             primary_drift = reconciliation.drift_events[0] if reconciliation.drift_events else None
 
             operation_snapshots.append(
@@ -181,7 +188,7 @@ class DashboardCommandCenterService:
                     reconciliation_primary_severity=primary_drift.severity if primary_drift else None,
                     reconciliation_primary_event=primary_drift.event_type if primary_drift else None,
                     reconciliation_primary_message=primary_drift.message if primary_drift else None,
-                    risk_event_count=len(plan_risk_events),
+                    risk_event_count=risk_event_count,
                     latest_risk_severity=latest_risk.severity if latest_risk else None,
                     latest_risk_event_type=latest_risk.event_type if latest_risk else None,
                     latest_risk_message=latest_risk.message if latest_risk else None,

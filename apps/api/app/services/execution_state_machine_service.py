@@ -8,24 +8,12 @@ class ExecutionStateMachineService:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def reconcile_trade_plan(self, trade_plan_id: int) -> ReconciliationReport:
-        trade_plan = self.db.get(TradePlan, trade_plan_id)
-        if not trade_plan:
-            raise ValueError("Trade plan no encontrado")
-
-        orders = (
-            self.db.query(Order)
-            .filter(Order.trade_plan_id == trade_plan_id)
-            .order_by(Order.created_at.asc())
-            .all()
-        )
-        positions = (
-            self.db.query(Position)
-            .filter(Position.trade_plan_id == trade_plan_id)
-            .order_by(Position.id.asc())
-            .all()
-        )
-
+    def reconcile_loaded_trade_plan(
+        self,
+        trade_plan: TradePlan,
+        orders: list[Order],
+        positions: list[Position],
+    ) -> ReconciliationReport:
         open_positions = [position for position in positions if position.status == "open"]
         closed_positions = [position for position in positions if position.status == "closed"]
         filled_orders = [
@@ -100,3 +88,22 @@ class ExecutionStateMachineService:
             drift_events=drift_events,
             recommended_actions=recommended_actions,
         )
+
+    def reconcile_trade_plan(self, trade_plan_id: int) -> ReconciliationReport:
+        trade_plan = self.db.get(TradePlan, trade_plan_id)
+        if not trade_plan:
+            raise ValueError("Trade plan no encontrado")
+
+        orders = (
+            self.db.query(Order)
+            .filter(Order.trade_plan_id == trade_plan_id)
+            .order_by(Order.created_at.asc())
+            .all()
+        )
+        positions = (
+            self.db.query(Position)
+            .filter(Position.trade_plan_id == trade_plan_id)
+            .order_by(Position.id.asc())
+            .all()
+        )
+        return self.reconcile_loaded_trade_plan(trade_plan, orders, positions)

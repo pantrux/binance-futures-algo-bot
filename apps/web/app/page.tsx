@@ -161,7 +161,7 @@ function formatDate(value: string) {
 
 function statusTone(status: string) {
   const normalized = status.toLowerCase();
-  if (["filled", "testnet_executed", "paper_executed", "approved", "open", "info"].includes(normalized)) return "ok";
+  if (["filled", "testnet_executed", "paper_executed", "approved", "open"].includes(normalized)) return "ok";
   if (["warning", "partially_filled", "blocked", "draft", "new"].includes(normalized)) return "warn";
   if (["critical", "rejected", "cancelled", "canceled", "expired"].includes(normalized)) return "danger";
   return "neutral";
