@@ -14,6 +14,7 @@ from apps.api.app.schemas.dashboard import DashboardSummary
 from apps.api.app.schemas.execution_parity import ExecutionParityReport
 from apps.api.app.schemas.execution_reconciliation import ReconciliationReport
 from apps.api.app.schemas.production_reporting import AlertEvaluationResponse, DailyProductionSummary
+from apps.api.app.schemas.shadow_run_reporting import ShadowRunSummary
 from apps.api.app.schemas.indicators import IndicatorSnapshot
 from apps.api.app.schemas.market_data import MarketCandleRead, MarketIngestionResponse, MarketSnapshotRead
 from apps.api.app.schemas.market_regime import MarketRegimeSnapshot
@@ -34,6 +35,7 @@ from apps.api.app.services.market_regime_service import MarketRegimeService
 from apps.api.app.services.paper_trading_service import PaperTradingService
 from apps.api.app.services.production_reporting_service import ProductionReportingService
 from apps.api.app.services.risk_engine import RiskEngine
+from apps.api.app.services.shadow_run_reporting_service import ShadowRunReportingService
 from apps.api.app.services.signal_service import SignalService
 from apps.api.app.services.testnet_trading_service import BinanceTestnetTradingService
 from apps.api.app.services.trade_plan_query_service import TradePlanQueryService
@@ -237,3 +239,12 @@ def reporting_daily_summary(_: None = Depends(require_metrics_auth), db: Session
 @router.get("/alerts/evaluate", response_model=AlertEvaluationResponse)
 def alerts_evaluate(_: None = Depends(require_metrics_auth), db: Session = Depends(get_db)) -> AlertEvaluationResponse:
     return ProductionReportingService(db).evaluate_alerts()
+
+
+@router.get("/reporting/shadow-run-summary", response_model=ShadowRunSummary)
+def reporting_shadow_run_summary(
+    window_days: int = Query(default=30, ge=1, le=365),
+    _: None = Depends(require_metrics_auth),
+    db: Session = Depends(get_db),
+) -> ShadowRunSummary:
+    return ShadowRunReportingService(db).build_summary(window_days=window_days)

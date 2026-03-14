@@ -1,0 +1,109 @@
+name: Synology Shadow Run Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "Base URL API Synology (ej: https://TU_NAS/bot-api)"
+        required: true
+        default: ""
+      window_days:
+        description: "Ventana de análisis en días"
+        required: false
+        default: "30"
+      min_shadow_days:
+        description: "Días mínimos de shadow run"
+        required: false
+        default: "7"
+      min_trades:
+        description: "Trades mínimos en paper/testnet/pares"
+        required: false
+        default: "200"
+      min_fill_rate_pct:
+        description: "Fill rate mínimo esperado (%)"
+        required: false
+        default: "98"
+      max_avg_slippage_bps:
+        description: "Slippage promedio máximo permitido (bps)"
+        required: false
+        default: "1"
+      max_warning_risk_events_7d:
+        description: "Máximo de warning risk events en 7d"
+        required: false
+        default: "3"
+  schedule:
+    - cron: "40 5 * * *"
+
+jobs:
+  shadow-run-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Evaluar Gate C shadow run
+        id: shadow_run_gate
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url || vars.SYNOLOGY_API_BASE_URL }}
+          METRICS_API_KEY: ${{ secrets.METRICS_API_KEY }}
+          WINDOW_DAYS: ${{ inputs.window_days || '30' }}
+          MIN_SHADOW_DAYS: ${{ inputs.min_shadow_days || '7' }}
+          MIN_TRADES: ${{ inputs.min_trades || '200' }}
+          MIN_FILL_RATE_PCT: ${{ inputs.min_fill_rate_pct || '98' }}
+          MAX_AVG_SLIPPAGE_BPS: ${{ inputs.max_avg_slippage_bps || '1' }}
+          MAX_WARNING_RISK_EVENTS_7D: ${{ inputs.max_warning_risk_events_7d || '3' }}
+        run: |
+          if [[ -z "${API_BASE_URL}" ]]; then
+            echo "❌ Debes informar api_base_url o definir vars.SYNOLOGY_API_BASE_URL" >&2
+            exit 1
+          fi
+          if [[ -z "${METRICS_API_KEY}" ]]; then
+            echo "❌ Falta secret METRICS_API_KEY" >&2
+            exit 1
+          fi
+
+          set +e
+          python3 scripts/synology_shadow_run_gate.py \
+            --api-base-url "${API_BASE_URL}" \
+            --metrics-api-key "${METRICS_API_KEY}" \
+            --window-days "${WINDOW_DAYS}" \
+            --min-shadow-days "${MIN_SHADOW_DAYS}" \
+            --min-trades "${MIN_TRADES}" \
+            --min-fill-rate-pct "${MIN_FILL_RATE_PCT}" \
+            --max-avg-slippage-bps "${MAX_AVG_SLIPPAGE_BPS}" \
+            --max-warning-risk-events-7d "${MAX_WARNING_RISK_EVENTS_7D}" \
+            --output-json artifacts/synology-shadow-run-gate.json \
+            --output-md artifacts/synology-shadow-run-gate.md
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publish summary
+        if: always()
+        run: |
+          {
+            echo "## Synology Shadow Run Gate"
+            echo
+            if [[ -f artifacts/synology-shadow-run-gate.md ]]; then
+              cat artifacts/synology-shadow-run-gate.md
+            else
+              echo "⚠️ No se generó resumen Markdown (revisar logs del paso anterior)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload shadow run gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synology-shadow-run-gate
+          if-no-files-found: warn
+          path: |
+            artifacts/synology-shadow-run-gate.json
+            artifacts/synology-shadow-run-gate.md
+
+      - name: Fail job if gate is not ready
+        if: ${{ steps.shadow_run_gate.outputs.exit_code != '0' }}
+        run: |
+          echo "❌ Gate C de shadow run no está listo (ver summary/artifacts)."
+          exit 1
