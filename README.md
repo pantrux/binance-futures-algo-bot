@@ -188,11 +188,15 @@ La respuesta incluye métricas del periodo completo y un resumen walk-forward co
 Toda la documentación del proyecto está en español dentro de `docs/` y debe sincronizarse también en Outline.
 
 - Índice local de estructura: `docs/README.md`
-- Sync idempotente a Outline (evita duplicados por título):
+- Sync idempotente a Outline (evita duplicados por título y reescribe links locales a URLs navegables de Outline/GitHub):
 
 ```bash
 OUTLINE_API_TOKEN="..." python3 scripts/sync_outline_docs.py
 ```
+
+- Variables opcionales para la estrategia de links:
+  - `OUTLINE_REPO_WEB_BASE` → fuerza la base web del repo (si no se detecta por `git remote`); puede ser la URL del repo o una URL `.../blob/<ref>`
+  - `OUTLINE_GIT_REF` → ref usada para links `blob/<ref>` / fallback `raw` (default: `main`)
 
 - Si se requiere limpieza de legacy docs no mapeados en el catálogo actual:
 

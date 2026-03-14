@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 10 ya tiene contrato de drills/evidencia mergeado y ahora avanza hacia artefactos operativos reutilizables para cutover.
-- **PR activo:** `PR-37` — templates operativos de artefactos de cutover.
-- **Etapa actual:** **Fase 10 — Ensayos operativos de cutover** (`PR-36` a `PR-37`).
+- **Estado global actual:** Fase 10 ya tiene drills/evidencia y templates operativos mergeados; ahora avanza en la navegación documental limpia desde Outline.
+- **PR activo:** `PR-39` — links navegables para documentación sincronizada en Outline.
+- **Etapa actual:** **Fase 10 — Ensayos operativos y navegabilidad documental** (`PR-36` a `PR-39`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -34,7 +34,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
 | Fase 8 — Ejecución exchange robusta | 🟡 En progreso | 75% | PR-29..PR-32 | Router testnet + reconciliación + paridad paper/testnet + reporting operativo |
 | Fase 9 — Go-live readiness | ✅ Completada | 100% | PR-33..PR-35 | Validación cuantitativa, gates formales de transición y cutover controlado |
-| Fase 10 — Ensayos operativos de cutover | 🟡 En progreso | 20% | PR-36 | drills sintéticos, evidencia estandarizada y cierre operacional pre-live |
+| Fase 10 — Ensayos operativos de cutover | 🟡 En progreso | 80% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 
 ---
 
@@ -119,9 +119,15 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - ver `docs/plans/cutover-drills-and-evidence-package.md`
 - ADR-037
 
-### PR-37 — Templates operativos de artefactos de cutover 🟡
+### PR-37 — Templates operativos de artefactos de cutover ✅
 - ver `docs/templates/README.md`
 - ADR-038
+
+### PR-39 — Links navegables para documentación sincronizada en Outline 🟡
+- estrategia híbrida: URL de Outline si el documento existe allí; fallback a GitHub `blob/<ref>`
+- script `scripts/sync_outline_docs.py`
+- ADR-039
+- continuidad retomada desde el PR-38 cerrado por renombre de rama
 
 ---
 

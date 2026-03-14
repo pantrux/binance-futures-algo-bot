@@ -4,6 +4,10 @@
 Uso:
   OUTLINE_API_TOKEN=... python3 scripts/sync_outline_docs.py
   OUTLINE_API_TOKEN=... python3 scripts/sync_outline_docs.py --archive-unknown
+
+Comportamiento adicional:
+  - reescribe links locales/relativos a URLs navegables de Outline cuando el documento existe allí
+  - usa fallback a la URL web del repo (`blob/<ref>`) para archivos versionados sin equivalente en Outline
 """
 
 from __future__ import annotations
@@ -11,13 +15,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import subprocess
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
-from urllib import request
+from urllib import parse, request
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = REPO_ROOT / "docs"
@@ -25,6 +31,8 @@ DOCS_ROOT = REPO_ROOT / "docs"
 PREFIX = "Trading Bot Binance Futures"
 DEFAULT_OUTLINE_URL = os.getenv("OUTLINE_API_URL", "http://192.168.0.8:3005/api")
 DEFAULT_COLLECTION_ID = os.getenv("OUTLINE_COLLECTION_ID", "24c679b7-7739-4f6b-b0f2-71c02f20bfcb")
+DEFAULT_GIT_REF = os.getenv("OUTLINE_GIT_REF", "main")
+DEFAULT_REPO_WEB_BASE = os.getenv("OUTLINE_REPO_WEB_BASE", "")
 
 ROOT_TITLE = f"{PREFIX} — Índice maestro"
 HUB_TITLES = {
@@ -56,6 +64,10 @@ NON_ADR_TITLE_MAP = {
     "docs/diagrams/paper-trading-flow.md": f"{PREFIX} — Flujo de paper trading",
     "docs/diagrams/demo-loop-flow.md": f"{PREFIX} — Flujo demo loop",
 }
+
+FENCE_RE = re.compile(r"^([`~]{3,})")
+BACKTICK_RUN_RE = re.compile(r"`+")
+EXTERNAL_SCHEMES = ("http://", "https://", "mailto:", "tel:", "data:")
 
 
 @dataclass
@@ -163,19 +175,366 @@ def collect_targets() -> List[TargetDoc]:
     return targets
 
 
+def detect_repo_web_base() -> str:
+    if DEFAULT_REPO_WEB_BASE:
+        return DEFAULT_REPO_WEB_BASE.rstrip("/")
+
+    try:
+        remote = subprocess.check_output(
+            ["git", "config", "--get", "remote.origin.url"], cwd=REPO_ROOT, text=True
+        ).strip()
+    except Exception:  # pragma: no cover - fallback defensivo
+        print("[WARN] No se pudo detectar remote.origin.url para generar links web", file=sys.stderr)
+        return ""
+
+    sanitized_remote = remote
+    if sanitized_remote.startswith(("https://", "http://")):
+        parsed_remote = parse.urlparse(sanitized_remote)
+        if parsed_remote.hostname:
+            netloc = parsed_remote.hostname
+            if parsed_remote.port:
+                netloc = f"{netloc}:{parsed_remote.port}"
+            sanitized_remote = parse.urlunparse(
+                (
+                    parsed_remote.scheme,
+                    netloc,
+                    parsed_remote.path,
+                    parsed_remote.params,
+                    parsed_remote.query,
+                    parsed_remote.fragment,
+                )
+            )
+
+    if sanitized_remote.startswith("git@github.com:"):
+        repo_path = sanitized_remote.split(":", 1)[1]
+    elif sanitized_remote.startswith("https://github.com/"):
+        repo_path = sanitized_remote.split("https://github.com/", 1)[1]
+    elif sanitized_remote.startswith("http://github.com/"):
+        repo_path = sanitized_remote.split("http://github.com/", 1)[1]
+    else:
+        print(f"[WARN] Remote no soportado para links web: {remote}", file=sys.stderr)
+        return ""
+
+    if repo_path.endswith(".git"):
+        repo_path = repo_path[:-4]
+
+    return f"https://github.com/{repo_path}/blob/{DEFAULT_GIT_REF}"
+
+
+def resolve_repo_relative_path(source_path: Path, href: str) -> tuple[str | None, str]:
+    target, sep, anchor = href.partition("#")
+    suffix = f"#{anchor}" if sep else ""
+
+    if not target or target.startswith("#"):
+        return None, suffix
+    if target.startswith(EXTERNAL_SCHEMES):
+        return None, suffix
+
+    if target.startswith("file://"):
+        parsed = parse.urlparse(target)
+        candidate = Path(parse.unquote(parsed.path))
+    elif target.startswith("/"):
+        candidate = Path(target)
+    elif target.startswith("docs/") or target.startswith("scripts/"):
+        candidate = REPO_ROOT / target
+    else:
+        candidate = source_path.parent / target
+
+    try:
+        rel_path = candidate.resolve().relative_to(REPO_ROOT).as_posix()
+    except Exception:
+        return None, suffix
+
+    return rel_path, suffix
+
+
+def to_raw_github_base(repo_web_base: str) -> str:
+    prefix = "https://github.com/"
+    if not repo_web_base.startswith(prefix):
+        return repo_web_base
+
+    repo_path = repo_web_base[len(prefix):].strip("/")
+    owner_repo = repo_path
+    git_ref = DEFAULT_GIT_REF
+
+    for marker in ("/blob/", "/tree/"):
+        if marker in repo_path:
+            owner_repo, _, git_ref = repo_path.partition(marker)
+            break
+
+    if owner_repo and git_ref:
+        return f"https://raw.githubusercontent.com/{owner_repo}/{git_ref}".rstrip("/")
+    return repo_web_base
+
+
+def split_markdown_link_target(target: str) -> tuple[str, str]:
+    value = target.strip()
+    if not value:
+        return "", ""
+
+    if value.startswith("<"):
+        end = value.find(">")
+        if end != -1:
+            return value[1:end], value[end + 1 :].strip()
+        return "", ""
+
+    i = 0
+    while i < len(value):
+        ch = value[i]
+        if ch.isspace():
+            break
+        if ch == "\\" and i + 1 < len(value):
+            i += 2
+            continue
+        i += 1
+    return value[:i], value[i:].strip()
+
+
+def parse_markdown_link_at(segment: str, start: int) -> tuple[int, int, str, str, str] | None:
+    image = segment.startswith("![", start)
+    if image:
+        label_start = start + 2
+        prefix = "!"
+    elif segment[start] == "[":
+        label_start = start + 1
+        prefix = ""
+    else:
+        return None
+
+    i = label_start
+    depth = 1
+    while i < len(segment):
+        ch = segment[i]
+        if ch == "\\" and i + 1 < len(segment):
+            i += 2
+            continue
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                break
+        i += 1
+    if depth != 0 or i + 1 >= len(segment) or segment[i + 1] != "(":
+        return None
+
+    label = segment[label_start:i]
+    j = i + 2
+    paren_depth = 1
+    in_angle = False
+    in_quotes: str | None = None
+    while j < len(segment):
+        ch = segment[j]
+        if ch == "\\" and j + 1 < len(segment):
+            j += 2
+            continue
+        if in_quotes:
+            if ch == in_quotes:
+                in_quotes = None
+        else:
+            if ch in ('"', "'"):
+                in_quotes = ch
+            elif ch == "<":
+                in_angle = True
+            elif ch == ">" and in_angle:
+                in_angle = False
+            elif ch == "(" and not in_angle:
+                paren_depth += 1
+            elif ch == ")" and not in_angle:
+                paren_depth -= 1
+                if paren_depth == 0:
+                    break
+        j += 1
+    if paren_depth != 0:
+        return None
+
+    target = segment[i + 2 : j]
+    return start, j + 1, prefix, label, target
+
+
+def outline_web_base(outline_api_url: str) -> str:
+    parsed = parse.urlparse(outline_api_url)
+    if not parsed.scheme or not parsed.netloc:
+        return ""
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def normalize_outline_doc_url(url: str, outline_base: str) -> str:
+    if not url:
+        return ""
+    if url.startswith("/") and outline_base:
+        return f"{outline_base}{url}"
+    if url.startswith(("http://", "https://")):
+        return url
+    return ""
+
+
+def is_markdown_escaped(segment: str, cursor: int) -> bool:
+    backslashes = 0
+    pos = cursor - 1
+    while pos >= 0 and segment[pos] == "\\":
+        backslashes += 1
+        pos -= 1
+    return backslashes % 2 == 1
+
+
+
+def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, str], repo_web_base: str) -> str:
+    def rewrite_target(prefix: str, label: str, raw_target: str) -> str | None:
+        href, title_suffix = split_markdown_link_target(raw_target)
+        if not href:
+            return None
+
+        rel_path, anchor = resolve_repo_relative_path(source_path, href)
+        if not rel_path:
+            return None
+
+        rewritten_href = outline_urls.get(rel_path, "")
+        if not rewritten_href:
+            if not repo_web_base:
+                return None
+            base = to_raw_github_base(repo_web_base) if prefix == "!" else repo_web_base
+            rewritten_href = f"{base}/{rel_path}"
+
+        suffix = f" {title_suffix}" if title_suffix else ""
+        return f"{prefix}[{label}]({rewritten_href}{anchor}{suffix})"
+
+    def replace_segment(segment: str) -> str:
+        out: List[str] = []
+        cursor = 0
+        while cursor < len(segment):
+            escaped = is_markdown_escaped(segment, cursor)
+            if escaped and segment.startswith("![", cursor):
+                out.append("![")
+                cursor += 2
+                continue
+            if escaped and segment[cursor] == "[":
+                out.append("[")
+                cursor += 1
+                continue
+
+            if segment.startswith("![", cursor):
+                link = parse_markdown_link_at(segment, cursor)
+                if link:
+                    start, end, prefix, label, target = link
+                    rewritten = rewrite_target(prefix, label, target)
+                    out.append(rewritten if rewritten else segment[start:end])
+                    cursor = end
+                    continue
+                out.append("![")
+                cursor += 2
+                continue
+
+            link = parse_markdown_link_at(segment, cursor)
+            if link:
+                start, end, prefix, label, target = link
+                rewritten = rewrite_target(prefix, label, target)
+                out.append(rewritten if rewritten else segment[start:end])
+                cursor = end
+                continue
+
+            opener = BACKTICK_RUN_RE.search(segment, cursor)
+            if opener and opener.start() == cursor:
+                run = opener.group(0)
+                closer_end = None
+                for candidate in BACKTICK_RUN_RE.finditer(segment, opener.end()):
+                    if candidate.group(0) == run:
+                        closer_end = candidate.end()
+                        break
+                if closer_end is None:
+                    out.append(segment[cursor:])
+                    break
+                out.append(segment[cursor:closer_end])
+                cursor = closer_end
+                continue
+
+            next_positions = [len(segment)]
+            if opener:
+                next_positions.append(opener.start())
+            next_link_positions = [
+                pos for pos in (segment.find("![", cursor + 1), segment.find("[", cursor + 1)) if pos != -1
+            ]
+            next_positions.extend(next_link_positions)
+            next_stop = min(next_positions)
+            if next_stop == len(segment):
+                out.append(segment[cursor:])
+                break
+            out.append(segment[cursor:next_stop])
+            cursor = next_stop
+
+        return "".join(out)
+
+    lines = text.splitlines(keepends=True)
+    in_fenced_code = False
+    fence_char = ""
+    fence_len = 0
+    rewritten_lines: List[str] = []
+    for line in lines:
+        stripped = line.lstrip()
+        fence_match = FENCE_RE.match(stripped)
+        if fence_match:
+            fence = fence_match.group(1)
+            if not in_fenced_code:
+                in_fenced_code = True
+                fence_char = fence[0]
+                fence_len = len(fence)
+            elif fence[0] == fence_char and len(fence) >= fence_len:
+                in_fenced_code = False
+                fence_char = ""
+                fence_len = 0
+            rewritten_lines.append(line)
+            continue
+        if in_fenced_code:
+            rewritten_lines.append(line)
+            continue
+        rewritten_lines.append(replace_segment(line))
+
+    return "".join(rewritten_lines)
+
+
+def canonical_doc(docs: List[dict], title: str) -> dict | None:
+    same = [d for d in docs if d.get("title") == title and d.get("archivedAt") is None]
+    if not same:
+        return None
+    return sorted(same, key=lambda d: parse_iso(d.get("createdAt")))[0]
+
+
 def ensure_single_doc(client: OutlineClient, docs: List[dict], title: str, text: str, parent_id: str | None = None) -> str:
     same = [d for d in docs if d.get("title") == title and d.get("archivedAt") is None]
     if same:
         canonical = sorted(same, key=lambda d: parse_iso(d.get("createdAt")))[0]
         client.update(canonical["id"], title, text, parent_id=parent_id)
+        canonical["parentDocumentId"] = parent_id
         for extra in same:
             if extra["id"] != canonical["id"]:
                 client.archive(extra["id"])
         return canonical["id"]
 
     new_id = client.create(title, text, parent_id=parent_id)
-    docs.append({"id": new_id, "title": title, "archivedAt": None, "createdAt": None, "updatedAt": None})
+    docs.append({
+        "id": new_id,
+        "title": title,
+        "archivedAt": None,
+        "createdAt": None,
+        "updatedAt": None,
+        "parentDocumentId": parent_id,
+    })
     return new_id
+
+
+def ensure_doc_exists(client: OutlineClient, docs: List[dict], title: str, text: str, parent_id: str | None = None) -> str:
+    existing = canonical_doc(docs, title)
+    if existing:
+        return existing["id"]
+    return ensure_single_doc(client, docs, title, text, parent_id=parent_id)
+
+
+
+def parent_document_needs_update(doc: dict, expected_parent_id: str | None) -> bool:
+    if "parentDocumentId" not in doc:
+        return False
+    return doc.get("parentDocumentId") != expected_parent_id
+
 
 
 def main() -> None:
@@ -191,6 +550,7 @@ def main() -> None:
 
     client = OutlineClient(args.outline_url, args.token, args.collection_id)
     targets = collect_targets()
+    repo_web_base = detect_repo_web_base()
 
     # Paso 1: dedupe exacto previo por título en todo el prefijo del proyecto
     all_docs = client.list_collection_docs()
@@ -223,7 +583,11 @@ def main() -> None:
     for key, title in HUB_TITLES.items():
         hub_ids[key] = ensure_single_doc(client, all_docs, title, f"# {title.split(' — ', 1)[1]}\n", parent_id=root_id)
 
-    # Paso 3: upsert de targets y asignación de parent
+    # Paso 3: asegurar existencia inicial solo para documentos faltantes.
+    # En el primer sync de un documento nuevo se crea con texto crudo para obtener su id/url en Outline;
+    # la reescritura final ocurre recién en el paso 4, así que ese bootstrap puede implicar dos writes
+    # para documentos inéditos. Se acepta como trade-off para mantener el flujo determinista sin depender
+    # de URLs de Outline que todavía no existen en la corrida inicial.
     synced = 0
     desired_titles = {ROOT_TITLE, *HUB_TITLES.values()}
 
@@ -234,10 +598,46 @@ def main() -> None:
             continue
         text = path.read_text(encoding="utf-8")
         desired_titles.add(t.title)
-        ensure_single_doc(client, all_docs, t.title, text, parent_id=hub_ids[t.category])
+        ensure_doc_exists(client, all_docs, t.title, text, parent_id=hub_ids[t.category])
         synced += 1
 
-    # Paso 4: opción de limpiar documentos legacy no mapeados
+    # Paso 4: segunda pasada para reescribir links locales a Outline/GitHub y actualizar solo si cambia el contenido final
+    all_docs = client.list_collection_docs()
+    outline_base = outline_web_base(args.outline_url)
+    outline_urls_by_title = {
+        d.get("title"): normalize_outline_doc_url(d.get("url", ""), outline_base)
+        for d in all_docs
+        if d.get("archivedAt") is None and d.get("title")
+    }
+    outline_urls_by_rel = {
+        t.rel_path: outline_urls_by_title.get(t.title, "")
+        for t in targets
+        if outline_urls_by_title.get(t.title)
+    }
+
+    current_text_by_id: Dict[str, str] = {}
+    for t in targets:
+        path = REPO_ROOT / t.rel_path
+        if not path.exists():
+            continue
+        raw_text = path.read_text(encoding="utf-8")
+        final_text = rewrite_local_links(raw_text, path, outline_urls_by_rel, repo_web_base)
+        doc = canonical_doc(all_docs, t.title)
+        if not doc:
+            continue
+        doc_id = doc["id"]
+        if doc_id not in current_text_by_id:
+            current_text_by_id[doc_id] = client.get_text(doc_id)
+        needs_update = (
+            current_text_by_id[doc_id] != final_text
+            or parent_document_needs_update(doc, hub_ids[t.category])
+        )
+        if needs_update:
+            client.update(doc_id, t.title, final_text, parent_id=hub_ids[t.category])
+            current_text_by_id[doc_id] = final_text
+            doc["parentDocumentId"] = hub_ids[t.category]
+
+    # Paso 5: opción de limpiar documentos legacy no mapeados
     archived_unknown = 0
     if args.archive_unknown:
         for d in client.list_collection_docs():
@@ -250,7 +650,7 @@ def main() -> None:
                 client.archive(d["id"])
                 archived_unknown += 1
 
-    # Paso 5: regenerar índices de hubs y root
+    # Paso 6: regenerar índices de hubs y root
     docs = [
         d
         for d in client.list_collection_docs()

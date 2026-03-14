@@ -219,6 +219,16 @@ OUTLINE_API_TOKEN="..." \
 python3 scripts/sync_outline_docs.py
 ```
 
+El sync reescribe links locales del repo a URLs navegables:
+- **preferencia:** documento equivalente en Outline
+- **fallback:** URL web del repo (`blob/<ref>`; imágenes vía `raw.githubusercontent.com`)
+- **alcance:** solo fuera de bloques de código cercados (respetando el delimitador real del fence) y preservando spans inline con backticks simples o múltiples
+- **heurística documentada:** rutas que empiecen por `docs/` o `scripts/` se interpretan como relativas a la raíz del repo; el resto sigue la resolución relativa al documento origen
+
+Variables opcionales:
+- `OUTLINE_REPO_WEB_BASE` para forzar la base web del repo (acepta tanto la URL del repo como `.../blob/<ref>`)
+- `OUTLINE_GIT_REF` para elegir la ref usada en links GitHub/raw (default `main`)
+
 Limpieza opcional de documentos legacy fuera del catálogo oficial:
 
 ```bash
