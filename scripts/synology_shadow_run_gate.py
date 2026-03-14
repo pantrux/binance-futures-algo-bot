@@ -5,6 +5,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from urllib import error as url_error
 from urllib import parse, request
 
 
@@ -14,8 +15,15 @@ def fetch_shadow_run_summary(api_base_url: str, metrics_api_key: str, window_day
         f"{api_base_url.rstrip('/')}/reporting/shadow-run-summary?{query}",
         headers={"x-metrics-key": metrics_api_key},
     )
-    with request.urlopen(req, timeout=40) as response:
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with request.urlopen(req, timeout=40) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except url_error.HTTPError as exc:
+        print(f"❌ Error HTTP {exc.code} al consultar shadow-run-summary: {exc.reason}", file=sys.stderr)
+        raise SystemExit(2) from exc
+    except url_error.URLError as exc:
+        print(f"❌ Error de red al consultar shadow-run-summary: {exc.reason}", file=sys.stderr)
+        raise SystemExit(2) from exc
 
 
 def evaluate(summary: dict, args: argparse.Namespace) -> dict:

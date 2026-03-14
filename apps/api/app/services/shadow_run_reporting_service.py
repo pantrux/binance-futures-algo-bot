@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from apps.api.app.db.models import Order, RiskEvent, TradePlan
 from apps.api.app.schemas.shadow_run_reporting import ShadowRunSummary, ShadowRunSymbolSummary
 
+MAX_PAIRING_DELTA_SECONDS = 86_400
+
 
 class ShadowRunReportingService:
     def __init__(self, db: Session) -> None:
@@ -40,6 +42,8 @@ class ShadowRunReportingService:
                 if candidate.side != paper.side:
                     continue
                 delta_seconds = abs((candidate.created_at - paper.created_at).total_seconds())
+                if delta_seconds > MAX_PAIRING_DELTA_SECONDS:
+                    continue
                 candidates.append((idx, delta_seconds))
 
             if not candidates:
@@ -123,6 +127,8 @@ class ShadowRunReportingService:
             self.db.query(Order, TradePlan.entry_price)
             .join(TradePlan, TradePlan.id == Order.trade_plan_id)
             .filter(Order.is_testnet.is_(True))
+            .filter(Order.venue == "binance_futures_testnet")
+            .filter(TradePlan.status == "testnet_executed")
             .filter(Order.created_at >= cutoff)
             .all()
         )

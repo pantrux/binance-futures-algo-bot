@@ -87,7 +87,7 @@ def test_shadow_run_summary_aggregates_pairs_fill_rate_slippage_and_risk() -> No
     db = build_db()
     now = datetime.now(timezone.utc)
     paper = seed_trade_plan(db, symbol="BTCUSDT", side="long", status="paper_executed", entry_price=50000, created_at=now - timedelta(days=10))
-    testnet = seed_trade_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=50100, created_at=now - timedelta(days=1))
+    testnet = seed_trade_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=50100, created_at=now - timedelta(days=9, hours=12))
     unmatched = seed_trade_plan(db, symbol="ETHUSDT", side="short", status="paper_executed", entry_price=3000, created_at=now - timedelta(days=2))
 
     seed_order(db, testnet, status="filled", price=50125, created_at=now - timedelta(hours=12))
@@ -102,16 +102,31 @@ def test_shadow_run_summary_aggregates_pairs_fill_rate_slippage_and_risk() -> No
     assert summary.compared_pairs == 1
     assert summary.unmatched_paper == 1
     assert summary.unmatched_testnet == 0
-    assert summary.shadow_run_duration_days >= 9
-    assert summary.testnet_orders_total == 2
+    assert summary.shadow_run_duration_days >= 7
+    assert summary.testnet_orders_total == 1
     assert summary.testnet_orders_filled == 1
-    assert summary.testnet_fill_rate_pct == 50.0
+    assert summary.testnet_fill_rate_pct == 100.0
     assert summary.avg_testnet_slippage_bps == 4.99
     assert summary.critical_risk_events_7d == 1
     assert summary.warning_risk_events_7d == 1
     assert summary.total_risk_events_30d == 2
     assert len(summary.symbols) == 2
     assert summary.symbols[0].symbol == "BTCUSDT"
+
+
+
+def test_shadow_run_summary_does_not_pair_plans_beyond_max_temporal_delta() -> None:
+    db = build_db()
+    now = datetime.now(timezone.utc)
+    seed_trade_plan(db, symbol="BTCUSDT", side="long", status="paper_executed", entry_price=50000, created_at=now - timedelta(days=10))
+    seed_trade_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=50010, created_at=now - timedelta(days=1))
+
+    summary = ShadowRunReportingService(db).build_summary(window_days=30)
+
+    assert summary.compared_pairs == 0
+    assert summary.unmatched_paper == 1
+    assert summary.unmatched_testnet == 1
+    assert summary.avg_entry_price_diff_pct is None
 
 
 

@@ -31,6 +31,14 @@ on:
         description: "Máximo de warning risk events en 7d"
         required: false
         default: "3"
+      max_critical_risk_events_7d:
+        description: "Máximo de critical risk events en 7d"
+        required: false
+        default: "0"
+      max_avg_risk_events_per_day_30d:
+        description: "Promedio máximo de risk events por día en 30d"
+        required: false
+        default: "1"
   schedule:
     - cron: "40 5 * * *"
 
@@ -53,6 +61,8 @@ jobs:
           MIN_FILL_RATE_PCT: ${{ inputs.min_fill_rate_pct || '98' }}
           MAX_AVG_SLIPPAGE_BPS: ${{ inputs.max_avg_slippage_bps || '1' }}
           MAX_WARNING_RISK_EVENTS_7D: ${{ inputs.max_warning_risk_events_7d || '3' }}
+          MAX_CRITICAL_RISK_EVENTS_7D: ${{ inputs.max_critical_risk_events_7d || '0' }}
+          MAX_AVG_RISK_EVENTS_PER_DAY_30D: ${{ inputs.max_avg_risk_events_per_day_30d || '1' }}
         run: |
           if [[ -z "${API_BASE_URL}" ]]; then
             echo "❌ Debes informar api_base_url o definir vars.SYNOLOGY_API_BASE_URL" >&2
@@ -73,6 +83,8 @@ jobs:
             --min-fill-rate-pct "${MIN_FILL_RATE_PCT}" \
             --max-avg-slippage-bps "${MAX_AVG_SLIPPAGE_BPS}" \
             --max-warning-risk-events-7d "${MAX_WARNING_RISK_EVENTS_7D}" \
+            --max-critical-risk-events-7d "${MAX_CRITICAL_RISK_EVENTS_7D}" \
+            --max-avg-risk-events-per-day-30d "${MAX_AVG_RISK_EVENTS_PER_DAY_30D}" \
             --output-json artifacts/synology-shadow-run-gate.json \
             --output-md artifacts/synology-shadow-run-gate.md
           EXIT_CODE=$?

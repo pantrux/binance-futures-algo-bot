@@ -68,7 +68,7 @@ def test_reporting_shadow_run_summary_route_returns_payload() -> None:
     now = datetime.now(timezone.utc)
 
     paper = seed_trade_plan(db, symbol="BTCUSDT", status="paper_executed", side="long", created_at=now - timedelta(days=8))
-    testnet = seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", side="long", created_at=now - timedelta(days=1))
+    testnet = seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", side="long", created_at=now - timedelta(days=7, hours=12))
 
     order = Order(
         trade_plan_id=testnet.id,
