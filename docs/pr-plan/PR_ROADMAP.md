@@ -54,9 +54,9 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-29 | Router Binance Testnet | ✅ Mergeado | ejecución real en testnet con trazabilidad de órdenes |
 | PR-30 | Reconciliación y máquina de estados de ejecución | ✅ Mergeado | consistencia entre órdenes/posiciones/eventos |
 | PR-31 | Paridad paper vs testnet (shadow run) | ✅ Mergeado | reporte comparativo y brechas de comportamiento |
-| PR-32 | Alerting y reporting de producción | 🟡 En progreso | resumen diario operativo y evaluación temprana de alertas |
-| PR-33 | Backtesting y walk-forward | 🟡 En progreso | baseline cuantitativo reproducible con benchmark y walk-forward |
-| PR-34 | Checklist de transición y rampa de capital | 🔵 Planificado | criterios formales para eventual salida de paper |
+| PR-32 | Alerting y reporting de producción | ✅ Mergeado | resumen diario operativo y evaluación temprana de alertas |
+| PR-33 | Backtesting y walk-forward | ✅ Mergeado | baseline cuantitativo reproducible con benchmark y walk-forward |
+| PR-34 | Checklist de transición y rampa de capital | 🟡 En progreso | criterios formales para eventual salida de paper |
 | PR-35 | Cutover controlado y monitoreo post-cutover | 🔵 Planificado | transición asistida con gates y rollback explícito |
 
 ## Secuencia de PRs actualizada
@@ -521,7 +521,7 @@ Medir brecha entre comportamiento esperado (paper) y real (testnet) antes de cua
 ---
 
 ### PR-32 — Alerting y reporting de producción
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Agregar una capa mínima de visibilidad operativa diaria para detectar degradación temprana antes de la etapa formal de go-live readiness.
@@ -536,7 +536,7 @@ Agregar una capa mínima de visibilidad operativa diaria para detectar degradaci
 ---
 
 ### PR-33 — Backtesting y walk-forward
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Validar robustez estadística de estrategias bajo distintos periodos y condiciones.
@@ -552,7 +552,7 @@ Validar robustez estadística de estrategias bajo distintos periodos y condicion
 ---
 
 ### PR-34 — Checklist de transición y rampa de capital
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Definir formalmente condiciones para eventual transición fuera de paper.

@@ -5,6 +5,7 @@
 - `master-plan.md`
 - `implementation-roadmap.md`
 - `phase5-operational-closure.md`
+- `transition-checklist-and-capital-ramp.md`
 
 ## Fases de implementación
 
