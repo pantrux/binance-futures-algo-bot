@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 12 ya produjo ejecuciones testnet reales en Synology y corrigió la normalización de fills; el ajuste pendiente ahora es blindar la reconciliación contra órdenes históricas rechazadas con `executed_quantity > 0` heredado de versiones previas.
-- **PR activo:** `PR-44` — guard de reconciliación para órdenes rechazadas históricas.
-- **Etapa actual:** **Fase 12 — Activación operativa de testnet** (`PR-42`, `PR-43`, `PR-44`).
+- **Estado global actual:** Fase 12 ya produjo ejecuciones testnet reales, fills normalizados y reconciliación blindada; ahora el foco visible es el operador: exponer en el centro de mando el flujo completo de operaciones, órdenes, posiciones, riesgo y shadow run en una sola vista.
+- **PR activo:** `PR-45` — centro de mando operacional.
+- **Etapa actual:** **Fase 12 — Activación operativa de testnet** (`PR-42`, `PR-43`, `PR-44`, `PR-45`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -171,3 +171,4 @@ Un sistema de trading **auditable, operable y seguro**, con:
 - `PAPER_TRADING=true` obligatorio hasta cumplir criterios de transición definidos en Fase 9 y aprobar los ensayos operativos de Fase 10.
 - No habilitar live trading por defecto en ninguna fase intermedia.
 - Cada PR debe cerrar con: checks verdes + comentarios/reviews resueltos + roadmap/docs/memoria actualizados.
+dos.

@@ -62,7 +62,12 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-37 | Templates operativos de artefactos de cutover | ✅ Mergeado | plantillas reutilizables para reportes, incidentes y cierre |
 | PR-38 | Links navegables para documentación sincronizada en Outline | ⚪ Cerrado | continuidad absorbida por PR-39 tras renombre de rama |
 | PR-39 | Links navegables para documentación sincronizada en Outline | ✅ Mergeado | reescritura de links locales a Outline/GitHub durante el sync + sync Outline validado (`docs_synced=59`) |
-| PR-40 | Validación CI de links Markdown documentales | 🟡 En progreso | lint/test de links locales para prevenir regresiones antes del sync a Outline |
+| PR-40 | Validación CI de links Markdown documentales | ✅ Mergeado | lint/test de links locales para prevenir regresiones antes del sync a Outline |
+| PR-41 | Gate auditable de shadow run para readiness testnet | ✅ Mergeado | reporte/API/workflow para evaluar Gate C con evidencia JSON+Markdown ya desplegado en Synology |
+| PR-42 | Activación de shadow run testnet en Synology | ✅ Mergeado | credenciales cargadas y primer gate útil con `testnet_executed > 0` |
+| PR-43 | Normalización de fills testnet y reconciliación | ✅ Mergeado | fills testnet normalizados + shadow run limpio con `fill_rate=100%` |
+| PR-44 | Guard de reconciliación para órdenes rechazadas históricas | ✅ Mergeado | follow-up de review para no inflar fills con rechazos heredados |
+| PR-45 | Centro de mando operacional | 🟡 En progreso | endpoint agregado + UI rica para mostrar operaciones, órdenes, posiciones, riesgo y shadow run |
 
 ## Secuencia de PRs actualizada
 
@@ -685,7 +690,7 @@ Corregir el falso drift crítico cuando Binance Testnet devuelve órdenes con `s
 - mergeado en `a85c305`
 
 ### PR-44 — Guard de reconciliación para órdenes rechazadas históricas
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Evitar que la reconciliación clasifique como fill órdenes rechazadas heredadas de versiones previas que pudieron quedar con `executed_quantity > 0` por un bug histórico.
@@ -693,6 +698,20 @@ Evitar que la reconciliación clasifique como fill órdenes rechazadas heredadas
 **Entregables**
 - exclusión explícita de estados terminales de fallo en `filled_orders`
 - test focal para orden `rejected` con `executed_quantity > 0`
+- ajuste adicional post-review: `canceled/cancelled/expired` con `executed_quantity > 0` siguen contando como fill parcial legítimo
+- mergeado en `f0c0015`
+
+### PR-45 — Centro de mando operacional
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Mostrar en la UI del centro de mando toda la información relevante de operación en tiempo real práctico: planes, órdenes, posiciones, eventos de riesgo y snapshot de shadow run, sin depender de múltiples endpoints manuales.
+
+**Entregables**
+- endpoint agregado `GET /dashboard/command-center`
+- servicio backend con snapshot operativo unificado
+- home de `apps/web` rediseñada para mostrar operaciones recientes, órdenes, posiciones, riesgo y readiness testnet
+- tests de servicio/ruta + build frontend verde
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

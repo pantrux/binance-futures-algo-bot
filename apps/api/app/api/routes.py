@@ -11,6 +11,7 @@ from apps.api.app.core.settings import settings
 from apps.api.app.observability.metrics import api_metrics
 from apps.api.app.schemas.backtesting import BacktestRunRequest, BacktestRunResponse
 from apps.api.app.schemas.dashboard import DashboardSummary
+from apps.api.app.schemas.dashboard_command_center import DashboardCommandCenterResponse
 from apps.api.app.schemas.execution_parity import ExecutionParityReport
 from apps.api.app.schemas.execution_reconciliation import ReconciliationReport
 from apps.api.app.schemas.production_reporting import AlertEvaluationResponse, DailyProductionSummary
@@ -27,6 +28,7 @@ from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.binance_market_data_service import BinanceMarketDataService
 from apps.api.app.services.backtesting_service import BacktestingError, BacktestingService
+from apps.api.app.services.dashboard_command_center_service import DashboardCommandCenterService
 from apps.api.app.services.dashboard_service import DashboardService
 from apps.api.app.services.execution_parity_service import ExecutionParityService
 from apps.api.app.services.execution_state_machine_service import ExecutionStateMachineService
@@ -114,6 +116,11 @@ def latest_market_snapshot(symbol: str, db: Session = Depends(get_db)) -> Market
 @router.get("/dashboard/summary", response_model=DashboardSummary)
 def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
     return DashboardService(db).summary()
+
+
+@router.get("/dashboard/command-center", response_model=DashboardCommandCenterResponse)
+def dashboard_command_center(db: Session = Depends(get_db)) -> DashboardCommandCenterResponse:
+    return DashboardCommandCenterService(db).build()
 
 
 @router.post("/backtesting/run", response_model=BacktestRunResponse)

@@ -1,39 +1,149 @@
-async function getSummary() {
+type CommandCenterResponse = {
+  generated_at: string;
+  summary: {
+    trade_plans_total: number;
+    approved_trade_plans: number;
+    paper_executed_trade_plans: number;
+    testnet_executed_trade_plans: number;
+    open_positions: number;
+    risk_events_total: number;
+  };
+  shadow_run: {
+    shadow_run_duration_days: number;
+    paper_executed_trade_plans: number;
+    testnet_executed_trade_plans: number;
+    compared_pairs: number;
+    unmatched_paper: number;
+    unmatched_testnet: number;
+    testnet_orders_total: number;
+    testnet_orders_filled: number;
+    testnet_fill_rate_pct: number | null;
+    avg_testnet_slippage_bps: number | null;
+    critical_risk_events_7d: number;
+    warning_risk_events_7d: number;
+  };
+  recent_trade_plans: Array<{
+    id: number;
+    symbol: string;
+    side: string;
+    market_regime: string;
+    aggregate_score: number;
+    applied_risk_pct: number;
+    max_position_notional: number;
+    status: string;
+    created_at: string;
+  }>;
+  recent_orders: Array<{
+    id: number;
+    trade_plan_id: number;
+    symbol: string;
+    side: string;
+    venue: string;
+    status: string;
+    price: number;
+    quantity: number;
+    executed_quantity: number;
+    created_at: string;
+  }>;
+  open_positions: Array<{
+    id: number;
+    trade_plan_id: number | null;
+    symbol: string;
+    side: string;
+    quantity: number;
+    entry_price: number;
+    mark_price: number;
+    unrealized_pnl: number;
+    leverage: number;
+    status: string;
+    opened_at: string;
+  }>;
+  recent_risk_events: Array<{
+    id: number;
+    trade_plan_id: number | null;
+    event_type: string;
+    severity: string;
+    message: string;
+    created_at: string;
+  }>;
+};
+
+const EMPTY_COMMAND_CENTER: CommandCenterResponse = {
+  generated_at: new Date(0).toISOString(),
+  summary: {
+    trade_plans_total: 0,
+    approved_trade_plans: 0,
+    paper_executed_trade_plans: 0,
+    testnet_executed_trade_plans: 0,
+    open_positions: 0,
+    risk_events_total: 0,
+  },
+  shadow_run: {
+    shadow_run_duration_days: 0,
+    paper_executed_trade_plans: 0,
+    testnet_executed_trade_plans: 0,
+    compared_pairs: 0,
+    unmatched_paper: 0,
+    unmatched_testnet: 0,
+    testnet_orders_total: 0,
+    testnet_orders_filled: 0,
+    testnet_fill_rate_pct: null,
+    avg_testnet_slippage_bps: null,
+    critical_risk_events_7d: 0,
+    warning_risk_events_7d: 0,
+  },
+  recent_trade_plans: [],
+  recent_orders: [],
+  open_positions: [],
+  recent_risk_events: [],
+};
+
+async function getCommandCenter(): Promise<CommandCenterResponse> {
   const apiUrl = process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
   try {
-    const response = await fetch(`${apiUrl}/dashboard/summary`, { cache: "no-store" });
-    if (!response.ok) throw new Error("summary failed");
+    const response = await fetch(`${apiUrl}/dashboard/command-center`, { cache: "no-store" });
+    if (!response.ok) throw new Error("command-center failed");
     return await response.json();
   } catch {
-    return {
-      trade_plans_total: 0,
-      approved_trade_plans: 0,
-      paper_executed_trade_plans: 0,
-      open_positions: 0,
-      risk_events_total: 0,
-    };
+    return EMPTY_COMMAND_CENTER;
   }
 }
 
-async function getTradePlans() {
-  const apiUrl = process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
-  try {
-    const response = await fetch(`${apiUrl}/trade-plans?limit=5`, { cache: "no-store" });
-    if (!response.ok) throw new Error("trade plans failed");
-    return await response.json();
-  } catch {
-    return [];
-  }
+function formatNumber(value: number | null | undefined, digits = 0) {
+  if (value == null) return "—";
+  return new Intl.NumberFormat("es-CL", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("es-CL", {
+    dateStyle: "short",
+    timeStyle: "short",
+    hour12: false,
+  }).format(new Date(value));
+}
+
+function statusTone(status: string) {
+  const normalized = status.toLowerCase();
+  if (["filled", "testnet_executed", "paper_executed", "approved", "open"].includes(normalized)) return "ok";
+  if (["warning", "partially_filled", "blocked", "draft", "new"].includes(normalized)) return "warn";
+  if (["critical", "rejected", "cancelled", "canceled", "expired"].includes(normalized)) return "danger";
+  return "neutral";
 }
 
 export default async function HomePage() {
-  const [summary, tradePlans] = await Promise.all([getSummary(), getTradePlans()]);
+  const commandCenter = await getCommandCenter();
+  const { summary, shadow_run: shadowRun } = commandCenter;
 
   const cards = [
     { title: "Trade plans", value: String(summary.trade_plans_total), hint: "Planes persistidos" },
-    { title: "Aprobados", value: String(summary.approved_trade_plans), hint: "Listos para paper trading" },
-    { title: "Paper ejecutados", value: String(summary.paper_executed_trade_plans), hint: "Órdenes simuladas creadas" },
-    { title: "Posiciones abiertas", value: String(summary.open_positions), hint: "Inventario operativo" },
+    { title: "Aprobados", value: String(summary.approved_trade_plans), hint: "Listos para ejecución" },
+    { title: "Paper ejecutados", value: String(summary.paper_executed_trade_plans), hint: "Simulación operativa" },
+    { title: "Testnet ejecutados", value: String(summary.testnet_executed_trade_plans), hint: "Órdenes reales en testnet" },
+    { title: "Posiciones abiertas", value: String(summary.open_positions), hint: "Inventario operativo vivo" },
+    { title: "Fill rate testnet", value: `${formatNumber(shadowRun.testnet_fill_rate_pct, 1)}%`, hint: "Órdenes llenadas / órdenes testnet" },
   ];
 
   return (
@@ -43,16 +153,32 @@ export default async function HomePage() {
           <p className="eyebrow">Binance USDⓈ-M Futures</p>
           <h1>Centro de mando del bot algorítmico</h1>
           <p className="lead">
-            Arquitectura auditable con persistencia de trade plans, paper trading controlado, base Synology-first y documentación viva en Outline.
+            Visibilidad operativa unificada de planes, órdenes, posiciones, riesgo y shadow run testnet desde una sola pantalla.
           </p>
         </div>
         <div className="status-box">
-          <span className="badge">Fase operativa inicial</span>
-          <p>Persistencia + Binance Testnet base + paper trading skeleton + dashboard conectado a la API.</p>
+          <span className="badge">Shadow run activo</span>
+          <p>
+            Generado: <strong>{formatDate(commandCenter.generated_at)}</strong>
+          </p>
+          <div className="status-metrics">
+            <div>
+              <span className="metric-label">Días observados</span>
+              <strong>{formatNumber(shadowRun.shadow_run_duration_days, 2)}</strong>
+            </div>
+            <div>
+              <span className="metric-label">Pares comparados</span>
+              <strong>{shadowRun.compared_pairs}</strong>
+            </div>
+            <div>
+              <span className="metric-label">Risk 7d</span>
+              <strong>{shadowRun.critical_risk_events_7d}/{shadowRun.warning_risk_events_7d}</strong>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="grid">
+      <section className="grid grid-six">
         {cards.map((card) => (
           <article key={card.title} className="card">
             <p className="card-title">{card.title}</p>
@@ -62,45 +188,160 @@ export default async function HomePage() {
         ))}
       </section>
 
-      <section className="panel">
-        <div className="panel-header">
-          <h3>Últimos trade plans</h3>
-          <span className="badge subtle">Risk events: {summary.risk_events_total}</span>
+      <section className="panel panel-highlight">
+        <div className="panel-header stacked">
+          <div>
+            <h3>Shadow run / readiness</h3>
+            <p className="panel-copy">Snapshot operativo para seguir el avance real hacia el gate testnet.</p>
+          </div>
+          <div className="chip-row">
+            <span className="badge subtle">Paper: {shadowRun.paper_executed_trade_plans}</span>
+            <span className="badge subtle">Testnet: {shadowRun.testnet_executed_trade_plans}</span>
+            <span className="badge subtle">Unmatched: {shadowRun.unmatched_paper}/{shadowRun.unmatched_testnet}</span>
+          </div>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Símbolo</th>
-                <th>Lado</th>
-                <th>Régimen</th>
-                <th>Score</th>
-                <th>Riesgo</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tradePlans.length === 0 ? (
+        <div className="stats-grid">
+          <article className="mini-stat"><span>Órdenes testnet</span><strong>{shadowRun.testnet_orders_total}</strong></article>
+          <article className="mini-stat"><span>Órdenes filled</span><strong>{shadowRun.testnet_orders_filled}</strong></article>
+          <article className="mini-stat"><span>Slippage promedio</span><strong>{formatNumber(shadowRun.avg_testnet_slippage_bps, 2)} bps</strong></article>
+          <article className="mini-stat"><span>Risk events total</span><strong>{summary.risk_events_total}</strong></article>
+        </div>
+      </section>
+
+      <section className="two-column">
+        <section className="panel">
+          <div className="panel-header">
+            <h3>Operaciones recientes</h3>
+            <span className="badge subtle">trade plans + órdenes</span>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={7} className="empty">Sin datos todavía. El dashboard está listo para leer desde la API.</td>
+                  <th>Plan</th>
+                  <th>Símbolo</th>
+                  <th>Lado</th>
+                  <th>Score</th>
+                  <th>Riesgo</th>
+                  <th>Estado</th>
+                  <th>Creado</th>
                 </tr>
-              ) : (
-                tradePlans.map((plan: any) => (
+              </thead>
+              <tbody>
+                {commandCenter.recent_trade_plans.length === 0 ? (
+                  <tr><td colSpan={7} className="empty">Sin trade plans recientes.</td></tr>
+                ) : commandCenter.recent_trade_plans.map((plan) => (
                   <tr key={plan.id}>
-                    <td>{plan.id}</td>
+                    <td>#{plan.id}</td>
                     <td>{plan.symbol}</td>
                     <td>{plan.side}</td>
-                    <td>{plan.market_regime}</td>
-                    <td>{plan.aggregate_score}</td>
-                    <td>{plan.applied_risk_pct}%</td>
-                    <td>{plan.status}</td>
+                    <td>{formatNumber(plan.aggregate_score, 2)}</td>
+                    <td>{formatNumber(plan.applied_risk_pct, 3)}%</td>
+                    <td><span className={`status-pill ${statusTone(plan.status)}`}>{plan.status}</span></td>
+                    <td>{formatDate(plan.created_at)}</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header">
+            <h3>Órdenes recientes</h3>
+            <span className="badge subtle">exchange execution</span>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Plan</th>
+                  <th>Símbolo</th>
+                  <th>Venue</th>
+                  <th>Qty / Exec</th>
+                  <th>Estado</th>
+                  <th>Hora</th>
+                </tr>
+              </thead>
+              <tbody>
+                {commandCenter.recent_orders.length === 0 ? (
+                  <tr><td colSpan={7} className="empty">Sin órdenes recientes.</td></tr>
+                ) : commandCenter.recent_orders.map((order) => (
+                  <tr key={order.id}>
+                    <td>#{order.id}</td>
+                    <td>#{order.trade_plan_id}</td>
+                    <td>{order.symbol}</td>
+                    <td>{order.venue}</td>
+                    <td>{formatNumber(order.quantity, 3)} / {formatNumber(order.executed_quantity, 3)}</td>
+                    <td><span className={`status-pill ${statusTone(order.status)}`}>{order.status}</span></td>
+                    <td>{formatDate(order.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section className="two-column">
+        <section className="panel">
+          <div className="panel-header">
+            <h3>Posiciones abiertas</h3>
+            <span className="badge subtle">inventory</span>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Posición</th>
+                  <th>Símbolo</th>
+                  <th>Lado</th>
+                  <th>Qty</th>
+                  <th>Entry / Mark</th>
+                  <th>PnL</th>
+                  <th>Lev</th>
+                </tr>
+              </thead>
+              <tbody>
+                {commandCenter.open_positions.length === 0 ? (
+                  <tr><td colSpan={7} className="empty">Sin posiciones abiertas.</td></tr>
+                ) : commandCenter.open_positions.map((position) => (
+                  <tr key={position.id}>
+                    <td>#{position.id}</td>
+                    <td>{position.symbol}</td>
+                    <td>{position.side}</td>
+                    <td>{formatNumber(position.quantity, 3)}</td>
+                    <td>{formatNumber(position.entry_price, 2)} / {formatNumber(position.mark_price, 2)}</td>
+                    <td className={position.unrealized_pnl >= 0 ? "positive" : "negative"}>{formatNumber(position.unrealized_pnl, 2)}</td>
+                    <td>{position.leverage}x</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header">
+            <h3>Eventos de riesgo</h3>
+            <span className="badge subtle">últimos 12</span>
+          </div>
+          <div className="risk-feed">
+            {commandCenter.recent_risk_events.length === 0 ? (
+              <p className="empty">Sin eventos recientes.</p>
+            ) : commandCenter.recent_risk_events.map((event) => (
+              <article key={event.id} className="risk-item">
+                <div className="risk-item-top">
+                  <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
+                  <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
+                </div>
+                <p>{event.message}</p>
+                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
+              </article>
+            ))}
+          </div>
+        </section>
       </section>
     </main>
   );
