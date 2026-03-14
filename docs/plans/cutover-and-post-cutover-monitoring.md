@@ -58,8 +58,9 @@
 
 ### Paso 3 — Ventana de observación
 
-- Duración mínima recomendada: **24 horas** antes de cerrar la ventana inicial de cutover.
-- Checkpoints sugeridos: **15 min**, **1 h**, **6 h** y **24 h**.
+- **Fase de estabilización inicial:** mínimo **24 horas** tras el cutover.
+- **Fase de monitoreo post-cutover:** mínimo **7 días** antes de declarar cierre formal de la ventana.
+- Checkpoints sugeridos: **15 min**, **1 h**, **6 h**, **24 h** y luego checkpoint diario hasta completar **7 días**.
 - [ ] Mantener exposición controlada según etapa (micro/small)
 - [ ] Validar reporte diario y alertas críticas mediante **synthetic checks**, replay controlado o disparos de prueba que no requieran provocar una falla real en live
 - [ ] Registrar incidente si hay degradación
@@ -94,7 +95,13 @@
 
 ## Checklist de salida de ventana
 
+### Cierre inicial (24 h)
+- [ ] No incidentes P0 en las primeras 24 h
+- [ ] Estabilidad operativa suficiente para mantener exposición controlada
+- [ ] Reporte inicial post-cutover emitido (Markdown + JSON)
+
+### Cierre formal (7 días)
 - [ ] No incidentes P0
 - [ ] Incidentes P1 dentro de umbrales (**<= 1 en rolling de 7 días**)
-- [ ] Reporte post-cutover emitido (Markdown + JSON)
+- [ ] Reporte de cierre post-cutover emitido (Markdown + JSON)
 - [ ] Próximo checkpoint calendarizado (24h / 7d)
