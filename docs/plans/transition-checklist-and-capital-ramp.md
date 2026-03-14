@@ -52,7 +52,7 @@
 **Métricas mínimas sugeridas (ajustables):**
 - Profit factor > **1.3** (mínimo inicial; calibrar por fees/slippage y timeframe)
 - Max drawdown <= **15%**
-- Trades suficientes (no “sobreajuste por 3 trades”) — mínimo inicial: **>= 200 trades** en el periodo evaluado.
+- Trades suficientes (no “sobreajuste por 3 trades”) — mínimo inicial: **>= 200 trades por periodo** (cada uno de los periodos evaluados).
 
 **Evidencia requerida:**
 - Reporte reproducible del backtest (inputs + outputs + versión del código).
@@ -62,6 +62,7 @@
 
 **Condiciones mínimas:**
 - Shadow run activo: comparar decisiones paper vs ejecución testnet.
+- **Duración mínima:** **>= 7 días** de shadow run **y** **>= 200 trades** acumulados en la ventana (para evitar falsos positivos por baja muestra).
 - Brecha documentada y acotada.
 
 **Métricas sugeridas (umbrales iniciales):**
@@ -81,7 +82,7 @@
 - Autenticación y rate limiting en endpoints sensibles.
 
 **Evidencia requerida:**
-- Tests y/o runbook demostrando rechazo por risk limits.
+- Tests **y** runbook demostrando rechazo por risk limits.
 
 ## Política de rampa de capital (propuesta)
 
