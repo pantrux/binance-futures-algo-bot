@@ -59,7 +59,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-34 | Checklist de transición y rampa de capital | ✅ Mergeado | criterios formales para eventual salida de paper |
 | PR-35 | Cutover controlado y monitoreo post-cutover | ✅ Mergeado | transición asistida con gates y rollback explícito |
 | PR-36 | Drills sintéticos y paquete de evidencia de cutover | ✅ Mergeado | ensayos controlados y artifacts previos al cutover real |
-| PR-37 | Links navegables para documentación sincronizada en Outline | 🟡 En progreso | reescritura de links locales a Outline/GitHub durante el sync |
+| PR-38 | Links navegables para documentación sincronizada en Outline | 🟡 En progreso | reescritura de links locales a Outline/GitHub durante el sync |
 
 ## Secuencia de PRs actualizada
 
@@ -580,7 +580,7 @@ Ejecutar transición asistida únicamente si todos los gates anteriores se cumpl
 ---
 
 ### PR-36 — Drills sintéticos y paquete de evidencia de cutover
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Formalizar ensayos previos al cutover real y estandarizar la evidencia obligatoria de ejecución/rollback.
@@ -590,16 +590,17 @@ Formalizar ensayos previos al cutover real y estandarizar la evidencia obligator
 - paquete de evidencia estándar de cutover
 - criterio de aprobación/rechazo del ensayo
 
-## Criterio de avance
-No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
-- checks terminados
-- documentación actualizada
-- comentarios/reviews resueltos
-- estado consolidado en memoria
-- roadmap y Gantt actualizados
-
 ---
-/<ref>`
+
+### PR-38 — Links navegables para documentación sincronizada en Outline
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Evitar que Outline publique links locales/rotos, reescribiéndolos a URLs navegables del documento equivalente en Outline o al repositorio web.
+
+**Entregables**
+- reescritura automática de links relativos/locales en `scripts/sync_outline_docs.py`
+- fallback estable a GitHub `blob/<ref>`
 - documentación operativa de la estrategia de links
 - ADR-038
 

@@ -119,7 +119,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - ver `docs/plans/cutover-drills-and-evidence-package.md`
 - ADR-037
 
-### PR-37 — Links navegables para documentación sincronizada en Outline 🟡
+### PR-38 — Links navegables para documentación sincronizada en Outline 🟡
 - estrategia híbrida: URL de Outline si el documento existe allí; fallback a GitHub `blob/<ref>`
 - script `scripts/sync_outline_docs.py`
 - ADR-038
