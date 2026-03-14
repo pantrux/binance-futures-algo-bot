@@ -59,8 +59,9 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-34 | Checklist de transición y rampa de capital | ✅ Mergeado | criterios formales para eventual salida de paper |
 | PR-35 | Cutover controlado y monitoreo post-cutover | ✅ Mergeado | transición asistida con gates y rollback explícito |
 | PR-36 | Drills sintéticos y paquete de evidencia de cutover | ✅ Mergeado | ensayos controlados y artifacts previos al cutover real |
-| PR-37 | Templates operativos de artefactos de cutover | 🟡 En progreso | plantillas reutilizables para paquete de evidencia y operación real |
-| PR-38 | Links navegables para documentación sincronizada en Outline | 🟡 En progreso | reescritura de links locales a Outline/GitHub durante el sync |
+| PR-37 | Templates operativos de artefactos de cutover | ✅ Mergeado | plantillas reutilizables para reportes, incidentes y cierre |
+| PR-38 | Links navegables para documentación sincronizada en Outline | ⚪ Cerrado | continuidad absorbida por PR-39 tras renombre de rama |
+| PR-39 | Links navegables para documentación sincronizada en Outline | 🟡 En progreso | reescritura de links locales a Outline/GitHub durante el sync |
 
 ## Secuencia de PRs actualizada
 
@@ -594,17 +595,26 @@ Formalizar ensayos previos al cutover real y estandarizar la evidencia obligator
 ---
 
 ### PR-37 — Templates operativos de artefactos de cutover
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
-Materializar el contrato documental de PR-36 en templates reutilizables para la operación real de cutover.
+Bajar el contrato documental a templates reutilizables para operación real y drills repetibles.
 
 **Entregables**
-- `docs/templates/cutover-initial-report-template.md`
-- `docs/templates/incident-log-template.md`
-- `docs/templates/drill-results-template.md`
-- `docs/templates/post-cutover-closeout-template.md`
+- templates operativos para reporte inicial (Markdown + JSON), incident log, drill results y closeout
+- referencias desde el plan de drills hacia templates concretos
 - ADR-038
+
+---
+
+### PR-38 — Links navegables para documentación sincronizada en Outline
+**Estado:** ⚪ Cerrado
+
+**Objetivo**
+Intento inicial de continuidad para la reescritura de links locales, cerrado al renombrar la rama fuente.
+
+**Entregables**
+- continuidad absorbida por `PR-39`
 
 ---
 

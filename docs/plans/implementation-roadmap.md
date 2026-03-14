@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 10 avanza en dos frentes documentales complementarios: templates operativos reutilizables (`PR-37`) y links navegables desde Outline (`PR-38`).
-- **PRs activos:** `PR-37` y `PR-38`.
-- **Etapa actual:** **Fase 10 — Ensayos operativos y navegabilidad documental** (`PR-36` a `PR-38`).
+- **Estado global actual:** Fase 10 ya tiene drills/evidencia y templates operativos mergeados; ahora avanza en la navegación documental limpia desde Outline.
+- **PR activo:** `PR-39` — links navegables para documentación sincronizada en Outline.
+- **Etapa actual:** **Fase 10 — Ensayos operativos y navegabilidad documental** (`PR-36` a `PR-39`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -119,15 +119,15 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - ver `docs/plans/cutover-drills-and-evidence-package.md`
 - ADR-037
 
-### PR-37 — Templates operativos de artefactos de cutover 🟡
-- templates reutilizables para `cutover-initial-report`, `incident-log`, `drill-results` y `post-cutover-closeout`
-- artifacts de evidencia listos para operación real
+### PR-37 — Templates operativos de artefactos de cutover ✅
+- ver `docs/templates/README.md`
 - ADR-038
 
-### PR-38 — Links navegables para documentación sincronizada en Outline 🟡
+### PR-39 — Links navegables para documentación sincronizada en Outline 🟡
 - estrategia híbrida: URL de Outline si el documento existe allí; fallback a GitHub `blob/<ref>`
 - script `scripts/sync_outline_docs.py`
 - ADR-039
+- continuidad retomada desde el PR-38 cerrado por renombre de rama
 
 ---
 

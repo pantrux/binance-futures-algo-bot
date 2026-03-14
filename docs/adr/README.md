@@ -39,6 +39,7 @@
 - `ADR-035-transition-checklist-capital-ramp.md`
 - `ADR-036-cutover-and-post-cutover-monitoring.md`
 - `ADR-037-cutover-drills-and-evidence-package.md`
+- `ADR-038-cutover-artifact-templates.md`
 - `ADR-039-outline-link-rewrite-strategy.md`
 
 ## Archivados

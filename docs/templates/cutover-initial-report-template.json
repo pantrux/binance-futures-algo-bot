@@ -1,0 +1,12 @@
+{
+  "context": "<contexto>",
+  "generatedAtUtc": "YYYY-MM-DDTHH:mm:ssZ",
+  "owner": "<owner>",
+  "commit": "<git-sha-or-release>",
+  "targetEnvironment": "paper|testnet|real",
+  "changeWindow": "<window>",
+  "preflightStatus": "OK|WARN|FAIL",
+  "plannedCheckpoints": ["15m", "1h", "6h", "24h", "7d"],
+  "knownRisks": ["<risk-1>", "<risk-2>"],
+  "startDecision": "APROBADO|RECHAZADO"
+}
