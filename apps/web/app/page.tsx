@@ -55,6 +55,16 @@ type CommandCenterResponse = {
     latest_risk_message: string | null;
     created_at: string;
   }>;
+  timeline: Array<{
+    trade_plan_id: number | null;
+    symbol: string | null;
+    entity_kind: string;
+    event_kind: string;
+    tone: string;
+    title: string;
+    detail: string;
+    occurred_at: string;
+  }>;
   recent_trade_plans: Array<{
     id: number;
     symbol: string;
@@ -126,6 +136,7 @@ const EMPTY_COMMAND_CENTER: CommandCenterResponse = {
     warning_risk_events_7d: 0,
   },
   operation_snapshots: [],
+  timeline: [],
   recent_trade_plans: [],
   recent_orders: [],
   open_positions: [],
@@ -331,38 +342,23 @@ export default async function HomePage() {
       <section className="two-column">
         <section className="panel">
           <div className="panel-header">
-            <h3>Operaciones recientes</h3>
-            <span className="badge subtle">trade plans + órdenes</span>
+            <h3>Línea de tiempo operativa</h3>
+            <span className="badge subtle">últimos 20 eventos</span>
           </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Plan</th>
-                  <th>Símbolo</th>
-                  <th>Lado</th>
-                  <th>Score</th>
-                  <th>Riesgo</th>
-                  <th>Estado</th>
-                  <th>Creado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {commandCenter.recent_trade_plans.length === 0 ? (
-                  <tr><td colSpan={7} className="empty">Sin trade plans recientes.</td></tr>
-                ) : commandCenter.recent_trade_plans.map((plan) => (
-                  <tr key={plan.id}>
-                    <td>#{plan.id}</td>
-                    <td>{plan.symbol}</td>
-                    <td>{plan.side}</td>
-                    <td>{formatNumber(plan.aggregate_score, 2)}</td>
-                    <td>{formatNumber(plan.applied_risk_pct, 3)}%</td>
-                    <td><span className={`status-pill ${statusTone(plan.status)}`}>{plan.status}</span></td>
-                    <td>{formatDate(plan.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="risk-feed timeline-feed">
+            {commandCenter.timeline.length === 0 ? (
+              <p className="empty">Sin eventos en timeline.</p>
+            ) : commandCenter.timeline.map((item, index) => (
+              <article key={`${item.entity_kind}-${item.trade_plan_id ?? 'na'}-${item.event_kind}-${index}`} className="risk-item timeline-item">
+                <div className="risk-item-top">
+                  <span className={`status-pill ${statusTone(item.tone)}`}>{item.entity_kind}</span>
+                  <span className="risk-meta">{item.event_kind} · {formatDate(item.occurred_at)}</span>
+                </div>
+                <p>{item.title}</p>
+                <small>{item.detail}</small>
+                <small>trade_plan_id: {item.trade_plan_id ?? '—'} · symbol: {item.symbol ?? '—'}</small>
+              </article>
+            ))}
           </div>
         </section>
 

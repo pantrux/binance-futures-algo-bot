@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 12 ya produjo ejecuciones testnet reales, fills normalizados y command center operacional base; ahora el foco es subir la granularidad visual por operación con plan + orden + posición + reconciliación + riesgo en la misma vista.
-- **PR activo:** `PR-46` — radar unificado por operación en el centro de mando.
-- **Etapa actual:** **Fase 12 — Activación operativa de testnet** (`PR-42`, `PR-43`, `PR-44`, `PR-45`, `PR-46`).
+- **Estado global actual:** Fase 12 ya tiene command center con radar unificado por operación; el siguiente salto visible es la línea de tiempo operativa para ver el orden cronológico de plan → orden → posición → riesgo sin hacer joins mentales.
+- **PR activo:** `PR-47` — línea de tiempo operativa unificada.
+- **Etapa actual:** **Fase 12 — Activación operativa de testnet** (`PR-42`, `PR-43`, `PR-44`, `PR-45`, `PR-46`, `PR-47`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -172,3 +172,4 @@ Un sistema de trading **auditable, operable y seguro**, con:
 - No habilitar live trading por defecto en ninguna fase intermedia.
 - Cada PR debe cerrar con: checks verdes + comentarios/reviews resueltos + roadmap/docs/memoria actualizados.
 dos.
+.

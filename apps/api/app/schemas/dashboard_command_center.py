@@ -109,11 +109,23 @@ class DashboardCommandCenterOperationSnapshot(BaseModel):
     created_at: datetime
 
 
+class DashboardCommandCenterTimelineEntry(BaseModel):
+    trade_plan_id: int | None = None
+    symbol: str | None = None
+    entity_kind: str
+    event_kind: str
+    tone: str
+    title: str
+    detail: str
+    occurred_at: datetime
+
+
 class DashboardCommandCenterResponse(BaseModel):
     generated_at: datetime
     summary: DashboardCommandCenterSummary
     shadow_run: DashboardCommandCenterShadowRun
     operation_snapshots: list[DashboardCommandCenterOperationSnapshot] = Field(default_factory=list)
+    timeline: list[DashboardCommandCenterTimelineEntry] = Field(default_factory=list)
     recent_trade_plans: list[DashboardCommandCenterTradePlan] = Field(default_factory=list)
     recent_orders: list[DashboardCommandCenterOrder] = Field(default_factory=list)
     open_positions: list[DashboardCommandCenterPosition] = Field(default_factory=list)

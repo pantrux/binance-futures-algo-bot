@@ -715,7 +715,7 @@ Mostrar en la UI del centro de mando toda la información relevante de operació
 - mergeado y desplegado en Synology
 
 ### PR-46 — Radar unificado por operación en el centro de mando
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Subir la granularidad del centro de mando consolidando por operación el plan, la orden, la posición, la reconciliación y el último evento de riesgo en una sola vista operativa.
@@ -723,6 +723,18 @@ Subir la granularidad del centro de mando consolidando por operación el plan, l
 **Entregables**
 - `operation_snapshots` en `GET /dashboard/command-center`
 - tabla “Radar de operaciones” con setup, orden, posición, reconcile y riesgo por trade plan
+- tests de servicio/ruta + build frontend verde
+- mergeado en `4285d30` y desplegado en Synology
+
+### PR-47 — Línea de tiempo operativa unificada
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Mostrar cronológicamente en el centro de mando el flujo de cada operación (creación de plan, orden, posición, riesgo y drift) para entender qué pasó y cuándo sin saltar entre widgets.
+
+**Entregables**
+- `timeline` en `GET /dashboard/command-center`
+- feed visual “Línea de tiempo operativa” en la home del dashboard
 - tests de servicio/ruta + build frontend verde
 
 ## Criterio de avance
