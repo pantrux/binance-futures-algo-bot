@@ -164,7 +164,11 @@ class BinanceTestnetTradingService:
         executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=quantity)
         if executed_qty <= 0:
             executed_qty = quantity
-        order_status = str(exchange_order.get("status") or "FILLED").lower()
+        order_status = self._normalize_order_status(
+            exchange_order.get("status"),
+            executed_qty=executed_qty,
+            requested_qty=quantity,
+        )
         external_order_id = str(exchange_order.get("orderId") or exchange_order.get("clientOrderId") or client_order_id)
 
         leverage = 1

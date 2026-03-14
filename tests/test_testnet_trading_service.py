@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.db.base import Base
-from apps.api.app.db.models import Position, TradePlan
+from apps.api.app.db.models import Order, Position, TradePlan
 from apps.api.app.services.testnet_trading_service import BinanceTestnetTradingService
 
 
@@ -206,6 +206,24 @@ def test_testnet_trading_falls_back_to_trade_plan_price_when_avg_price_is_zero()
     position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
     assert position.entry_price == plan.entry_price
     assert position.quantity > 0
+
+
+def test_testnet_trading_normalizes_new_status_with_executed_qty_as_filled():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientNewStatusButExecuted(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    order = db.query(Order).filter(Order.trade_plan_id == plan.id).one()
+    assert order.status == "filled"
+    assert order.executed_quantity > 0
+
 
 
 def test_testnet_trading_returns_explicit_reason_when_credentials_are_missing():
