@@ -56,8 +56,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-31 | Paridad paper vs testnet (shadow run) | ✅ Mergeado | reporte comparativo y brechas de comportamiento |
 | PR-32 | Alerting y reporting de producción | ✅ Mergeado | resumen diario operativo y evaluación temprana de alertas |
 | PR-33 | Backtesting y walk-forward | ✅ Mergeado | baseline cuantitativo reproducible con benchmark y walk-forward |
-| PR-34 | Checklist de transición y rampa de capital | 🟡 En progreso | criterios formales para eventual salida de paper |
-| PR-35 | Cutover controlado y monitoreo post-cutover | 🔵 Planificado | transición asistida con gates y rollback explícito |
+| PR-34 | Checklist de transición y rampa de capital | ✅ Mergeado | criterios formales para eventual salida de paper |
+| PR-35 | Cutover controlado y monitoreo post-cutover | 🟡 En progreso | transición asistida con gates y rollback explícito |
 
 ## Secuencia de PRs actualizada
 
@@ -552,7 +552,7 @@ Validar robustez estadística de estrategias bajo distintos periodos y condicion
 ---
 
 ### PR-34 — Checklist de transición y rampa de capital
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Definir formalmente condiciones para eventual transición fuera de paper.
@@ -565,7 +565,7 @@ Definir formalmente condiciones para eventual transición fuera de paper.
 ---
 
 ### PR-35 — Cutover controlado y monitoreo post-cutover
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Ejecutar transición asistida únicamente si todos los gates anteriores se cumplen.

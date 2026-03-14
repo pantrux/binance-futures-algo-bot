@@ -37,6 +37,7 @@
 - `ADR-033-production-alerting-and-daily-reporting.md`
 - `ADR-034-backtesting-walk-forward.md`
 - `ADR-035-transition-checklist-capital-ramp.md`
+- `ADR-036-cutover-and-post-cutover-monitoring.md`
 
 ## Archivados
 

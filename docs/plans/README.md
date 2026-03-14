@@ -6,6 +6,7 @@
 - `implementation-roadmap.md`
 - `phase5-operational-closure.md`
 - `transition-checklist-and-capital-ramp.md`
+- `cutover-and-post-cutover-monitoring.md`
 
 ## Fases de implementación
 
