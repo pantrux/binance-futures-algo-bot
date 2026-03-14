@@ -30,6 +30,12 @@
 - [ ] Circuit breakers habilitados
 - [ ] Rate limiting y auth en endpoints sensibles
 
+## Definiciones operativas locales
+
+- **P0:** incidente crítico que obliga a congelar entradas y reducir exposición a **0**.
+- **P1:** incidente mayor no crítico que obliga a congelar entradas y reducir exposición a **micro**.
+- **Umbral de salida de ventana:** **0 incidentes P0** y **<= 1 incidente P1** en rolling de **7 días**, alineado con `docs/plans/transition-checklist-and-capital-ramp.md`.
+
 ## Cutover: secuencia recomendada
 
 ### Paso 0 — Congelar cambios
@@ -52,8 +58,10 @@
 
 ### Paso 3 — Ventana de observación
 
+- Duración mínima recomendada: **24 horas** antes de cerrar la ventana inicial de cutover.
+- Checkpoints sugeridos: **15 min**, **1 h**, **6 h** y **24 h**.
 - [ ] Mantener exposición controlada según etapa (micro/small)
-- [ ] Confirmar que report diario y alertas se disparan en condiciones simuladas
+- [ ] Validar reporte diario y alertas críticas mediante **synthetic checks**, replay controlado o disparos de prueba que no requieran provocar una falla real en live
 - [ ] Registrar incidente si hay degradación
 
 ## Post-cutover: monitoreo y gates
@@ -82,6 +90,6 @@
 ## Checklist de salida de ventana
 
 - [ ] No incidentes P0
-- [ ] Incidentes P1 dentro de umbrales
+- [ ] Incidentes P1 dentro de umbrales (**<= 1 en rolling de 7 días**)
 - [ ] Reporte post-cutover emitido (Markdown + JSON)
 - [ ] Próximo checkpoint calendarizado (24h / 7d)
