@@ -58,7 +58,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-33 | Backtesting y walk-forward | ✅ Mergeado | baseline cuantitativo reproducible con benchmark y walk-forward |
 | PR-34 | Checklist de transición y rampa de capital | ✅ Mergeado | criterios formales para eventual salida de paper |
 | PR-35 | Cutover controlado y monitoreo post-cutover | ✅ Mergeado | transición asistida con gates y rollback explícito |
-| PR-36 | Drills sintéticos y paquete de evidencia de cutover | 🟡 En progreso | ensayos controlados y artifacts previos al cutover real |
+| PR-36 | Drills sintéticos y paquete de evidencia de cutover | ✅ Mergeado | ensayos controlados y artifacts previos al cutover real |
+| PR-37 | Links navegables para documentación sincronizada en Outline | 🟡 En progreso | reescritura de links locales a Outline/GitHub durante el sync |
 
 ## Secuencia de PRs actualizada
 
@@ -588,6 +589,19 @@ Formalizar ensayos previos al cutover real y estandarizar la evidencia obligator
 - catálogo mínimo de drills sintéticos
 - paquete de evidencia estándar de cutover
 - criterio de aprobación/rechazo del ensayo
+
+## Criterio de avance
+No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
+- checks terminados
+- documentación actualizada
+- comentarios/reviews resueltos
+- estado consolidado en memoria
+- roadmap y Gantt actualizados
+
+---
+/<ref>`
+- documentación operativa de la estrategia de links
+- ADR-038
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

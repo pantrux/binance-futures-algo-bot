@@ -52,9 +52,9 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Entrega: backtesting/walk-forward, checklist de transición, cutover controlado.
 
 ### Etapa H — Ensayos operativos de cutover
-- PR-36.
+- PR-36 y PR-37.
 - Estado actual: en progreso.
-- Entrega: drills sintéticos, paquete de evidencia y criterio formal de aprobación pre-live.
+- Entrega: drills sintéticos, paquete de evidencia, criterio formal de aprobación pre-live y links navegables desde Outline hacia la documentación fuente.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.
