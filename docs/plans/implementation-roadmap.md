@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 10 ya tiene drills/evidencia y templates operativos mergeados; ahora avanza en la navegación documental limpia desde Outline.
-- **PR activo:** `PR-39` — links navegables para documentación sincronizada en Outline.
-- **Etapa actual:** **Fase 10 — Ensayos operativos y navegabilidad documental** (`PR-36` a `PR-39`).
+- **Estado global actual:** Fase 10 quedó completada con navegación documental utilizable desde Outline y sync post-merge validado (`docs_synced=59`).
+- **PR activo:** `PR-40` — validación CI de links Markdown documentales.
+- **Etapa actual:** **Fase 11 — Hygiene documental preventiva** (`PR-40`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -34,7 +34,8 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
 | Fase 8 — Ejecución exchange robusta | 🟡 En progreso | 75% | PR-29..PR-32 | Router testnet + reconciliación + paridad paper/testnet + reporting operativo |
 | Fase 9 — Go-live readiness | ✅ Completada | 100% | PR-33..PR-35 | Validación cuantitativa, gates formales de transición y cutover controlado |
-| Fase 10 — Ensayos operativos de cutover | 🟡 En progreso | 80% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
+| Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
+| Fase 11 — Hygiene documental preventiva | 🟡 En progreso | 20% | PR-40 | lint/test de links Markdown antes del sync a Outline |
 
 ---
 
@@ -113,7 +114,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - ver `docs/plans/cutover-and-post-cutover-monitoring.md`
 - ADR-036
 
-## Fase 10 — Ensayos operativos de cutover
+## Fase 10 — Ensayos operativos de cutover ✅
 
 ### PR-36 — Drills sintéticos y paquete de evidencia de cutover ✅
 - ver `docs/plans/cutover-drills-and-evidence-package.md`
@@ -123,11 +124,19 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - ver `docs/templates/README.md`
 - ADR-038
 
-### PR-39 — Links navegables para documentación sincronizada en Outline 🟡
+### PR-39 — Links navegables para documentación sincronizada en Outline ✅
 - estrategia híbrida: URL de Outline si el documento existe allí; fallback a GitHub `blob/<ref>`
 - script `scripts/sync_outline_docs.py`
 - ADR-039
 - continuidad retomada desde el PR-38 cerrado por renombre de rama
+- sync post-merge validado (`docs_synced=59`, `duplicates_archived=0`, `unknown_archived=0`)
+
+## Fase 11 — Hygiene documental preventiva
+
+### PR-40 — Validación CI de links Markdown documentales 🟡
+- script `scripts/check_markdown_links.py`
+- validación de links locales antes del sync a Outline
+- job dedicado en CI para lint + tests focales
 
 ---
 

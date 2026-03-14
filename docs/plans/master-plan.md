@@ -53,8 +53,13 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa H — Ensayos operativos de cutover
 - PR-36 a PR-39.
-- Estado actual: PR-36 y PR-37 mergeados; PR-39 en progreso.
+- Estado actual: completada; PR-39 mergeado con links navegables hacia Outline/GitHub y sync validado (`docs_synced=59`).
 - Entrega: drills sintéticos, paquete de evidencia, templates operativos, criterio formal de aprobación pre-live y links navegables desde Outline hacia la documentación fuente.
+
+### Etapa I — Hygiene documental preventiva
+- PR-40.
+- Estado actual: en progreso.
+- Entrega: validación CI de links Markdown locales para prevenir regresiones antes del sync a Outline.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.
