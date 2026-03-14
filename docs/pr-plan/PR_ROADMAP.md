@@ -58,7 +58,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-33 | Backtesting y walk-forward | ✅ Mergeado | baseline cuantitativo reproducible con benchmark y walk-forward |
 | PR-34 | Checklist de transición y rampa de capital | ✅ Mergeado | criterios formales para eventual salida de paper |
 | PR-35 | Cutover controlado y monitoreo post-cutover | ✅ Mergeado | transición asistida con gates y rollback explícito |
-| PR-36 | Drills sintéticos y paquete de evidencia de cutover | 🟡 En progreso | ensayos controlados y artifacts previos al cutover real |
+| PR-36 | Drills sintéticos y paquete de evidencia de cutover | ✅ Mergeado | ensayos controlados y artifacts previos al cutover real |
+| PR-37 | Templates operativos de artefactos de cutover | 🟡 En progreso | plantillas reutilizables para reportes, incidentes y cierre |
 
 ## Secuencia de PRs actualizada
 
@@ -579,7 +580,7 @@ Ejecutar transición asistida únicamente si todos los gates anteriores se cumpl
 ---
 
 ### PR-36 — Drills sintéticos y paquete de evidencia de cutover
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Formalizar ensayos previos al cutover real y estandarizar la evidencia obligatoria de ejecución/rollback.
@@ -588,6 +589,19 @@ Formalizar ensayos previos al cutover real y estandarizar la evidencia obligator
 - catálogo mínimo de drills sintéticos
 - paquete de evidencia estándar de cutover
 - criterio de aprobación/rechazo del ensayo
+
+---
+
+### PR-37 — Templates operativos de artefactos de cutover
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Bajar el contrato documental a templates reutilizables para operación real y drills repetibles.
+
+**Entregables**
+- templates operativos para reporte inicial (Markdown + JSON), incident log, drill results y closeout
+- referencias desde el plan de drills hacia templates concretos
+- ADR-038
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

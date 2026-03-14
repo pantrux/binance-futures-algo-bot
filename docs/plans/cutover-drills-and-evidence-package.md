@@ -86,6 +86,7 @@
 Cada cutover o ensayo debe dejar un paquete mínimo con:
 
 1. **`cutover-initial-report.md`**
+   - template base: `docs/templates/cutover-initial-report-template.md`
    - contexto
    - versión / commit
    - entorno objetivo
@@ -93,9 +94,11 @@ Cada cutover o ensayo debe dejar un paquete mínimo con:
    - checkpoints esperados
 
 2. **`cutover-initial-report.json`**
+   - template base: `docs/templates/cutover-initial-report-template.json`
    - mismos campos en formato máquina-legible
 
 3. **`incident-log.md`**
+   - template base: `docs/templates/incident-log-template.md`
    - timestamp
    - incidente
    - severidad
@@ -104,12 +107,14 @@ Cada cutover o ensayo debe dejar un paquete mínimo con:
    - owner
 
 4. **`drill-results.md`**
+   - template base: `docs/templates/drill-results-template.md`
    - tabla de drills ejecutados
    - resultado
    - evidencia enlazada
    - observaciones
 
 5. **`post-cutover-closeout.md`**
+   - template base: `docs/templates/post-cutover-closeout-template.md`
    - cierre inicial 24 h
    - cierre formal 7 días
    - decisión final: continuar / mantener micro / rollback
