@@ -50,6 +50,23 @@ class FakeBinanceClientZeroAvgPrice:
         }
 
 
+class FakeBinanceClientNewStatusButExecuted:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 5
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": 456,
+            "clientOrderId": client_order_id,
+            "avgPrice": "50010",
+            "executedQty": f"{quantity}",
+            "status": "NEW",
+        }
+
+
 class FakeBinanceClientMissingCredentials:
     async def get_symbol_step_size(self, symbol: str) -> float:
         return 0.001

@@ -28,7 +28,11 @@ class ExecutionStateMachineService:
 
         open_positions = [position for position in positions if position.status == "open"]
         closed_positions = [position for position in positions if position.status == "closed"]
-        filled_orders = [order for order in orders if order.status in {"filled", "partially_filled"}]
+        filled_orders = [
+            order
+            for order in orders
+            if order.status in {"filled", "partially_filled"} or (order.executed_quantity or 0) > 0
+        ]
 
         drift_events: list[ExecutionDriftEvent] = []
         recommended_actions: list[str] = []

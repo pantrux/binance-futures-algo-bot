@@ -27,6 +27,16 @@ class BinanceTestnetTradingService:
             return fallback
 
     @staticmethod
+    def _normalize_order_status(raw_status: object, *, executed_qty: float, requested_qty: float) -> str:
+        status = str(raw_status or "new").strip().lower()
+        if executed_qty <= 0:
+            return status
+        if status in {"filled", "partially_filled"}:
+            return status
+        tolerance = max(1e-12, requested_qty * 1e-9)
+        return "filled" if executed_qty >= max(0.0, requested_qty - tolerance) else "partially_filled"
+
+    @staticmethod
     def _round_to_step(quantity: float, step_size: float) -> float:
         if step_size <= 0:
             return quantity

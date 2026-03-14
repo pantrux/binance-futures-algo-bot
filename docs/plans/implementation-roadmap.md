@@ -35,7 +35,8 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 8 — Ejecución exchange robusta | 🟡 En progreso | 75% | PR-29..PR-32 | Router testnet + reconciliación + paridad paper/testnet + reporting operativo |
 | Fase 9 — Go-live readiness | ✅ Completada | 100% | PR-33..PR-35 | Validación cuantitativa, gates formales de transición y cutover controlado |
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
-| Fase 11 — Hygiene documental preventiva | 🟡 En progreso | 20% | PR-40 | lint/test de links Markdown antes del sync a Outline |
+| Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
+| Fase 12 — Activación operativa de testnet | 🟡 En progreso | 45% | PR-42..PR-43 | primeras ejecuciones testnet reales; pendiente normalización/reconciliación de fills devueltos como `new` |
 
 ---
 
