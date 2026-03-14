@@ -133,6 +133,21 @@ def test_backtest_strategy_parameters_require_entry_rsi_above_exit_rsi():
         raise AssertionError("Se esperaba ValueError para umbral RSI de entrada no mayor al de salida")
 
 
+def test_backtest_run_request_rejects_when_single_window_does_not_fit():
+    try:
+        BacktestRunRequest(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            candles_limit=170,
+            training_window=120,
+            testing_window=60,
+        )
+    except ValueError as exc:
+        assert "training_window + testing_window no puede exceder candles_limit" in str(exc)
+    else:
+        raise AssertionError("Se esperaba ValueError cuando ni siquiera cabe una ventana de testing")
+
+
 def test_backtest_run_request_requires_at_least_two_walk_forward_windows():
     try:
         BacktestRunRequest(

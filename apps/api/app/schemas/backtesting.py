@@ -59,9 +59,13 @@ class BacktestRunRequest(BaseModel):
     def validate_windows(self) -> "BacktestRunRequest":
         if self.training_window >= self.candles_limit:
             raise ValueError("training_window debe ser menor que candles_limit")
-        if self.training_window + self.testing_window > self.candles_limit:
+
+        minimum_single_window_candles = self.training_window + self.testing_window
+        if minimum_single_window_candles > self.candles_limit:
             raise ValueError("training_window + testing_window no puede exceder candles_limit")
-        if self.training_window + (2 * self.testing_window) > self.candles_limit:
+
+        minimum_two_oos_windows_candles = self.training_window + (2 * self.testing_window)
+        if minimum_two_oos_windows_candles > self.candles_limit:
             raise ValueError("Se requieren al menos dos ventanas out-of-sample para ejecutar walk-forward")
         return self
 
