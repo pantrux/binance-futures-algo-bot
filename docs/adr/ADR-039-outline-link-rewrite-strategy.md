@@ -1,4 +1,4 @@
-# ADR-038 — Links navegables en Outline
+# ADR-039 — Links navegables en Outline
 
 ## Estado
 Propuesto

@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 10 ya tiene la capa base de drills/evidencia y ahora endurece navegación documental para que Outline apunte a documentos realmente navegables.
-- **PR activo:** `PR-37` — estrategia de hyperlinks navegables para Outline.
-- **Etapa actual:** **Fase 10 — Ensayos operativos y navegabilidad documental** (`PR-36` a `PR-37`).
+- **Estado global actual:** Fase 10 avanza en dos frentes documentales complementarios: templates operativos reutilizables (`PR-37`) y links navegables desde Outline (`PR-38`).
+- **PRs activos:** `PR-37` y `PR-38`.
+- **Etapa actual:** **Fase 10 — Ensayos operativos y navegabilidad documental** (`PR-36` a `PR-38`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -34,7 +34,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
 | Fase 8 — Ejecución exchange robusta | 🟡 En progreso | 75% | PR-29..PR-32 | Router testnet + reconciliación + paridad paper/testnet + reporting operativo |
 | Fase 9 — Go-live readiness | ✅ Completada | 100% | PR-33..PR-35 | Validación cuantitativa, gates formales de transición y cutover controlado |
-| Fase 10 — Ensayos operativos de cutover | 🟡 En progreso | 60% | PR-36..PR-37 | drills sintéticos, evidencia estandarizada y navegación documental usable en Outline |
+| Fase 10 — Ensayos operativos de cutover | 🟡 En progreso | 80% | PR-36..PR-38 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 
 ---
 
@@ -119,10 +119,15 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - ver `docs/plans/cutover-drills-and-evidence-package.md`
 - ADR-037
 
+### PR-37 — Templates operativos de artefactos de cutover 🟡
+- templates reutilizables para `cutover-initial-report`, `incident-log`, `drill-results` y `post-cutover-closeout`
+- artifacts de evidencia listos para operación real
+- ADR-038
+
 ### PR-38 — Links navegables para documentación sincronizada en Outline 🟡
 - estrategia híbrida: URL de Outline si el documento existe allí; fallback a GitHub `blob/<ref>`
 - script `scripts/sync_outline_docs.py`
-- ADR-038
+- ADR-039
 
 ---
 

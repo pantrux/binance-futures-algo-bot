@@ -59,6 +59,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-34 | Checklist de transición y rampa de capital | ✅ Mergeado | criterios formales para eventual salida de paper |
 | PR-35 | Cutover controlado y monitoreo post-cutover | ✅ Mergeado | transición asistida con gates y rollback explícito |
 | PR-36 | Drills sintéticos y paquete de evidencia de cutover | ✅ Mergeado | ensayos controlados y artifacts previos al cutover real |
+| PR-37 | Templates operativos de artefactos de cutover | 🟡 En progreso | plantillas reutilizables para paquete de evidencia y operación real |
 | PR-38 | Links navegables para documentación sincronizada en Outline | 🟡 En progreso | reescritura de links locales a Outline/GitHub durante el sync |
 
 ## Secuencia de PRs actualizada
@@ -592,6 +593,21 @@ Formalizar ensayos previos al cutover real y estandarizar la evidencia obligator
 
 ---
 
+### PR-37 — Templates operativos de artefactos de cutover
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Materializar el contrato documental de PR-36 en templates reutilizables para la operación real de cutover.
+
+**Entregables**
+- `docs/templates/cutover-initial-report-template.md`
+- `docs/templates/incident-log-template.md`
+- `docs/templates/drill-results-template.md`
+- `docs/templates/post-cutover-closeout-template.md`
+- ADR-038
+
+---
+
 ### PR-38 — Links navegables para documentación sincronizada en Outline
 **Estado:** 🟡 En progreso
 
@@ -602,7 +618,7 @@ Evitar que Outline publique links locales/rotos, reescribiéndolos a URLs navega
 - reescritura automática de links relativos/locales en `scripts/sync_outline_docs.py`
 - fallback estable a GitHub `blob/<ref>`
 - documentación operativa de la estrategia de links
-- ADR-038
+- ADR-039
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
