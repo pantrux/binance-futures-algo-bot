@@ -403,13 +403,16 @@ def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, st
             opener = BACKTICK_RUN_RE.search(segment, cursor)
             if opener and opener.start() == cursor:
                 run = opener.group(0)
-                closer = re.search(re.escape(run), segment[opener.end():])
-                if not closer:
+                closer_end = None
+                for candidate in BACKTICK_RUN_RE.finditer(segment, opener.end()):
+                    if candidate.group(0) == run:
+                        closer_end = candidate.end()
+                        break
+                if closer_end is None:
                     out.append(segment[cursor:])
                     break
-                code_end = opener.end() + closer.end()
-                out.append(segment[cursor:code_end])
-                cursor = code_end
+                out.append(segment[cursor:closer_end])
+                cursor = closer_end
                 continue
 
             next_positions = [len(segment)]
