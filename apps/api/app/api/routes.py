@@ -41,6 +41,7 @@ from apps.api.app.services.trade_plan_service import TradePlanService
 router = APIRouter()
 risk_engine = RiskEngine()
 BACKTESTING_MIN_INTERVAL_SECONDS = 5.0
+BACKTESTING_RATE_LIMIT_TTL_SECONDS = BACKTESTING_MIN_INTERVAL_SECONDS * 2
 _backtesting_rate_limit_lock = Lock()
 _backtesting_last_request_by_key: dict[str, float] = {}
 
@@ -56,6 +57,14 @@ def require_backtesting_access(x_metrics_key: str | None = Header(default=None, 
     request_key = x_metrics_key or "metrics-authenticated"
     now = time.monotonic()
     with _backtesting_rate_limit_lock:
+        expired_keys = [
+            key
+            for key, timestamp in _backtesting_last_request_by_key.items()
+            if (now - timestamp) >= BACKTESTING_RATE_LIMIT_TTL_SECONDS
+        ]
+        for expired_key in expired_keys:
+            _backtesting_last_request_by_key.pop(expired_key, None)
+
         previous_request_at = _backtesting_last_request_by_key.get(request_key)
         if previous_request_at is not None and (now - previous_request_at) < BACKTESTING_MIN_INTERVAL_SECONDS:
             raise HTTPException(

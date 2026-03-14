@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from apps.api.app.api.routes import (
+    BACKTESTING_RATE_LIMIT_TTL_SECONDS,
     _backtesting_last_request_by_key,
     require_backtesting_access,
     run_backtesting,
@@ -140,5 +141,22 @@ def test_require_backtesting_access_rate_limits_repeated_requests(monkeypatch):
 
         current_time["value"] += 5.1
         require_backtesting_access("test-key")
+    finally:
+        _backtesting_last_request_by_key.clear()
+
+
+def test_require_backtesting_access_evicts_expired_keys(monkeypatch):
+    _backtesting_last_request_by_key.clear()
+    try:
+        current_time = {"value": 100.0}
+        monkeypatch.setattr("apps.api.app.api.routes.require_metrics_auth", lambda x_metrics_key=None: None)
+        monkeypatch.setattr("apps.api.app.api.routes.time.monotonic", lambda: current_time["value"])
+
+        require_backtesting_access("old-key")
+        current_time["value"] += BACKTESTING_RATE_LIMIT_TTL_SECONDS + 0.1
+        require_backtesting_access("new-key")
+
+        assert "old-key" not in _backtesting_last_request_by_key
+        assert "new-key" in _backtesting_last_request_by_key
     finally:
         _backtesting_last_request_by_key.clear()
