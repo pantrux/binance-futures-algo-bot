@@ -146,5 +146,3 @@ Un ensayo queda **aprobado** solo si:
 - drills sintéticos aprobados
 - paquete de evidencia archivado y enlazable en Outline
 - revisión humana final registrada
-
-revisión humana final registrada

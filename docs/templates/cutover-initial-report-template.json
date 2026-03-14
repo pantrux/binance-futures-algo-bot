@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "YYYY-MM-DDTHH:mm:SSZ",
+  "generatedAtUtc": "YYYY-MM-DDTHH:mm:ssZ",
   "owner": "<owner>",
   "commit": "<git-sha-or-release>",
   "targetEnvironment": "paper|testnet|real",

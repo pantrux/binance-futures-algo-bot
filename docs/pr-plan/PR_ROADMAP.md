@@ -599,7 +599,7 @@ Formalizar ensayos previos al cutover real y estandarizar la evidencia obligator
 Bajar el contrato documental a templates reutilizables para operación real y drills repetibles.
 
 **Entregables**
-- templates Markdown para reporte inicial, incident log, drill results y closeout
+- templates operativos para reporte inicial (Markdown + JSON), incident log, drill results y closeout
 - referencias desde el plan de drills hacia templates concretos
 - ADR-038
 
