@@ -566,7 +566,7 @@ Definir formalmente condiciones para eventual transición fuera de paper.
 ---
 
 ### PR-35 — Cutover controlado y monitoreo post-cutover
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Ejecutar transición asistida únicamente si todos los gates anteriores se cumplen.
@@ -575,6 +575,19 @@ Ejecutar transición asistida únicamente si todos los gates anteriores se cumpl
 - plan de cutover con pasos verificables
 - monitoreo intensivo post-cutover
 - criterio de rollback inmediato y comunicación de incidente
+
+---
+
+### PR-36 — Drills sintéticos y paquete de evidencia de cutover
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Formalizar ensayos previos al cutover real y estandarizar la evidencia obligatoria de ejecución/rollback.
+
+**Entregables**
+- catálogo mínimo de drills sintéticos
+- paquete de evidencia estándar de cutover
+- criterio de aprobación/rechazo del ensayo
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
