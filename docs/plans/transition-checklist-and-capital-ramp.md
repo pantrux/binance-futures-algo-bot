@@ -18,6 +18,11 @@
 - **Etapa 3 (Real - Small):** capital real bajo, incremento gradual.
 - **Etapa 4 (Real - Target):** capital objetivo (según política de riesgo).
 
+### Severidad de incidentes (para criterios de rollback)
+
+- **P0:** incidente crítico. Ejemplos: bypass de guardrails de riesgo, órdenes/posiciones en estado inconsistente no reconciliable, pérdida de control de exposición, caída prolongada del sistema (sin ejecución/monitorización) o cualquier condición que requiera congelar entradas de inmediato.
+- **P1:** incidente mayor. Ejemplos: degradación operativa repetida (timeouts/reintentos agotados), drift recurrente paper vs testnet sin causa explicada, latencia que impide cumplir SLA operativo, fallos intermitentes que no rompen seguridad pero sí confiabilidad.
+
 ## Gates obligatorios por etapa
 
 ### Gate A — Calidad operativa (OBLIGATORIO desde Etapa 0)
@@ -86,7 +91,7 @@
 - Duración mínima: **7 días** o **30 trades** (lo que ocurra primero).
 - Criterio de rollback:
   - 2 eventos de circuit breaker en 24h, o
-  - drawdown > **2%** en ventana corta.
+  - drawdown > **2%** desde el último máximo (medición intra-etapa).
 
 ### Etapa 3 — Real (Small)
 - Exposición: **0.5% → 2%** del capital objetivo, por incrementos.
