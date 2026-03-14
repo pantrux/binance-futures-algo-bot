@@ -11,7 +11,7 @@
 
 ## Regla operativa
 
-**No se ejecuta un cutover real** si antes no existe al menos **1 corrida documentada** de drills sintéticos con resultado satisfactorio y evidencia archivada.
+**No se ejecuta un cutover real** si antes no existe al menos **1 corrida documentada** de drills sintéticos **aprobada según el criterio formal de este documento** y con evidencia archivada.
 
 ## Catálogo mínimo de drills
 
@@ -96,6 +96,7 @@ Cada cutover o ensayo debe dejar un paquete mínimo con:
    - mismos campos en formato máquina-legible
 
 3. **`incident-log.md`**
+   - timestamp
    - incidente
    - severidad
    - impacto
