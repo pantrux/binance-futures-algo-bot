@@ -47,6 +47,7 @@
 - Backtesting/walk-forward ejecutable vía endpoint y/o servicio.
 - Comparación contra benchmark (buy-and-hold u otro baseline).
 - Resultados estables en múltiples periodos (definir al menos 3 rangos).
+  - Definición inicial de estabilidad: evaluar **>= 3 periodos** y exigir que, en cada periodo, se cumpla el umbral mínimo de Gate B; además, que el **profit factor** y el **max drawdown** no varíen más de **±25%** respecto a la mediana entre periodos.
 
 **Métricas mínimas sugeridas (ajustables):**
 - Profit factor > **1.3** (mínimo inicial; calibrar por fees/slippage y timeframe)
@@ -66,7 +67,7 @@
 **Métricas sugeridas (umbrales iniciales):**
 - Desvío de slippage vs supuesto <= **20%** (|slippage_real - slippage_modelado| / slippage_modelado).
 - Desvío de fill rate <= **2%** (fills esperados vs fills efectivos en ventanas comparables).
-- Errores operativos: **<= 1 por día** (timeouts, rejects no esperados, reintentos agotados).
+- Errores operativos: en ventana rolling de **7 días**, promedio **<= 1/día** y máximo **<= 3** en cualquier ventana de 7 días (timeouts, rejects no esperados, reintentos agotados).
 
 **Evidencia requerida:**
 - Reporte de paridad por corrida.
@@ -112,7 +113,9 @@
 ## Plan de rollback
 
 1. **Congelar nuevas entradas** (permitir sólo gestión de posiciones existentes si corresponde).
-2. **Reducir exposición** a 0 (o a micro) en un máximo de **10 minutos**.
+2. **Reducir exposición** en un máximo de **10 minutos**:
+   - Incidente **P0** → reducir a **0** (cerrar/hedgear posiciones según runbook) y congelar entradas.
+   - Incidente **P1** o degradación operativa no crítica → reducir a **micro** y congelar entradas hasta completar análisis.
 3. **Emitir incidente** (registro y notificación).
 4. **Postmortem** con causa raíz y corrección antes de reintentar.
 
