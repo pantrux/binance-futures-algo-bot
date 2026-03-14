@@ -182,8 +182,9 @@ def detect_repo_web_base() -> str:
         remote = subprocess.check_output(
             ["git", "config", "--get", "remote.origin.url"], cwd=REPO_ROOT, text=True
         ).strip()
-    except Exception as exc:  # pragma: no cover - fallback defensivo
-        raise RuntimeError("No se pudo detectar remote.origin.url para generar links web") from exc
+    except Exception:  # pragma: no cover - fallback defensivo
+        print("[WARN] No se pudo detectar remote.origin.url para generar links web", file=sys.stderr)
+        return ""
 
     if remote.startswith("git@github.com:"):
         repo_path = remote.split(":", 1)[1]
@@ -192,7 +193,8 @@ def detect_repo_web_base() -> str:
     elif remote.startswith("http://github.com/"):
         repo_path = remote.split("http://github.com/", 1)[1]
     else:
-        raise RuntimeError(f"Remote no soportado para links web: {remote}")
+        print(f"[WARN] Remote no soportado para links web: {remote}", file=sys.stderr)
+        return ""
 
     if repo_path.endswith(".git"):
         repo_path = repo_path[:-4]
@@ -214,7 +216,7 @@ def resolve_repo_relative_path(source_path: Path, href: str) -> tuple[str | None
         candidate = Path(parse.unquote(parsed.path))
     elif target.startswith("/"):
         candidate = Path(target)
-    elif target.startswith("docs/") or target.startswith("scripts/") or target.startswith("README"):
+    elif target.startswith("docs/") or target.startswith("scripts/"):
         candidate = REPO_ROOT / target
     else:
         candidate = source_path.parent / target
@@ -227,6 +229,17 @@ def resolve_repo_relative_path(source_path: Path, href: str) -> tuple[str | None
     return rel_path, suffix
 
 
+def to_raw_github_base(repo_web_base: str) -> str:
+    prefix = "https://github.com/"
+    marker = "/blob/"
+    if repo_web_base.startswith(prefix) and marker in repo_web_base:
+        repo_path = repo_web_base[len(prefix):]
+        owner_repo, _, git_ref = repo_path.partition(marker)
+        if owner_repo and git_ref:
+            return f"https://raw.githubusercontent.com/{owner_repo}/{git_ref}".rstrip("/")
+    return repo_web_base
+
+
 def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, str], repo_web_base: str) -> str:
     def replace(match: re.Match[str]) -> str:
         label = match.group(1)
@@ -237,8 +250,11 @@ def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, st
 
         if rel_path in outline_urls:
             return f"{label}({outline_urls[rel_path]}{anchor})"
+        if not repo_web_base:
+            return match.group(0)
 
-        return f"{label}({repo_web_base}/{rel_path}{anchor})"
+        base = to_raw_github_base(repo_web_base) if label.startswith("!") else repo_web_base
+        return f"{label}({base}/{rel_path}{anchor})"
 
     return MARKDOWN_LINK_RE.sub(replace, text)
 
@@ -337,7 +353,8 @@ def main() -> None:
             continue
         raw_text = path.read_text(encoding="utf-8")
         rewritten = rewrite_local_links(raw_text, path, outline_urls_by_rel, repo_web_base)
-        ensure_single_doc(client, all_docs, t.title, rewritten, parent_id=hub_ids[t.category])
+        if rewritten != raw_text:
+            ensure_single_doc(client, all_docs, t.title, rewritten, parent_id=hub_ids[t.category])
 
     # Paso 5: opción de limpiar documentos legacy no mapeados
     archived_unknown = 0
