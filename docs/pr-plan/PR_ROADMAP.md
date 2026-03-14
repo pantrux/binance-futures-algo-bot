@@ -61,7 +61,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-36 | Drills sintéticos y paquete de evidencia de cutover | ✅ Mergeado | ensayos controlados y artifacts previos al cutover real |
 | PR-37 | Templates operativos de artefactos de cutover | ✅ Mergeado | plantillas reutilizables para reportes, incidentes y cierre |
 | PR-38 | Links navegables para documentación sincronizada en Outline | ⚪ Cerrado | continuidad absorbida por PR-39 tras renombre de rama |
-| PR-39 | Links navegables para documentación sincronizada en Outline | 🟡 En progreso | reescritura de links locales a Outline/GitHub durante el sync |
+| PR-39 | Links navegables para documentación sincronizada en Outline | ✅ Mergeado | reescritura de links locales a Outline/GitHub durante el sync + sync Outline validado (`docs_synced=59`) |
+| PR-40 | Validación CI de links Markdown documentales | 🟡 En progreso | lint/test de links locales para prevenir regresiones antes del sync a Outline |
 
 ## Secuencia de PRs actualizada
 
@@ -619,7 +620,7 @@ Intento inicial de continuidad para la reescritura de links locales, cerrado al 
 ---
 
 ### PR-39 — Links navegables para documentación sincronizada en Outline
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Evitar que Outline publique links locales/rotos, reescribiéndolos a URLs navegables del documento equivalente en Outline o al repositorio web.
@@ -629,6 +630,19 @@ Evitar que Outline publique links locales/rotos, reescribiéndolos a URLs navega
 - fallback estable a GitHub `blob/<ref>`
 - documentación operativa de la estrategia de links
 - ADR-039
+- sync post-merge validado (`docs_synced=59`, `duplicates_archived=0`, `unknown_archived=0`)
+
+### PR-40 — Validación CI de links Markdown documentales
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Prevenir regresiones documentales antes del sync a Outline validando en CI que los links locales Markdown resuelvan correctamente dentro del repo.
+
+**Entregables**
+- script `scripts/check_markdown_links.py`
+- tests focales para parser/casos válidos/rotos
+- job `docs-links` en CI
+- actualización de roadmap/runbook según corresponda
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
