@@ -44,9 +44,9 @@
 - Resultados estables en múltiples periodos (definir al menos 3 rangos).
 
 **Métricas mínimas sugeridas (ajustables):**
-- Profit factor > 1.1
-- Max drawdown <= 15%
-- Trades suficientes (no “sobreajuste por 3 trades”) — umbral mínimo.
+- Profit factor > **1.3** (mínimo inicial; calibrar por fees/slippage y timeframe)
+- Max drawdown <= **15%**
+- Trades suficientes (no “sobreajuste por 3 trades”) — mínimo inicial: **>= 200 trades** en el periodo evaluado.
 
 **Evidencia requerida:**
 - Reporte reproducible del backtest (inputs + outputs + versión del código).
@@ -83,10 +83,10 @@
 
 ### Etapa 2 — Real (Micro)
 - Exposición: **1× unidad mínima** o **<= 0.25%** del capital objetivo.
-- Duración mínima: **7 días** o **N trades** (definir N).
+- Duración mínima: **7 días** o **30 trades** (lo que ocurra primero).
 - Criterio de rollback:
   - 2 eventos de circuit breaker en 24h, o
-  - drawdown > **X%** en ventana corta.
+  - drawdown > **2%** en ventana corta.
 
 ### Etapa 3 — Real (Small)
 - Exposición: **0.5% → 2%** del capital objetivo, por incrementos.
@@ -100,7 +100,7 @@
 ## Plan de rollback
 
 1. **Congelar nuevas entradas** (permitir sólo gestión de posiciones existentes si corresponde).
-2. **Reducir exposición** a 0 (o a micro) en un máximo de `T` minutos.
+2. **Reducir exposición** a 0 (o a micro) en un máximo de **10 minutos**.
 3. **Emitir incidente** (registro y notificación).
 4. **Postmortem** con causa raíz y corrección antes de reintentar.
 
