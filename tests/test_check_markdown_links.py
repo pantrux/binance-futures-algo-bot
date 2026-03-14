@@ -16,6 +16,15 @@ def test_collect_links_from_text_ignores_fenced_code_and_escaped_links() -> None
 
 
 
+def test_collect_links_from_text_continues_after_unclosed_backticks() -> None:
+    text = "Ver `funcion_sin_cierre y [roadmap](./roadmap.md)\n"
+
+    links = collect_links_from_text(text)
+
+    assert [(link.href, link.line_number) for link in links] == [("./roadmap.md", 1)]
+
+
+
 def test_validate_markdown_file_reports_missing_local_targets() -> None:
     source = FIXTURE_ROOT / "broken.md"
 

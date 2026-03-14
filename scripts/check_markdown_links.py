@@ -91,7 +91,8 @@ def collect_links_from_line(line: str, line_number: int) -> List[LinkOccurrence]
                     closer_end = candidate.end()
                     break
             if closer_end is None:
-                break
+                cursor = opener.end()
+                continue
             cursor = closer_end
             continue
 
