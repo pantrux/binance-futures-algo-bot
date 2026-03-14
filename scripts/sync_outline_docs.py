@@ -66,6 +66,8 @@ NON_ADR_TITLE_MAP = {
 }
 
 MARKDOWN_LINK_RE = re.compile(r"(!?\[[^\]]*\])\(([^)]+)\)")
+FENCE_RE = re.compile(r"^([`~]{3,})")
+BACKTICK_RUN_RE = re.compile(r"`+")
 EXTERNAL_SCHEMES = ("http://", "https://", "mailto:", "tel:", "data:")
 
 
@@ -258,34 +260,61 @@ def normalize_outline_doc_url(url: str, outline_base: str) -> str:
 
 
 def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, str], repo_web_base: str) -> str:
+    def replace(match: re.Match[str]) -> str:
+        label = match.group(1)
+        href = match.group(2).strip()
+        rel_path, anchor = resolve_repo_relative_path(source_path, href)
+        if not rel_path:
+            return match.group(0)
+
+        if rel_path in outline_urls:
+            return f"{label}({outline_urls[rel_path]}{anchor})"
+        if not repo_web_base:
+            return match.group(0)
+
+        base = to_raw_github_base(repo_web_base) if label.startswith("!") else repo_web_base
+        return f"{label}({base}/{rel_path}{anchor})"
+
     def replace_segment(segment: str) -> str:
-        def replace(match: re.Match[str]) -> str:
-            label = match.group(1)
-            href = match.group(2).strip()
-            rel_path, anchor = resolve_repo_relative_path(source_path, href)
-            if not rel_path:
-                return match.group(0)
+        out: List[str] = []
+        cursor = 0
+        while cursor < len(segment):
+            opener = BACKTICK_RUN_RE.search(segment, cursor)
+            if not opener:
+                out.append(MARKDOWN_LINK_RE.sub(replace, segment[cursor:]))
+                break
 
-            if rel_path in outline_urls:
-                return f"{label}({outline_urls[rel_path]}{anchor})"
-            if not repo_web_base:
-                return match.group(0)
+            out.append(MARKDOWN_LINK_RE.sub(replace, segment[cursor:opener.start()]))
+            run = opener.group(0)
+            closer = re.search(re.escape(run), segment[opener.end():])
+            if not closer:
+                out.append(MARKDOWN_LINK_RE.sub(replace, segment[opener.start():]))
+                break
 
-            base = to_raw_github_base(repo_web_base) if label.startswith("!") else repo_web_base
-            return f"{label}({base}/{rel_path}{anchor})"
+            code_end = opener.end() + closer.end()
+            out.append(segment[opener.start():code_end])
+            cursor = code_end
 
-        parts = segment.split("`")
-        for i in range(0, len(parts), 2):
-            parts[i] = MARKDOWN_LINK_RE.sub(replace, parts[i])
-        return "`".join(parts)
+        return "".join(out)
 
     lines = text.splitlines(keepends=True)
     in_fenced_code = False
+    fence_char = ""
+    fence_len = 0
     rewritten_lines: List[str] = []
     for line in lines:
         stripped = line.lstrip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            in_fenced_code = not in_fenced_code
+        fence_match = FENCE_RE.match(stripped)
+        if fence_match:
+            fence = fence_match.group(1)
+            if not in_fenced_code:
+                in_fenced_code = True
+                fence_char = fence[0]
+                fence_len = len(fence)
+            elif fence[0] == fence_char and len(fence) >= fence_len:
+                in_fenced_code = False
+                fence_char = ""
+                fence_len = 0
             rewritten_lines.append(line)
             continue
         if in_fenced_code:

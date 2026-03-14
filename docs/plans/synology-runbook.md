@@ -222,7 +222,7 @@ python3 scripts/sync_outline_docs.py
 El sync reescribe links locales del repo a URLs navegables:
 - **preferencia:** documento equivalente en Outline
 - **fallback:** URL web del repo (`blob/<ref>`; imágenes vía `raw.githubusercontent.com`)
-- **alcance:** solo fuera de bloques de código cercados y respetando spans inline con backticks
+- **alcance:** solo fuera de bloques de código cercados (respetando el delimitador real del fence) y preservando spans inline con backticks simples o múltiples
 - **heurística documentada:** rutas que empiecen por `docs/` o `scripts/` se interpretan como relativas a la raíz del repo; el resto sigue la resolución relativa al documento origen
 
 Variables opcionales:
