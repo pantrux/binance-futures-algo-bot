@@ -24,6 +24,7 @@
 - [ ] Alertas principales activas (caída total, drift, rejects, latencia)
 - [ ] Dashboard/endpoint de health accesible y autenticado
 - [ ] Drills sintéticos previos ejecutados con evidencia (`docs/plans/cutover-drills-and-evidence-package.md`)
+- [ ] Último artifact del gate auditable de shadow run (`synology-shadow-run-gate`) revisado y archivado
 
 ### 3) Riesgo y seguridad
 

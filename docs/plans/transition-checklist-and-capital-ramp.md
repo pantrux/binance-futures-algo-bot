@@ -77,6 +77,7 @@
 
 **Evidencia requerida:**
 - Reporte de paridad por corrida.
+- Artifact JSON + Markdown del gate auditable (`synology-shadow-run-gate`) generado desde `scripts/synology_shadow_run_gate.py` o el workflow `.github/workflows/synology-shadow-run-gate.yml`.
 
 ### Gate D — Seguridad + límites de riesgo (OBLIGATORIO para Real)
 

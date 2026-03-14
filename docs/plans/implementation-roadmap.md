@@ -131,12 +131,20 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - continuidad retomada desde el PR-38 cerrado por renombre de rama
 - sync post-merge validado (`docs_synced=59`, `duplicates_archived=0`, `unknown_archived=0`)
 
-## Fase 11 — Hygiene documental preventiva
+## Fase 11 — Guardrails documentales + readiness automation
 
-### PR-40 — Validación CI de links Markdown documentales 🟡
+### PR-40 — Validación CI de links Markdown documentales ✅
 - script `scripts/check_markdown_links.py`
 - validación de links locales antes del sync a Outline
 - job dedicado en CI para lint + tests focales
+- mergeado en `d517c3c`
+
+### PR-41 — Gate auditable de shadow run para readiness testnet 🟡
+- `ShadowRunReportingService` + endpoint `GET /reporting/shadow-run-summary`
+- workflow `synology-shadow-run-gate.yml`
+- script `scripts/synology_shadow_run_gate.py`
+- ADR-040
+- evidencia JSON + Markdown para Gate C antes de arrancar shadow run serio / real-micro
 
 ---
 

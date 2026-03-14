@@ -633,7 +633,7 @@ Evitar que Outline publique links locales/rotos, reescribiéndolos a URLs navega
 - sync post-merge validado (`docs_synced=59`, `duplicates_archived=0`, `unknown_archived=0`)
 
 ### PR-40 — Validación CI de links Markdown documentales
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Prevenir regresiones documentales antes del sync a Outline validando en CI que los links locales Markdown resuelvan correctamente dentro del repo.
@@ -643,6 +643,19 @@ Prevenir regresiones documentales antes del sync a Outline validando en CI que l
 - tests focales para parser/casos válidos/rotos
 - job `docs-links` en CI
 - actualización de roadmap/runbook según corresponda
+
+### PR-41 — Gate auditable de shadow run para readiness testnet
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Automatizar la evidencia del Gate C (paridad paper vs testnet) para decidir si el bot está listo para comenzar shadow run serio y aproximarse a real-micro con criterios medibles.
+
+**Entregables**
+- `ShadowRunReportingService` + endpoint `GET /reporting/shadow-run-summary`
+- esquema de salida consolidado para duración/volumen/paridad/fill-rate/slippage/incidentes
+- script `scripts/synology_shadow_run_gate.py` para generar artefactos JSON + Markdown
+- workflow `.github/workflows/synology-shadow-run-gate.yml`
+- ADR-040 + actualización de roadmap/runbook/checklist de transición
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

@@ -252,11 +252,30 @@ METRICS_API_KEY="<opcional>" \
 2. `docker compose ps` sin servicios `unhealthy`.
 3. Dashboard responde y muestra resumen sin errores 5xx.
 4. API responde `testnet/ping` correctamente.
-5. No activar live trading; mantener `PAPER_TRADING=true`.
+5. Gate C de shadow run puede evaluarse con artifact auditable (`synology-shadow-run-gate`).
+6. No activar live trading; mantener `PAPER_TRADING=true`.
 
 > Nota operativa: `/integrations/binance/testnet/ping` depende de disponibilidad externa de Binance Testnet.
 > Si Binance está intermitente, repetir el smoke o ejecutar temporalmente con `STRICT_EXTERNAL_CHECKS=false`
 > para no bloquear validaciones internas del NAS por una caída externa puntual.
+
+## Gate C — Shadow run readiness
+
+Para evaluar readiness antes de iniciar testnet serio o decidir avance hacia real-micro:
+
+1. Ejecutar el workflow `.github/workflows/synology-shadow-run-gate.yml` o correr localmente:
+   - `python3 scripts/synology_shadow_run_gate.py --api-base-url <API> --metrics-api-key <KEY>`
+2. Revisar artifact JSON + Markdown generado.
+3. Confirmar umbrales mínimos:
+   - `>= 7` días observados de shadow run
+   - `>= 200` trades paper
+   - `>= 200` trades testnet
+   - `>= 200` pares comparados
+   - fill rate testnet `>= 98%`
+   - `0` eventos críticos en 7d
+   - `<= 3` warnings en 7d
+   - promedio de risk events 30d `<= 1/día`
+4. Adjuntar el artifact al checkpoint operativo/cutover correspondiente.
 
 ## Troubleshooting real validado en Synology
 - Si `docker compose` falla con `build context` inválido desde `infra/docker/synology`, validar que el compose use `context: ../../../`.

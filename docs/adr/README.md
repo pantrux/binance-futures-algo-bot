@@ -41,6 +41,7 @@
 - `ADR-037-cutover-drills-and-evidence-package.md`
 - `ADR-038-cutover-artifact-templates.md`
 - `ADR-039-outline-link-rewrite-strategy.md`
+- `ADR-040-shadow-run-gate-auditable.md`
 
 ## Archivados
 
