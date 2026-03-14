@@ -1,6 +1,10 @@
 from pathlib import Path
 
-from scripts.sync_outline_docs import rewrite_local_links
+from scripts.sync_outline_docs import (
+    is_markdown_escaped,
+    parent_document_needs_update,
+    rewrite_local_links,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -34,3 +38,22 @@ def test_rewrite_local_links_still_rewrites_real_markdown_links() -> None:
     rewritten = rewrite_local_links(text, DOC_PATH, OUTLINE_URLS, REPO_WEB_BASE)
 
     assert rewritten == "Ver roadmap: [roadmap](https://outline.example.com/doc/implementation-roadmap)"
+
+
+def test_rewrite_local_links_rewrites_after_even_number_of_backslashes() -> None:
+    text = "Escapado literal: \\\\[roadmap](./implementation-roadmap.md)"
+
+    rewritten = rewrite_local_links(text, DOC_PATH, OUTLINE_URLS, REPO_WEB_BASE)
+
+    assert rewritten == "Escapado literal: \\\\[roadmap](https://outline.example.com/doc/implementation-roadmap)"
+
+
+def test_is_markdown_escaped_counts_consecutive_backslashes() -> None:
+    assert is_markdown_escaped("\\[roadmap]", 1) is True
+    assert is_markdown_escaped("\\\\[roadmap]", 2) is False
+
+
+def test_parent_document_needs_update_only_when_field_is_present() -> None:
+    assert parent_document_needs_update({}, "hub-1") is False
+    assert parent_document_needs_update({"parentDocumentId": "hub-1"}, "hub-1") is False
+    assert parent_document_needs_update({"parentDocumentId": "hub-old"}, "hub-1") is True

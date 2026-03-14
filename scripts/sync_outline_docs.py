@@ -369,6 +369,16 @@ def normalize_outline_doc_url(url: str, outline_base: str) -> str:
     return ""
 
 
+def is_markdown_escaped(segment: str, cursor: int) -> bool:
+    backslashes = 0
+    pos = cursor - 1
+    while pos >= 0 and segment[pos] == "\\":
+        backslashes += 1
+        pos -= 1
+    return backslashes % 2 == 1
+
+
+
 def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, str], repo_web_base: str) -> str:
     def rewrite_target(prefix: str, label: str, raw_target: str) -> str | None:
         href, title_suffix = split_markdown_link_target(raw_target)
@@ -393,7 +403,7 @@ def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, st
         out: List[str] = []
         cursor = 0
         while cursor < len(segment):
-            escaped = cursor > 0 and segment[cursor - 1] == "\\"
+            escaped = is_markdown_escaped(segment, cursor)
             if escaped and segment.startswith("![", cursor):
                 out.append("![")
                 cursor += 2
@@ -519,6 +529,14 @@ def ensure_doc_exists(client: OutlineClient, docs: List[dict], title: str, text:
     return ensure_single_doc(client, docs, title, text, parent_id=parent_id)
 
 
+
+def parent_document_needs_update(doc: dict, expected_parent_id: str | None) -> bool:
+    if "parentDocumentId" not in doc:
+        return False
+    return doc.get("parentDocumentId") != expected_parent_id
+
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--outline-url", default=DEFAULT_OUTLINE_URL)
@@ -608,7 +626,7 @@ def main() -> None:
             current_text_by_id[doc_id] = client.get_text(doc_id)
         needs_update = (
             current_text_by_id[doc_id] != final_text
-            or doc.get("parentDocumentId") != hub_ids[t.category]
+            or parent_document_needs_update(doc, hub_ids[t.category])
         )
         if needs_update:
             client.update(doc_id, t.title, final_text, parent_id=hub_ids[t.category])
