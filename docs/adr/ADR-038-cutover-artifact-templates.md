@@ -9,9 +9,10 @@ Con `ADR-037` ya existe el contrato documental de drills y paquete de evidencia,
 
 ## Decisión
 
-Estandarizar templates Markdown para:
+Estandarizar templates operativos para:
 
 - reporte inicial de cutover,
+- reporte inicial en JSON máquina-legible,
 - incident log,
 - resultados de drills,
 - cierre post-cutover.
@@ -19,6 +20,7 @@ Estandarizar templates Markdown para:
 Archivos fuente:
 
 - `docs/templates/cutover-initial-report-template.md`
+- `docs/templates/cutover-initial-report-template.json`
 - `docs/templates/incident-log-template.md`
 - `docs/templates/drill-results-template.md`
 - `docs/templates/post-cutover-closeout-template.md`
