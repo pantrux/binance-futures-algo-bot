@@ -1,3 +1,4 @@
+import hashlib
 import hmac
 import time
 from threading import Lock
@@ -42,6 +43,9 @@ router = APIRouter()
 risk_engine = RiskEngine()
 BACKTESTING_MIN_INTERVAL_SECONDS = 5.0
 BACKTESTING_RATE_LIMIT_TTL_SECONDS = BACKTESTING_MIN_INTERVAL_SECONDS * 2
+# Este throttle es deliberadamente process-local: protege el despliegue actual de
+# un solo worker. Si el API escala a múltiples workers, debe migrarse a un backend
+# compartido (por ejemplo Redis) para mantener una cuota global consistente.
 _backtesting_rate_limit_lock = Lock()
 _backtesting_last_request_by_key: dict[str, float] = {}
 
@@ -54,7 +58,8 @@ def require_metrics_auth(x_metrics_key: str | None = Header(default=None, alias=
 
 def require_backtesting_access(x_metrics_key: str | None = Header(default=None, alias="x-metrics-key")) -> None:
     require_metrics_auth(x_metrics_key)
-    request_key = x_metrics_key or "metrics-authenticated"
+    request_key_source = x_metrics_key or "metrics-authenticated"
+    request_key = hashlib.sha256(request_key_source.encode("utf-8")).hexdigest()
     now = time.monotonic()
     with _backtesting_rate_limit_lock:
         expired_keys = [

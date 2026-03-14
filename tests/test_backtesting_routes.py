@@ -156,7 +156,23 @@ def test_require_backtesting_access_evicts_expired_keys(monkeypatch):
         current_time["value"] += BACKTESTING_RATE_LIMIT_TTL_SECONDS + 0.1
         require_backtesting_access("new-key")
 
-        assert "old-key" not in _backtesting_last_request_by_key
-        assert "new-key" in _backtesting_last_request_by_key
+        assert all("old-key" != key for key in _backtesting_last_request_by_key)
+        assert len(_backtesting_last_request_by_key) == 1
+    finally:
+        _backtesting_last_request_by_key.clear()
+
+
+def test_require_backtesting_access_hashes_bucket_key(monkeypatch):
+    _backtesting_last_request_by_key.clear()
+    try:
+        monkeypatch.setattr("apps.api.app.api.routes.require_metrics_auth", lambda x_metrics_key=None: None)
+        monkeypatch.setattr("apps.api.app.api.routes.time.monotonic", lambda: 100.0)
+
+        require_backtesting_access("super-secret-key")
+
+        stored_keys = list(_backtesting_last_request_by_key.keys())
+        assert len(stored_keys) == 1
+        assert stored_keys[0] != "super-secret-key"
+        assert len(stored_keys[0]) == 64
     finally:
         _backtesting_last_request_by_key.clear()
