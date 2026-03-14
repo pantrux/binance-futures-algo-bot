@@ -1,4 +1,6 @@
 import hmac
+import time
+from threading import Lock
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -38,12 +40,29 @@ from apps.api.app.services.trade_plan_service import TradePlanService
 
 router = APIRouter()
 risk_engine = RiskEngine()
+BACKTESTING_MIN_INTERVAL_SECONDS = 5.0
+_backtesting_rate_limit_lock = Lock()
+_backtesting_last_request_by_key: dict[str, float] = {}
 
 
 def require_metrics_auth(x_metrics_key: str | None = Header(default=None, alias="x-metrics-key")) -> None:
     configured_metrics_key = settings.metrics_api_key.get_secret_value()
     if configured_metrics_key and not hmac.compare_digest(x_metrics_key or "", configured_metrics_key):
         raise HTTPException(status_code=401, detail="No autorizado")
+
+
+def require_backtesting_access(x_metrics_key: str | None = Header(default=None, alias="x-metrics-key")) -> None:
+    require_metrics_auth(x_metrics_key)
+    request_key = x_metrics_key or "metrics-authenticated"
+    now = time.monotonic()
+    with _backtesting_rate_limit_lock:
+        previous_request_at = _backtesting_last_request_by_key.get(request_key)
+        if previous_request_at is not None and (now - previous_request_at) < BACKTESTING_MIN_INTERVAL_SECONDS:
+            raise HTTPException(
+                status_code=429,
+                detail="Backtesting rate-limited: espera unos segundos antes de reintentar",
+            )
+        _backtesting_last_request_by_key[request_key] = now
 
 
 @router.get("/health")
@@ -85,7 +104,7 @@ def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
 def run_backtesting(
     payload: BacktestRunRequest,
     db: Session = Depends(get_db),
-    _: None = Depends(require_metrics_auth),
+    _: None = Depends(require_backtesting_access),
 ) -> BacktestRunResponse:
     try:
         return BacktestingService(db).run(payload)

@@ -3,7 +3,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from apps.api.app.api.routes import run_backtesting
+from apps.api.app.api.routes import (
+    _backtesting_last_request_by_key,
+    require_backtesting_access,
+    run_backtesting,
+)
 from apps.api.app.db.base import Base
 from apps.api.app.schemas.backtesting import BacktestRunRequest
 from tests.conftest import seed_walk_forward_candles
@@ -115,3 +119,26 @@ def test_backtesting_route_returns_400_when_db_only_allows_one_oos_window():
             raise AssertionError("Se esperaba HTTPException 400 cuando la BD solo permite una ventana OOS")
     finally:
         db.close()
+
+
+def test_require_backtesting_access_rate_limits_repeated_requests(monkeypatch):
+    _backtesting_last_request_by_key.clear()
+    try:
+        current_time = {"value": 100.0}
+        monkeypatch.setattr("apps.api.app.api.routes.require_metrics_auth", lambda x_metrics_key=None: None)
+        monkeypatch.setattr("apps.api.app.api.routes.time.monotonic", lambda: current_time["value"])
+
+        require_backtesting_access("test-key")
+
+        try:
+            require_backtesting_access("test-key")
+        except HTTPException as exc:
+            assert exc.status_code == 429
+            assert "rate-limited" in exc.detail
+        else:
+            raise AssertionError("Se esperaba HTTPException 429 para requests consecutivos")
+
+        current_time["value"] += 5.1
+        require_backtesting_access("test-key")
+    finally:
+        _backtesting_last_request_by_key.clear()
