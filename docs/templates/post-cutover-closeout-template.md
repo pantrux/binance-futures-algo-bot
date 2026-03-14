@@ -10,4 +10,4 @@
 - **Incidentes P0 (rolling 7d):**
 - **Incidentes P1 (rolling 7d):**
 - **Métricas clave:**
-- **Decisión final:** aprobado / condicionado / rollback
+- **Decisión final:** continuar / mantener micro / rollback
