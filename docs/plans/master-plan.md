@@ -48,7 +48,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa G — Go-live readiness
 - PR-33 a PR-35.
-- Estado actual: PR-33 mergeado; PR-34 en progreso (checklist de transición + rampa de capital).
+- Estado actual: PR-34 mergeado (checklist de transición + rampa de capital); PR-35 en progreso (cutover + monitoreo post-cutover).
 - Entrega: backtesting/walk-forward, checklist de transición, cutover controlado.
 
 ## Reglas inmutables del plan
