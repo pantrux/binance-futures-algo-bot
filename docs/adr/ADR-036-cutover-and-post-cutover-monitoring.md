@@ -37,4 +37,6 @@ Este documento será el procedimiento estándar para cada cutover y para el peri
 
 ## Referencias
 
+- ADR-033: production alerting and daily reporting
+- ADR-034: backtesting walk-forward
 - ADR-035: checklist transición y rampa de capital

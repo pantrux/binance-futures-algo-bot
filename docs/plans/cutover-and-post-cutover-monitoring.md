@@ -86,6 +86,11 @@
 2. Reducir exposición (P0→0 / P1→micro) en <= 10 minutos
 3. Emitir incidente + snapshot de evidencia (logs, métricas, reporte)
 4. Volver a etapa previa (paper/testnet) y revalidar gates
+5. No reintentar cutover antes de una **ventana mínima de estabilización de 24 h** y solo si:
+   - la causa raíz quedó documentada,
+   - se aplicó fix o mitigación verificable,
+   - `synology-release-gate` vuelve a estar en verde,
+   - y los synthetic checks / replay controlado confirman recuperación.
 
 ## Checklist de salida de ventana
 
