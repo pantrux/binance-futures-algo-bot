@@ -55,7 +55,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-30 | Reconciliación y máquina de estados de ejecución | ✅ Mergeado | consistencia entre órdenes/posiciones/eventos |
 | PR-31 | Paridad paper vs testnet (shadow run) | ✅ Mergeado | reporte comparativo y brechas de comportamiento |
 | PR-32 | Alerting y reporting de producción | 🟡 En progreso | resumen diario operativo y evaluación temprana de alertas |
-| PR-33 | Backtesting y walk-forward | 🔵 Planificado | validación cuantitativa de estrategias y robustez |
+| PR-33 | Backtesting y walk-forward | 🟡 En progreso | baseline cuantitativo reproducible con benchmark y walk-forward |
 | PR-34 | Checklist de transición y rampa de capital | 🔵 Planificado | criterios formales para eventual salida de paper |
 | PR-35 | Cutover controlado y monitoreo post-cutover | 🔵 Planificado | transición asistida con gates y rollback explícito |
 
@@ -536,7 +536,7 @@ Agregar una capa mínima de visibilidad operativa diaria para detectar degradaci
 ---
 
 ### PR-33 — Backtesting y walk-forward
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Validar robustez estadística de estrategias bajo distintos periodos y condiciones.
@@ -544,6 +544,9 @@ Validar robustez estadística de estrategias bajo distintos periodos y condicion
 **Entregables**
 - framework de backtest/walk-forward
 - métricas de rendimiento y riesgo
+- benchmark `buy_and_hold` comparable
+- endpoint `POST /backtesting/run`
+- ADR-034
 - informe técnico reproducible
 
 ---

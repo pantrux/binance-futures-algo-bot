@@ -48,6 +48,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa G — Go-live readiness
 - PR-33 a PR-35.
+- Estado actual: PR-33 en implementación local con baseline de benchmark y walk-forward.
 - Entrega: backtesting/walk-forward, checklist de transición, cutover controlado.
 
 ## Reglas inmutables del plan

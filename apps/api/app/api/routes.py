@@ -1,4 +1,7 @@
+import hashlib
 import hmac
+import time
+from threading import Lock
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -6,6 +9,7 @@ from sqlalchemy.orm import Session
 from apps.api.app.api.deps import get_db
 from apps.api.app.core.settings import settings
 from apps.api.app.observability.metrics import api_metrics
+from apps.api.app.schemas.backtesting import BacktestRunRequest, BacktestRunResponse
 from apps.api.app.schemas.dashboard import DashboardSummary
 from apps.api.app.schemas.execution_parity import ExecutionParityReport
 from apps.api.app.schemas.execution_reconciliation import ReconciliationReport
@@ -21,6 +25,7 @@ from apps.api.app.schemas.trade_plan_read import TradePlanRead
 from apps.api.app.schemas.trading import RiskDecision, TradePlanRequest
 from apps.api.app.services.binance_client import BinanceFuturesClient
 from apps.api.app.services.binance_market_data_service import BinanceMarketDataService
+from apps.api.app.services.backtesting_service import BacktestingError, BacktestingService
 from apps.api.app.services.dashboard_service import DashboardService
 from apps.api.app.services.execution_parity_service import ExecutionParityService
 from apps.api.app.services.execution_state_machine_service import ExecutionStateMachineService
@@ -36,12 +41,42 @@ from apps.api.app.services.trade_plan_service import TradePlanService
 
 router = APIRouter()
 risk_engine = RiskEngine()
+BACKTESTING_MIN_INTERVAL_SECONDS = 5.0
+BACKTESTING_RATE_LIMIT_TTL_SECONDS = BACKTESTING_MIN_INTERVAL_SECONDS * 2
+# Este throttle es deliberadamente process-local: protege el despliegue actual de
+# un solo worker. Si el API escala a múltiples workers, debe migrarse a un backend
+# compartido (por ejemplo Redis) para mantener una cuota global consistente.
+_backtesting_rate_limit_lock = Lock()
+_backtesting_last_request_by_key: dict[str, float] = {}
 
 
 def require_metrics_auth(x_metrics_key: str | None = Header(default=None, alias="x-metrics-key")) -> None:
     configured_metrics_key = settings.metrics_api_key.get_secret_value()
     if configured_metrics_key and not hmac.compare_digest(x_metrics_key or "", configured_metrics_key):
         raise HTTPException(status_code=401, detail="No autorizado")
+
+
+def require_backtesting_access(x_metrics_key: str | None = Header(default=None, alias="x-metrics-key")) -> None:
+    require_metrics_auth(x_metrics_key)
+    request_key_source = x_metrics_key or "metrics-authenticated"
+    request_key = hashlib.sha256(request_key_source.encode("utf-8")).hexdigest()
+    now = time.monotonic()
+    with _backtesting_rate_limit_lock:
+        expired_keys = [
+            key
+            for key, timestamp in _backtesting_last_request_by_key.items()
+            if (now - timestamp) >= BACKTESTING_RATE_LIMIT_TTL_SECONDS
+        ]
+        for expired_key in expired_keys:
+            _backtesting_last_request_by_key.pop(expired_key, None)
+
+        previous_request_at = _backtesting_last_request_by_key.get(request_key)
+        if previous_request_at is not None and (now - previous_request_at) < BACKTESTING_MIN_INTERVAL_SECONDS:
+            raise HTTPException(
+                status_code=429,
+                detail="Backtesting rate-limited: espera unos segundos antes de reintentar",
+            )
+        _backtesting_last_request_by_key[request_key] = now
 
 
 @router.get("/health")
@@ -77,6 +112,18 @@ def latest_market_snapshot(symbol: str, db: Session = Depends(get_db)) -> Market
 @router.get("/dashboard/summary", response_model=DashboardSummary)
 def dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
     return DashboardService(db).summary()
+
+
+@router.post("/backtesting/run", response_model=BacktestRunResponse)
+def run_backtesting(
+    payload: BacktestRunRequest,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_backtesting_access),
+) -> BacktestRunResponse:
+    try:
+        return BacktestingService(db).run(payload)
+    except BacktestingError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
 @router.get("/indicators/{symbol}", response_model=IndicatorSnapshot)
