@@ -583,7 +583,11 @@ def main() -> None:
     for key, title in HUB_TITLES.items():
         hub_ids[key] = ensure_single_doc(client, all_docs, title, f"# {title.split(' — ', 1)[1]}\n", parent_id=root_id)
 
-    # Paso 3: asegurar existencia inicial solo para documentos faltantes (evita doble escritura recurrente)
+    # Paso 3: asegurar existencia inicial solo para documentos faltantes.
+    # En el primer sync de un documento nuevo se crea con texto crudo para obtener su id/url en Outline;
+    # la reescritura final ocurre recién en el paso 4, así que ese bootstrap puede implicar dos writes
+    # para documentos inéditos. Se acepta como trade-off para mantener el flujo determinista sin depender
+    # de URLs de Outline que todavía no existen en la corrida inicial.
     synced = 0
     desired_titles = {ROOT_TITLE, *HUB_TITLES.values()}
 
