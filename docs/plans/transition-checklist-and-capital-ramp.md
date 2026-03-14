@@ -66,7 +66,9 @@
 - Brecha documentada y acotada.
 
 **Métricas sugeridas (umbrales iniciales):**
-- Desvío de slippage vs supuesto <= **20%** (|slippage_real - slippage_modelado| / slippage_modelado).
+- Desvío de slippage vs supuesto <= **20%**.
+  - Si `slippage_modelado > 0`: |slippage_real - slippage_modelado| / slippage_modelado
+  - Si `slippage_modelado = 0`: |slippage_real| <= **1 bp** (umbral absoluto)
 - Desvío de fill rate <= **2%** (fills esperados vs fills efectivos en ventanas comparables).
 - Errores operativos:
   - rolling **30 días**: promedio **<= 1/día**
@@ -109,7 +111,8 @@
 
 ### Etapa 4 — Real (Target)
 - Exposición: según presupuesto de riesgo aprobado.
-- Mantener guardrails de crecimiento (p. ej. +10% semanal máximo) si no hay evidencia suficiente.
+- Mantener guardrails de crecimiento (p. ej. +10% semanal máximo) hasta cumplir **evidencia suficiente**.
+  - Definición inicial de evidencia suficiente: **>= 30 días** en Etapa 3 con métricas dentro de umbrales, **0 incidentes P0** y **<= 2 incidentes P1**, y paridad paper↔testnet estable según Gate C.
 - Criterio de rollback:
   - drawdown > **10%** desde el último máximo, o
   - 2 incidentes P1 en 7 días, o
