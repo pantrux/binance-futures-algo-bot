@@ -1,3 +1,5 @@
+import hashlib
+
 from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -152,11 +154,12 @@ def test_require_backtesting_access_evicts_expired_keys(monkeypatch):
         monkeypatch.setattr("apps.api.app.api.routes.require_metrics_auth", lambda x_metrics_key=None: None)
         monkeypatch.setattr("apps.api.app.api.routes.time.monotonic", lambda: current_time["value"])
 
+        old_key_hash = hashlib.sha256("old-key".encode("utf-8")).hexdigest()
         require_backtesting_access("old-key")
         current_time["value"] += BACKTESTING_RATE_LIMIT_TTL_SECONDS + 0.1
         require_backtesting_access("new-key")
 
-        assert all("old-key" != key for key in _backtesting_last_request_by_key)
+        assert old_key_hash not in _backtesting_last_request_by_key
         assert len(_backtesting_last_request_by_key) == 1
     finally:
         _backtesting_last_request_by_key.clear()
