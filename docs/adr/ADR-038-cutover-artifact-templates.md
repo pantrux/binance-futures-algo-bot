@@ -1,6 +1,6 @@
 # ADR-038: Templates operativos para artefactos de cutover
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado
 - **Fecha:** 2026-03-14
 
 ## Contexto
