@@ -32,7 +32,7 @@
 - payload resumido
 - resultado (`OK` / `WARN` / `FAIL`)
 
-## Drill 2 — Reporte diario y snapshot operativo
+### Drill 2 — Reporte diario y snapshot operativo
 
 **Objetivo:** confirmar que el sistema emite el reporte operativo sin intervención manual.
 
