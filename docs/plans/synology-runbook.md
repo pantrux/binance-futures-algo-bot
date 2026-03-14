@@ -275,10 +275,10 @@ Para evaluar readiness antes de iniciar testnet serio o decidir avance hacia rea
    - `0` eventos críticos en 7d
    - `<= 3` warnings en 7d
    - promedio de risk events 30d `<= 1/día`
-5. Adjuntar el artifact al checkpoint operativo/cutover correspondiente.
+4. Adjuntar el artifact al checkpoint operativo/cutover correspondiente.
 
 ### Estado real validado tras despliegue de PR-41
-- Endpoint `GET /reporting/shadow-run-summary` desplegado y operativo en `http://192.168.0.8:8010`.
+- Endpoint `GET /reporting/shadow-run-summary` desplegado y operativo en `<API_BASE_URL>` (por ejemplo, `http://192.168.0.8:8010` en el NAS local).
 - Primer gate real ejecutado: `paper=63`, `testnet=0`, `duration_days=3.0494`, `overall=FAIL`.
 - Bloqueo detectado en NAS: `BINANCE_API_KEY` y `BINANCE_API_SECRET` vacíos en `infra/docker/synology/.env`.
 - Mientras ese bloqueo persista, el bot seguirá generando solo `paper_executed` y no habrá evidencia testnet útil para Gate C.
