@@ -58,10 +58,10 @@
 - Shadow run activo: comparar decisiones paper vs ejecución testnet.
 - Brecha documentada y acotada.
 
-**Métricas sugeridas:**
-- Desvío de slippage vs supuesto <= umbral.
-- Desvío de fill rate <= umbral.
-- Errores operativos (timeouts, rejects) bajo umbral.
+**Métricas sugeridas (umbrales iniciales):**
+- Desvío de slippage vs supuesto <= **20%** (|slippage_real - slippage_modelado| / slippage_modelado).
+- Desvío de fill rate <= **2%** (fills esperados vs fills efectivos en ventanas comparables).
+- Errores operativos: **<= 1 por día** (timeouts, rejects no esperados, reintentos agotados).
 
 **Evidencia requerida:**
 - Reporte de paridad por corrida.
@@ -90,12 +90,19 @@
 
 ### Etapa 3 — Real (Small)
 - Exposición: **0.5% → 2%** del capital objetivo, por incrementos.
-- Duración mínima: **14 días**.
+- Duración mínima: **14 días** o **>= 60 trades** (lo que ocurra primero).
 - Incremento permitido: sólo si métricas y estabilidad operativa cumplen (sin incidentes P0).
+- Criterio de rollback:
+  - drawdown > **5%** desde el último máximo, o
+  - 1 incidente P0 (caída prolongada, órdenes en estado inconsistente, o bypass de guardrails).
 
 ### Etapa 4 — Real (Target)
 - Exposición: según presupuesto de riesgo aprobado.
 - Mantener guardrails de crecimiento (p. ej. +10% semanal máximo) si no hay evidencia suficiente.
+- Criterio de rollback:
+  - drawdown > **10%** desde el último máximo, o
+  - 2 incidentes P1 en 7 días, o
+  - cualquier P0.
 
 ## Plan de rollback
 

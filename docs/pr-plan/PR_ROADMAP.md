@@ -521,7 +521,7 @@ Medir brecha entre comportamiento esperado (paper) y real (testnet) antes de cua
 ---
 
 ### PR-32 — Alerting y reporting de producción
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Agregar una capa mínima de visibilidad operativa diaria para detectar degradación temprana antes de la etapa formal de go-live readiness.
@@ -536,7 +536,7 @@ Agregar una capa mínima de visibilidad operativa diaria para detectar degradaci
 ---
 
 ### PR-33 — Backtesting y walk-forward
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Validar robustez estadística de estrategias bajo distintos periodos y condiciones.
@@ -552,7 +552,7 @@ Validar robustez estadística de estrategias bajo distintos periodos y condicion
 ---
 
 ### PR-34 — Checklist de transición y rampa de capital
-**Estado:** 🔵 Planificado
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Definir formalmente condiciones para eventual transición fuera de paper.
