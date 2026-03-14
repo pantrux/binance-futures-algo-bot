@@ -98,7 +98,7 @@
 ### Etapa 3 — Real (Small)
 - Exposición: **0.5% → 2%** del capital objetivo, por incrementos de **+0.25%** (máximo 1 incremento cada 7 días, condicionado a gates/estabilidad).
 - Duración mínima: **14 días** **y** **>= 60 trades**.
-- Incremento permitido: sólo si métricas y estabilidad operativa cumplen (sin incidentes P0).
+- Incremento permitido: sólo si métricas y estabilidad operativa cumplen (**sin incidentes P0** y con **<= 1 incidente P1** en los últimos 7 días).
 - Criterio de rollback:
   - drawdown > **5%** desde el último máximo, o
   - 1 incidente **P0**, o
