@@ -22,6 +22,39 @@ type CommandCenterResponse = {
     critical_risk_events_7d: number;
     warning_risk_events_7d: number;
   };
+  operation_snapshots: Array<{
+    trade_plan_id: number;
+    symbol: string;
+    side: string;
+    status: string;
+    market_regime: string;
+    aggregate_score: number;
+    entry_price: number;
+    stop_loss: number;
+    take_profit: number;
+    applied_risk_pct: number;
+    max_position_notional: number;
+    latest_order_id: number | null;
+    latest_order_status: string | null;
+    latest_order_venue: string | null;
+    latest_order_price: number | null;
+    latest_order_executed_quantity: number | null;
+    latest_position_id: number | null;
+    latest_position_status: string | null;
+    latest_position_quantity: number | null;
+    latest_position_entry_price: number | null;
+    latest_position_mark_price: number | null;
+    latest_position_unrealized_pnl: number | null;
+    reconciliation_healthy: boolean;
+    reconciliation_primary_severity: string | null;
+    reconciliation_primary_event: string | null;
+    reconciliation_primary_message: string | null;
+    risk_event_count: number;
+    latest_risk_severity: string | null;
+    latest_risk_event_type: string | null;
+    latest_risk_message: string | null;
+    created_at: string;
+  }>;
   recent_trade_plans: Array<{
     id: number;
     symbol: string;
@@ -92,6 +125,7 @@ const EMPTY_COMMAND_CENTER: CommandCenterResponse = {
     critical_risk_events_7d: 0,
     warning_risk_events_7d: 0,
   },
+  operation_snapshots: [],
   recent_trade_plans: [],
   recent_orders: [],
   open_positions: [],
@@ -130,6 +164,13 @@ function statusTone(status: string) {
   if (["filled", "testnet_executed", "paper_executed", "approved", "open"].includes(normalized)) return "ok";
   if (["warning", "partially_filled", "blocked", "draft", "new"].includes(normalized)) return "warn";
   if (["critical", "rejected", "cancelled", "canceled", "expired"].includes(normalized)) return "danger";
+  return "neutral";
+}
+
+function reconcileTone(healthy: boolean, severity: string | null) {
+  if (healthy) return "ok";
+  if (severity === "critical") return "danger";
+  if (severity === "warning") return "warn";
   return "neutral";
 }
 
@@ -205,6 +246,85 @@ export default async function HomePage() {
           <article className="mini-stat"><span>Órdenes filled</span><strong>{shadowRun.testnet_orders_filled}</strong></article>
           <article className="mini-stat"><span>Slippage promedio</span><strong>{formatNumber(shadowRun.avg_testnet_slippage_bps, 2)} bps</strong></article>
           <article className="mini-stat"><span>Risk events total</span><strong>{summary.risk_events_total}</strong></article>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <h3>Radar de operaciones</h3>
+            <p className="panel-copy">Cada fila consolida plan, orden, posición, riesgo y reconciliación para seguimiento operativo real.</p>
+          </div>
+          <span className="badge subtle">últimas 12 ejecuciones / setups</span>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Plan</th>
+                <th>Setup</th>
+                <th>Orden</th>
+                <th>Posición</th>
+                <th>Reconcile</th>
+                <th>Riesgo</th>
+                <th>Creado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {commandCenter.operation_snapshots.length === 0 ? (
+                <tr><td colSpan={7} className="empty">Sin operaciones consolidadas.</td></tr>
+              ) : commandCenter.operation_snapshots.map((operation) => (
+                <tr key={operation.trade_plan_id}>
+                  <td>
+                    <strong>#{operation.trade_plan_id}</strong><br />
+                    {operation.symbol} · {operation.side}<br />
+                    <span className={`status-pill ${statusTone(operation.status)}`}>{operation.status}</span>
+                  </td>
+                  <td>
+                    Regime: {operation.market_regime}<br />
+                    Entry/SL/TP: {formatNumber(operation.entry_price, 2)} / {formatNumber(operation.stop_loss, 2)} / {formatNumber(operation.take_profit, 2)}<br />
+                    Score: {formatNumber(operation.aggregate_score, 2)} · Risk: {formatNumber(operation.applied_risk_pct, 3)}% · Max: {formatNumber(operation.max_position_notional, 2)}
+                  </td>
+                  <td>
+                    {operation.latest_order_id ? (
+                      <>
+                        #{operation.latest_order_id} · {operation.latest_order_venue}<br />
+                        <span className={`status-pill ${statusTone(operation.latest_order_status ?? "neutral")}`}>{operation.latest_order_status ?? "—"}</span><br />
+                        Px/Exec: {formatNumber(operation.latest_order_price, 2)} / {formatNumber(operation.latest_order_executed_quantity, 3)}
+                      </>
+                    ) : "Sin orden"}
+                  </td>
+                  <td>
+                    {operation.latest_position_id ? (
+                      <>
+                        #{operation.latest_position_id} · <span className={`status-pill ${statusTone(operation.latest_position_status ?? "neutral")}`}>{operation.latest_position_status ?? "—"}</span><br />
+                        Qty: {formatNumber(operation.latest_position_quantity, 3)}<br />
+                        Entry/Mark: {formatNumber(operation.latest_position_entry_price, 2)} / {formatNumber(operation.latest_position_mark_price, 2)}<br />
+                        <span className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? "positive" : "negative"}>PnL: {formatNumber(operation.latest_position_unrealized_pnl, 2)}</span>
+                      </>
+                    ) : "Sin posición"}
+                  </td>
+                  <td>
+                    <span className={`status-pill ${reconcileTone(operation.reconciliation_healthy, operation.reconciliation_primary_severity)}`}>
+                      {operation.reconciliation_healthy ? "healthy" : operation.reconciliation_primary_event ?? "drift"}
+                    </span><br />
+                    {operation.reconciliation_primary_message ?? "Sin drift detectado"}
+                  </td>
+                  <td>
+                    {operation.latest_risk_event_type ? (
+                      <>
+                        <span className={`status-pill ${statusTone(operation.latest_risk_severity ?? "neutral")}`}>{operation.latest_risk_severity ?? "info"}</span><br />
+                        {operation.latest_risk_event_type}<br />
+                        <small>{operation.latest_risk_message}</small><br />
+                        Count: {operation.risk_event_count}
+                      </>
+                    ) : `Sin eventos · Count: ${operation.risk_event_count}`}
+                  </td>
+                  <td>{formatDate(operation.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

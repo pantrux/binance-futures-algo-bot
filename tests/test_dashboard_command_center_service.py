@@ -99,6 +99,12 @@ def test_dashboard_command_center_builds_operational_snapshot():
     assert payload.shadow_run.testnet_orders_total == 1
     assert payload.shadow_run.testnet_orders_filled == 1
     assert payload.shadow_run.testnet_fill_rate_pct == 100.0
+    assert payload.operation_snapshots[0].trade_plan_id == approved.id
+    assert payload.operation_snapshots[1].trade_plan_id == testnet.id
+    assert payload.operation_snapshots[1].latest_order_status == "filled"
+    assert payload.operation_snapshots[1].latest_position_status == "open"
+    assert payload.operation_snapshots[1].reconciliation_healthy is True
+    assert payload.operation_snapshots[0].latest_risk_event_type == "shadow_run_check"
     assert payload.recent_trade_plans[0].id == approved.id
     assert payload.recent_orders[0].trade_plan_id == testnet.id
     assert payload.open_positions[0].trade_plan_id == testnet.id

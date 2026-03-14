@@ -75,10 +75,45 @@ class DashboardCommandCenterShadowRun(BaseModel):
     warning_risk_events_7d: int
 
 
+class DashboardCommandCenterOperationSnapshot(BaseModel):
+    trade_plan_id: int
+    symbol: str
+    side: str
+    status: str
+    market_regime: str
+    aggregate_score: float
+    entry_price: float
+    stop_loss: float
+    take_profit: float
+    applied_risk_pct: float
+    max_position_notional: float
+    latest_order_id: int | None = None
+    latest_order_status: str | None = None
+    latest_order_venue: str | None = None
+    latest_order_price: float | None = None
+    latest_order_executed_quantity: float | None = None
+    latest_position_id: int | None = None
+    latest_position_status: str | None = None
+    latest_position_quantity: float | None = None
+    latest_position_entry_price: float | None = None
+    latest_position_mark_price: float | None = None
+    latest_position_unrealized_pnl: float | None = None
+    reconciliation_healthy: bool
+    reconciliation_primary_severity: str | None = None
+    reconciliation_primary_event: str | None = None
+    reconciliation_primary_message: str | None = None
+    risk_event_count: int = 0
+    latest_risk_severity: str | None = None
+    latest_risk_event_type: str | None = None
+    latest_risk_message: str | None = None
+    created_at: datetime
+
+
 class DashboardCommandCenterResponse(BaseModel):
     generated_at: datetime
     summary: DashboardCommandCenterSummary
     shadow_run: DashboardCommandCenterShadowRun
+    operation_snapshots: list[DashboardCommandCenterOperationSnapshot] = Field(default_factory=list)
     recent_trade_plans: list[DashboardCommandCenterTradePlan] = Field(default_factory=list)
     recent_orders: list[DashboardCommandCenterOrder] = Field(default_factory=list)
     open_positions: list[DashboardCommandCenterPosition] = Field(default_factory=list)

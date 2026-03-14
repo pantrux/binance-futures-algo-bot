@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from apps.api.app.db.models import Order, Position, RiskEvent, TradePlan
 from apps.api.app.schemas.dashboard_command_center import (
+    DashboardCommandCenterOperationSnapshot,
     DashboardCommandCenterOrder,
     DashboardCommandCenterPosition,
     DashboardCommandCenterResponse,
@@ -13,6 +14,7 @@ from apps.api.app.schemas.dashboard_command_center import (
     DashboardCommandCenterSummary,
     DashboardCommandCenterTradePlan,
 )
+from apps.api.app.services.execution_state_machine_service import ExecutionStateMachineService
 from apps.api.app.services.shadow_run_reporting_service import ShadowRunReportingService
 
 
@@ -58,6 +60,7 @@ class DashboardCommandCenterService:
             warning_risk_events_7d=shadow_run_summary.warning_risk_events_7d,
         )
 
+        recent_trade_plan_rows = self.db.query(TradePlan).order_by(desc(TradePlan.created_at)).limit(12).all()
         recent_trade_plans = [
             DashboardCommandCenterTradePlan(
                 id=plan.id,
@@ -70,7 +73,7 @@ class DashboardCommandCenterService:
                 status=plan.status,
                 created_at=plan.created_at,
             )
-            for plan in self.db.query(TradePlan).order_by(desc(TradePlan.created_at)).limit(12).all()
+            for plan in recent_trade_plan_rows
         ]
 
         recent_orders = [
@@ -110,6 +113,7 @@ class DashboardCommandCenterService:
             .all()
         ]
 
+        recent_risk_events_rows = self.db.query(RiskEvent).order_by(desc(RiskEvent.created_at)).limit(12).all()
         recent_risk_events = [
             DashboardCommandCenterRiskEvent(
                 id=event.id,
@@ -119,13 +123,84 @@ class DashboardCommandCenterService:
                 message=event.message,
                 created_at=event.created_at,
             )
-            for event in self.db.query(RiskEvent).order_by(desc(RiskEvent.created_at)).limit(12).all()
+            for event in recent_risk_events_rows
         ]
+
+        operation_snapshots: list[DashboardCommandCenterOperationSnapshot] = []
+        execution_state_machine = ExecutionStateMachineService(self.db)
+        for plan in recent_trade_plan_rows:
+            plan_orders = (
+                self.db.query(Order)
+                .filter(Order.trade_plan_id == plan.id)
+                .order_by(desc(Order.created_at), desc(Order.id))
+                .all()
+            )
+            plan_positions = (
+                self.db.query(Position)
+                .filter(Position.trade_plan_id == plan.id)
+                .order_by(desc(Position.opened_at), desc(Position.id))
+                .all()
+            )
+            latest_risk = (
+                self.db.query(RiskEvent)
+                .filter(RiskEvent.trade_plan_id == plan.id)
+                .order_by(desc(RiskEvent.created_at), desc(RiskEvent.id))
+                .first()
+            )
+            risk_event_count = (
+                self.db.scalar(select(func.count()).select_from(RiskEvent).where(RiskEvent.trade_plan_id == plan.id))
+                or 0
+            )
+            latest_order = plan_orders[0] if plan_orders else None
+            latest_position = plan_positions[0] if plan_positions else None
+            reconciliation = execution_state_machine.reconcile_loaded_trade_plan(
+                plan,
+                list(reversed(plan_orders)),
+                list(reversed(plan_positions)),
+            )
+            primary_drift = reconciliation.drift_events[0] if reconciliation.drift_events else None
+
+            operation_snapshots.append(
+                DashboardCommandCenterOperationSnapshot(
+                    trade_plan_id=plan.id,
+                    symbol=plan.symbol,
+                    side=plan.side,
+                    status=plan.status,
+                    market_regime=plan.market_regime,
+                    aggregate_score=plan.aggregate_score,
+                    entry_price=plan.entry_price,
+                    stop_loss=plan.stop_loss,
+                    take_profit=plan.take_profit,
+                    applied_risk_pct=plan.applied_risk_pct,
+                    max_position_notional=plan.max_position_notional,
+                    latest_order_id=latest_order.id if latest_order else None,
+                    latest_order_status=latest_order.status if latest_order else None,
+                    latest_order_venue=latest_order.venue if latest_order else None,
+                    latest_order_price=latest_order.price if latest_order else None,
+                    latest_order_executed_quantity=latest_order.executed_quantity if latest_order else None,
+                    latest_position_id=latest_position.id if latest_position else None,
+                    latest_position_status=latest_position.status if latest_position else None,
+                    latest_position_quantity=latest_position.quantity if latest_position else None,
+                    latest_position_entry_price=latest_position.entry_price if latest_position else None,
+                    latest_position_mark_price=latest_position.mark_price if latest_position else None,
+                    latest_position_unrealized_pnl=latest_position.unrealized_pnl if latest_position else None,
+                    reconciliation_healthy=reconciliation.healthy,
+                    reconciliation_primary_severity=primary_drift.severity if primary_drift else None,
+                    reconciliation_primary_event=primary_drift.event_type if primary_drift else None,
+                    reconciliation_primary_message=primary_drift.message if primary_drift else None,
+                    risk_event_count=risk_event_count,
+                    latest_risk_severity=latest_risk.severity if latest_risk else None,
+                    latest_risk_event_type=latest_risk.event_type if latest_risk else None,
+                    latest_risk_message=latest_risk.message if latest_risk else None,
+                    created_at=plan.created_at,
+                )
+            )
 
         return DashboardCommandCenterResponse(
             generated_at=datetime.now(timezone.utc),
             summary=summary,
             shadow_run=shadow_run,
+            operation_snapshots=operation_snapshots,
             recent_trade_plans=recent_trade_plans,
             recent_orders=recent_orders,
             open_positions=open_positions,
