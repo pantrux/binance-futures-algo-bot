@@ -65,7 +65,6 @@ NON_ADR_TITLE_MAP = {
     "docs/diagrams/demo-loop-flow.md": f"{PREFIX} — Flujo demo loop",
 }
 
-MARKDOWN_LINK_RE = re.compile(r"(!?\[[^\]]*\])\(([^)]+)\)")
 FENCE_RE = re.compile(r"^([`~]{3,})")
 BACKTICK_RUN_RE = re.compile(r"`+")
 EXTERNAL_SCHEMES = ("http://", "https://", "mailto:", "tel:", "data:")
@@ -233,13 +232,107 @@ def resolve_repo_relative_path(source_path: Path, href: str) -> tuple[str | None
 
 def to_raw_github_base(repo_web_base: str) -> str:
     prefix = "https://github.com/"
-    marker = "/blob/"
-    if repo_web_base.startswith(prefix) and marker in repo_web_base:
-        repo_path = repo_web_base[len(prefix):]
-        owner_repo, _, git_ref = repo_path.partition(marker)
-        if owner_repo and git_ref:
-            return f"https://raw.githubusercontent.com/{owner_repo}/{git_ref}".rstrip("/")
+    if not repo_web_base.startswith(prefix):
+        return repo_web_base
+
+    repo_path = repo_web_base[len(prefix):].strip("/")
+    owner_repo = repo_path
+    git_ref = DEFAULT_GIT_REF
+
+    for marker in ("/blob/", "/tree/"):
+        if marker in repo_path:
+            owner_repo, _, git_ref = repo_path.partition(marker)
+            break
+
+    if owner_repo and git_ref:
+        return f"https://raw.githubusercontent.com/{owner_repo}/{git_ref}".rstrip("/")
     return repo_web_base
+
+
+def split_markdown_link_target(target: str) -> tuple[str, str]:
+    value = target.strip()
+    if not value:
+        return "", ""
+
+    if value.startswith("<"):
+        end = value.find(">")
+        if end != -1:
+            return value[1:end], value[end + 1 :].strip()
+
+    i = 0
+    while i < len(value):
+        ch = value[i]
+        if ch.isspace():
+            break
+        if ch == "\\" and i + 1 < len(value):
+            i += 2
+            continue
+        i += 1
+    return value[:i], value[i:].strip()
+
+
+def parse_markdown_link_at(segment: str, start: int) -> tuple[int, int, str, str, str] | None:
+    image = segment.startswith("![", start)
+    if image:
+        if start + 1 >= len(segment) or segment[start + 1] != "[":
+            return None
+        label_start = start + 2
+        prefix = "!"
+    elif segment[start] == "[":
+        label_start = start + 1
+        prefix = ""
+    else:
+        return None
+
+    i = label_start
+    depth = 1
+    while i < len(segment):
+        ch = segment[i]
+        if ch == "\\" and i + 1 < len(segment):
+            i += 2
+            continue
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                break
+        i += 1
+    if depth != 0 or i + 1 >= len(segment) or segment[i + 1] != "(":
+        return None
+
+    label = segment[label_start:i]
+    j = i + 2
+    paren_depth = 1
+    in_angle = False
+    in_quotes: str | None = None
+    while j < len(segment):
+        ch = segment[j]
+        if ch == "\\" and j + 1 < len(segment):
+            j += 2
+            continue
+        if in_quotes:
+            if ch == in_quotes:
+                in_quotes = None
+        else:
+            if ch in ('"', "'"):
+                in_quotes = ch
+            elif ch == "<":
+                in_angle = True
+            elif ch == ">" and in_angle:
+                in_angle = False
+            elif ch == "(" and not in_angle:
+                paren_depth += 1
+            elif ch == ")" and not in_angle:
+                paren_depth -= 1
+                if paren_depth == 0:
+                    break
+        j += 1
+    if paren_depth != 0:
+        return None
+
+    target = segment[i + 2 : j]
+    return start, j + 1, prefix, label, target
 
 
 def outline_web_base(outline_api_url: str) -> str:
@@ -260,40 +353,62 @@ def normalize_outline_doc_url(url: str, outline_base: str) -> str:
 
 
 def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, str], repo_web_base: str) -> str:
-    def replace(match: re.Match[str]) -> str:
-        label = match.group(1)
-        href = match.group(2).strip()
+    def rewrite_target(prefix: str, label: str, raw_target: str) -> str | None:
+        href, title_suffix = split_markdown_link_target(raw_target)
+        if not href:
+            return None
+
         rel_path, anchor = resolve_repo_relative_path(source_path, href)
         if not rel_path:
-            return match.group(0)
+            return None
 
-        if rel_path in outline_urls:
-            return f"{label}({outline_urls[rel_path]}{anchor})"
-        if not repo_web_base:
-            return match.group(0)
+        rewritten_href = outline_urls.get(rel_path, "")
+        if not rewritten_href:
+            if not repo_web_base:
+                return None
+            base = to_raw_github_base(repo_web_base) if prefix == "!" else repo_web_base
+            rewritten_href = f"{base}/{rel_path}"
 
-        base = to_raw_github_base(repo_web_base) if label.startswith("!") else repo_web_base
-        return f"{label}({base}/{rel_path}{anchor})"
+        suffix = f" {title_suffix}" if title_suffix else ""
+        return f"{prefix}[{label}]({rewritten_href}{anchor}{suffix})"
 
     def replace_segment(segment: str) -> str:
         out: List[str] = []
         cursor = 0
         while cursor < len(segment):
+            link = parse_markdown_link_at(segment, cursor)
+            if link:
+                start, end, prefix, label, target = link
+                rewritten = rewrite_target(prefix, label, target)
+                out.append(rewritten if rewritten else segment[start:end])
+                cursor = end
+                continue
+
             opener = BACKTICK_RUN_RE.search(segment, cursor)
-            if not opener:
-                out.append(MARKDOWN_LINK_RE.sub(replace, segment[cursor:]))
-                break
+            if opener and opener.start() == cursor:
+                run = opener.group(0)
+                closer = re.search(re.escape(run), segment[opener.end():])
+                if not closer:
+                    out.append(segment[cursor:])
+                    break
+                code_end = opener.end() + closer.end()
+                out.append(segment[cursor:code_end])
+                cursor = code_end
+                continue
 
-            out.append(MARKDOWN_LINK_RE.sub(replace, segment[cursor:opener.start()]))
-            run = opener.group(0)
-            closer = re.search(re.escape(run), segment[opener.end():])
-            if not closer:
-                out.append(MARKDOWN_LINK_RE.sub(replace, segment[opener.start():]))
+            next_positions = [len(segment)]
+            if opener:
+                next_positions.append(opener.start())
+            next_link_positions = [
+                pos for pos in (segment.find("![", cursor + 1), segment.find("[", cursor + 1)) if pos != -1
+            ]
+            next_positions.extend(next_link_positions)
+            next_stop = min(next_positions)
+            if next_stop == len(segment):
+                out.append(segment[cursor:])
                 break
-
-            code_end = opener.end() + closer.end()
-            out.append(segment[opener.start():code_end])
-            cursor = code_end
+            out.append(segment[cursor:next_stop])
+            cursor = next_stop
 
         return "".join(out)
 

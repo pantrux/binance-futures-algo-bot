@@ -15,6 +15,7 @@ Durante la sincronización a Outline:
 2. Los links a archivos locales del repositorio que **no** tienen equivalente en Outline se reescriben a la **URL web del repositorio** (GitHub `blob/<ref>`; para imágenes se usa `raw.githubusercontent.com`).
 3. Los links externos (`https`, `mailto`, etc.) y anchors internos (`#...`) se preservan sin cambios.
 4. La reescritura se aplica solo fuera de bloques de código cercados, respetando el delimitador real del fence, y preservando spans inline con backticks simples o múltiples.
+5. El parser de links conserva el título opcional de Markdown (`[texto](ruta "título")`) al reescribir el href.
 
 ## Justificación
 - Mantiene navegación útil desde Outline.
