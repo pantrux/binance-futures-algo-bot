@@ -1,4 +1,5 @@
 {
+  "context": "<contexto>",
   "generatedAtUtc": "YYYY-MM-DDTHH:mm:ssZ",
   "owner": "<owner>",
   "commit": "<git-sha-or-release>",
