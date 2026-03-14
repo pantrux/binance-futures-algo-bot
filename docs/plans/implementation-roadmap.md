@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 12 ya produjo ejecuciones testnet reales, fills normalizados y reconciliación blindada; ahora el foco visible es el operador: exponer en el centro de mando el flujo completo de operaciones, órdenes, posiciones, riesgo y shadow run en una sola vista.
-- **PR activo:** `PR-45` — centro de mando operacional.
-- **Etapa actual:** **Fase 12 — Activación operativa de testnet** (`PR-42`, `PR-43`, `PR-44`, `PR-45`).
+- **Estado global actual:** Fase 12 ya produjo ejecuciones testnet reales, fills normalizados y command center operacional base; ahora el foco es subir la granularidad visual por operación con plan + orden + posición + reconciliación + riesgo en la misma vista.
+- **PR activo:** `PR-46` — radar unificado por operación en el centro de mando.
+- **Etapa actual:** **Fase 12 — Activación operativa de testnet** (`PR-42`, `PR-43`, `PR-44`, `PR-45`, `PR-46`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -36,7 +36,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 9 — Go-live readiness | ✅ Completada | 100% | PR-33..PR-35 | Validación cuantitativa, gates formales de transición y cutover controlado |
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
-| Fase 12 — Activación operativa de testnet | 🟡 En progreso | 60% | PR-42..PR-44 | primeras ejecuciones testnet reales; fills ya normalizados, pendiente blindaje final de reconciliación para históricos rechazados |
+| Fase 12 — Activación operativa de testnet | 🟡 En progreso | 82% | PR-42..PR-46 | primeras ejecuciones testnet reales + fills/reconciliación corregidos + command center con radar unificado por operación |
 
 ---
 

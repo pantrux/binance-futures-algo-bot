@@ -109,6 +109,10 @@ def test_dashboard_command_center_route_returns_payload():
     assert payload["summary"]["testnet_executed_trade_plans"] == 1
     assert payload["shadow_run"]["testnet_orders_total"] == 1
     assert payload["shadow_run"]["testnet_fill_rate_pct"] == 100.0
+    assert payload["operation_snapshots"][0]["trade_plan_id"] == plan.id
+    assert payload["operation_snapshots"][0]["latest_order_status"] == "filled"
+    assert payload["operation_snapshots"][0]["latest_position_status"] == "open"
+    assert payload["operation_snapshots"][0]["reconciliation_healthy"] is True
     assert payload["recent_trade_plans"][0]["id"] == plan.id
     assert payload["recent_orders"][0]["trade_plan_id"] == plan.id
     assert payload["open_positions"][0]["trade_plan_id"] == plan.id

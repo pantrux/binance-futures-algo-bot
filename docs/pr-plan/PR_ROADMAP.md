@@ -702,15 +702,27 @@ Evitar que la reconciliación clasifique como fill órdenes rechazadas heredadas
 - mergeado en `f0c0015`
 
 ### PR-45 — Centro de mando operacional
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
-Mostrar en la UI del centro de mando toda la información relevante de operación en tiempo real práctico: planes, órdenes, posiciones, eventos de riesgo y snapshot de shadow run, sin depender de múltiples endpoints manuales.
+Mostrar en la UI del centro de mando toda la información relevante de operación en tiempo real práctico: planes, órdenes, posiciones, eventos de riesgo, reconciliación y snapshot de shadow run, sin depender de múltiples endpoints manuales.
 
 **Entregables**
 - endpoint agregado `GET /dashboard/command-center`
 - servicio backend con snapshot operativo unificado
 - home de `apps/web` rediseñada para mostrar operaciones recientes, órdenes, posiciones, riesgo y readiness testnet
+- tests de servicio/ruta + build frontend verde
+- mergeado y desplegado en Synology
+
+### PR-46 — Radar unificado por operación en el centro de mando
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Subir la granularidad del centro de mando consolidando por operación el plan, la orden, la posición, la reconciliación y el último evento de riesgo en una sola vista operativa.
+
+**Entregables**
+- `operation_snapshots` en `GET /dashboard/command-center`
+- tabla “Radar de operaciones” con setup, orden, posición, reconcile y riesgo por trade plan
 - tests de servicio/ruta + build frontend verde
 
 ## Criterio de avance
