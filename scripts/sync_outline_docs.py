@@ -276,6 +276,7 @@ def split_markdown_link_target(target: str) -> tuple[str, str]:
         end = value.find(">")
         if end != -1:
             return value[1:end], value[end + 1 :].strip()
+        return "", ""
 
     i = 0
     while i < len(value):
@@ -392,6 +393,18 @@ def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, st
         out: List[str] = []
         cursor = 0
         while cursor < len(segment):
+            if segment.startswith("![", cursor):
+                link = parse_markdown_link_at(segment, cursor)
+                if link:
+                    start, end, prefix, label, target = link
+                    rewritten = rewrite_target(prefix, label, target)
+                    out.append(rewritten if rewritten else segment[start:end])
+                    cursor = end
+                    continue
+                out.append("![")
+                cursor += 2
+                continue
+
             link = parse_markdown_link_at(segment, cursor)
             if link:
                 start, end, prefix, label, target = link
@@ -459,19 +472,41 @@ def rewrite_local_links(text: str, source_path: Path, outline_urls: Dict[str, st
     return "".join(rewritten_lines)
 
 
+def canonical_doc(docs: List[dict], title: str) -> dict | None:
+    same = [d for d in docs if d.get("title") == title and d.get("archivedAt") is None]
+    if not same:
+        return None
+    return sorted(same, key=lambda d: parse_iso(d.get("createdAt")))[0]
+
+
 def ensure_single_doc(client: OutlineClient, docs: List[dict], title: str, text: str, parent_id: str | None = None) -> str:
     same = [d for d in docs if d.get("title") == title and d.get("archivedAt") is None]
     if same:
         canonical = sorted(same, key=lambda d: parse_iso(d.get("createdAt")))[0]
         client.update(canonical["id"], title, text, parent_id=parent_id)
+        canonical["parentDocumentId"] = parent_id
         for extra in same:
             if extra["id"] != canonical["id"]:
                 client.archive(extra["id"])
         return canonical["id"]
 
     new_id = client.create(title, text, parent_id=parent_id)
-    docs.append({"id": new_id, "title": title, "archivedAt": None, "createdAt": None, "updatedAt": None})
+    docs.append({
+        "id": new_id,
+        "title": title,
+        "archivedAt": None,
+        "createdAt": None,
+        "updatedAt": None,
+        "parentDocumentId": parent_id,
+    })
     return new_id
+
+
+def ensure_doc_exists(client: OutlineClient, docs: List[dict], title: str, text: str, parent_id: str | None = None) -> str:
+    existing = canonical_doc(docs, title)
+    if existing:
+        return existing["id"]
+    return ensure_single_doc(client, docs, title, text, parent_id=parent_id)
 
 
 def main() -> None:
@@ -520,7 +555,7 @@ def main() -> None:
     for key, title in HUB_TITLES.items():
         hub_ids[key] = ensure_single_doc(client, all_docs, title, f"# {title.split(' — ', 1)[1]}\n", parent_id=root_id)
 
-    # Paso 3: upsert inicial de targets para garantizar existencia/URL
+    # Paso 3: asegurar existencia inicial solo para documentos faltantes (evita doble escritura recurrente)
     synced = 0
     desired_titles = {ROOT_TITLE, *HUB_TITLES.values()}
 
@@ -531,10 +566,10 @@ def main() -> None:
             continue
         text = path.read_text(encoding="utf-8")
         desired_titles.add(t.title)
-        ensure_single_doc(client, all_docs, t.title, text, parent_id=hub_ids[t.category])
+        ensure_doc_exists(client, all_docs, t.title, text, parent_id=hub_ids[t.category])
         synced += 1
 
-    # Paso 4: segunda pasada para reescribir links locales a Outline/GitHub
+    # Paso 4: segunda pasada para reescribir links locales a Outline/GitHub y actualizar solo si cambia el contenido final
     all_docs = client.list_collection_docs()
     outline_base = outline_web_base(args.outline_url)
     outline_urls_by_title = {
@@ -548,14 +583,27 @@ def main() -> None:
         if outline_urls_by_title.get(t.title)
     }
 
+    current_text_by_id: Dict[str, str] = {}
     for t in targets:
         path = REPO_ROOT / t.rel_path
         if not path.exists():
             continue
         raw_text = path.read_text(encoding="utf-8")
-        rewritten = rewrite_local_links(raw_text, path, outline_urls_by_rel, repo_web_base)
-        if rewritten != raw_text:
-            ensure_single_doc(client, all_docs, t.title, rewritten, parent_id=hub_ids[t.category])
+        final_text = rewrite_local_links(raw_text, path, outline_urls_by_rel, repo_web_base)
+        doc = canonical_doc(all_docs, t.title)
+        if not doc:
+            continue
+        doc_id = doc["id"]
+        if doc_id not in current_text_by_id:
+            current_text_by_id[doc_id] = client.get_text(doc_id)
+        needs_update = (
+            current_text_by_id[doc_id] != final_text
+            or doc.get("parentDocumentId") != hub_ids[t.category]
+        )
+        if needs_update:
+            client.update(doc_id, t.title, final_text, parent_id=hub_ids[t.category])
+            current_text_by_id[doc_id] = final_text
+            doc["parentDocumentId"] = hub_ids[t.category]
 
     # Paso 5: opción de limpiar documentos legacy no mapeados
     archived_unknown = 0
