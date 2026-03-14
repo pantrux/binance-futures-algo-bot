@@ -596,3 +596,5 @@ No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
 - comentarios/reviews resueltos
 - estado consolidado en memoria
 - roadmap y Gantt actualizados
+
+---
