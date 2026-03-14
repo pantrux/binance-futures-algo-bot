@@ -23,6 +23,7 @@
 - [ ] Reporte diario operativo funcionando
 - [ ] Alertas principales activas (caída total, drift, rejects, latencia)
 - [ ] Dashboard/endpoint de health accesible y autenticado
+- [ ] Drills sintéticos previos ejecutados con evidencia (`docs/plans/cutover-drills-and-evidence-package.md`)
 
 ### 3) Riesgo y seguridad
 

@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 8 avanzada con baseline de ejecución exchange ya entregado y arranque de validación cuantitativa de go-live readiness.
-- **PR activo:** `PR-35` — cutover controlado y monitoreo post-cutover.
-- **Etapa actual:** **Fase 9 — Go-live readiness** (`PR-33` a `PR-35`).
+- **Estado global actual:** Fase 9 cerrada con runbook completo de go-live readiness y arranque de ensayos operativos para cutover real.
+- **PR activo:** `PR-36` — drills sintéticos y paquete de evidencia de cutover.
+- **Etapa actual:** **Fase 10 — Ensayos operativos de cutover** (`PR-36`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -33,7 +33,8 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 6 — Infraestructura recurrente | 🟡 En progreso | 85% | PR-22..PR-24 | Operación continua endurecida (SRE + continuidad) |
 | Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
 | Fase 8 — Ejecución exchange robusta | 🟡 En progreso | 75% | PR-29..PR-32 | Router testnet + reconciliación + paridad paper/testnet + reporting operativo |
-| Fase 9 — Go-live readiness | 🟡 En progreso | 80% | PR-33..PR-35 | Validación cuantitativa, gates formales de transición y cutover controlado |
+| Fase 9 — Go-live readiness | ✅ Completada | 100% | PR-33..PR-35 | Validación cuantitativa, gates formales de transición y cutover controlado |
+| Fase 10 — Ensayos operativos de cutover | 🟡 En progreso | 20% | PR-36 | drills sintéticos, evidencia estandarizada y cierre operacional pre-live |
 
 ---
 
@@ -108,9 +109,15 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 ### PR-34 — Checklist formal de transición y política de rampa de capital ✅
 - ver `docs/plans/transition-checklist-and-capital-ramp.md`
 - ADR-035
-### PR-35 — Cutover controlado (si y solo si todos los gates pasan) 🟡
+### PR-35 — Cutover controlado (si y solo si todos los gates pasan) ✅
 - ver `docs/plans/cutover-and-post-cutover-monitoring.md`
 - ADR-036
+
+## Fase 10 — Ensayos operativos de cutover
+
+### PR-36 — Drills sintéticos y paquete de evidencia de cutover 🟡
+- ver `docs/plans/cutover-drills-and-evidence-package.md`
+- ADR-037
 
 ---
 

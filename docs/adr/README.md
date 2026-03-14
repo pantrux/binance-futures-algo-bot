@@ -38,6 +38,7 @@
 - `ADR-034-backtesting-walk-forward.md`
 - `ADR-035-transition-checklist-capital-ramp.md`
 - `ADR-036-cutover-and-post-cutover-monitoring.md`
+- `ADR-037-cutover-drills-and-evidence-package.md`
 
 ## Archivados
 
