@@ -1,6 +1,6 @@
 # ADR-035: Checklist de transición y rampa de capital
 
-- **Estado:** Aprobado
+- **Estado:** Propuesto
 - **Fecha:** 2026-03-14
 
 ## Contexto

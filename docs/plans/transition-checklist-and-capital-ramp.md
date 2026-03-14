@@ -68,7 +68,10 @@
 **Métricas sugeridas (umbrales iniciales):**
 - Desvío de slippage vs supuesto <= **20%** (|slippage_real - slippage_modelado| / slippage_modelado).
 - Desvío de fill rate <= **2%** (fills esperados vs fills efectivos en ventanas comparables).
-- Errores operativos: en ventana rolling de **7 días**, promedio **<= 1/día** y máximo **<= 3** en cualquier ventana de 7 días (timeouts, rejects no esperados, reintentos agotados).
+- Errores operativos:
+  - rolling **30 días**: promedio **<= 1/día**
+  - rolling **7 días**: máximo **<= 3**
+  (timeouts, rejects no esperados, reintentos agotados)
 
 **Evidencia requerida:**
 - Reporte de paridad por corrida.
