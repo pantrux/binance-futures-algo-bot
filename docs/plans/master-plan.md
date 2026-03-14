@@ -58,8 +58,13 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa I — Guardrails documentales + readiness automation
 - PR-40 a PR-41.
-- Estado actual: en progreso.
+- Estado actual: completada.
 - Entrega: validación CI de links Markdown locales + gate auditable de shadow run para readiness testnet con artifacts JSON/Markdown.
+
+### Etapa J — Activación operativa de testnet
+- PR-42.
+- Estado actual: en progreso.
+- Entrega: desbloqueo de credenciales/configuración de Synology para generar primeras ejecuciones testnet reales y rerun exitoso del Gate C.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.

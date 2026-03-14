@@ -23,6 +23,8 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
 - `MAX_ACCOUNT_RISK_PCT=5`
 - `PAPER_TRADING=true`
 
+> Validación real post `PR-41`: si `BINANCE_API_KEY` / `BINANCE_API_SECRET` están vacíos, Synology solo producirá `paper_executed` y el Gate C de shadow run fallará por ausencia total de ejecuciones testnet.
+
 ## Secuencia de despliegue
 1. Copiar repositorio al NAS.
 2. Copiar `infra/docker/synology/.env.example` a `.env`.
