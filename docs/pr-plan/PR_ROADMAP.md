@@ -645,7 +645,7 @@ Prevenir regresiones documentales antes del sync a Outline validando en CI que l
 - actualización de roadmap/runbook según corresponda
 
 ### PR-41 — Gate auditable de shadow run para readiness testnet
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Automatizar la evidencia del Gate C (paridad paper vs testnet) para decidir si el bot está listo para comenzar shadow run serio y aproximarse a real-micro con criterios medibles.
@@ -656,6 +656,19 @@ Automatizar la evidencia del Gate C (paridad paper vs testnet) para decidir si e
 - script `scripts/synology_shadow_run_gate.py` para generar artefactos JSON + Markdown
 - workflow `.github/workflows/synology-shadow-run-gate.yml`
 - ADR-040 + actualización de roadmap/runbook/checklist de transición
+- mergeado en `d486e63` + deploy validado en Synology
+- primer gate real ejecutado: `paper=63`, `testnet=0`, `duration_days=3.0494`, `overall=FAIL`
+
+### PR-42 — Activación de shadow run testnet en Synology
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Desbloquear la primera ventana útil de shadow run testnet en Synology corrigiendo la configuración real del NAS (credenciales Binance testnet y variables operativas faltantes) y re-ejecutando el Gate C con datos testnet genuinos.
+
+**Entregables**
+- documentación explícita del bloqueo operativo real detectado en NAS (`BINANCE_API_KEY`/`BINANCE_API_SECRET` vacíos)
+- guía/ajuste para `SYNOLOGY_API_BASE_URL` y ejecución remota del workflow
+- evidencia del primer rerun del Gate C tras habilitar testnet
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

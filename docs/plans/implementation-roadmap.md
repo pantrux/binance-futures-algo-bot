@@ -139,12 +139,20 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - job dedicado en CI para lint + tests focales
 - mergeado en `d517c3c`
 
-### PR-41 — Gate auditable de shadow run para readiness testnet 🟡
+### PR-41 — Gate auditable de shadow run para readiness testnet ✅
 - `ShadowRunReportingService` + endpoint `GET /reporting/shadow-run-summary`
 - workflow `synology-shadow-run-gate.yml`
 - script `scripts/synology_shadow_run_gate.py`
 - ADR-040
-- evidencia JSON + Markdown para Gate C antes de arrancar shadow run serio / real-micro
+- mergeado en `d486e63`
+- desplegado en Synology y validado con primer gate real (`paper=63`, `testnet=0`, `duration_days=3.0494`, `overall=FAIL`)
+
+## Fase 12 — Activación operativa de testnet
+
+### PR-42 — Activación de shadow run testnet en Synology 🟡
+- documentar bloqueo real detectado tras deploy: `BINANCE_API_KEY`/`BINANCE_API_SECRET` vacíos en `infra/docker/synology/.env`
+- definir variable pública/operativa `SYNOLOGY_API_BASE_URL` para workflow remoto
+- rerun del gate cuando existan primeras ejecuciones `testnet_executed`
 
 ---
 
