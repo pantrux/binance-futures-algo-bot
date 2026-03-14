@@ -100,7 +100,8 @@
 - Incremento permitido: sólo si métricas y estabilidad operativa cumplen (sin incidentes P0).
 - Criterio de rollback:
   - drawdown > **5%** desde el último máximo, o
-  - 1 incidente P0 (caída prolongada, órdenes en estado inconsistente, o bypass de guardrails).
+  - 1 incidente **P0**, o
+  - **2 incidentes P1 en 7 días**.
 
 ### Etapa 4 — Real (Target)
 - Exposición: según presupuesto de riesgo aprobado.
