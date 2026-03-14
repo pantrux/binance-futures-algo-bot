@@ -193,6 +193,50 @@ def test_reconcile_detects_multiple_open_positions():
     assert any(event.event_type == "multiple_open_positions" for event in report.drift_events)
 
 
+def test_reconcile_does_not_count_rejected_order_with_executed_quantity_as_fill():
+    db = build_db()
+    plan = seed_trade_plan(db)
+
+    db.add(
+        Order(
+            trade_plan_id=plan.id,
+            venue="binance_futures_testnet",
+            external_order_id="ord-rej-executedqty",
+            symbol=plan.symbol,
+            side=plan.side,
+            order_type="market",
+            status="rejected",
+            price=50000,
+            quantity=0.1,
+            executed_quantity=0.1,
+            is_testnet=True,
+        )
+    )
+    db.add(
+        Position(
+            trade_plan_id=plan.id,
+            symbol=plan.symbol,
+            side=plan.side,
+            quantity=0.1,
+            entry_price=50000,
+            mark_price=50000,
+            unrealized_pnl=0,
+            leverage=5,
+            status="open",
+            is_testnet=True,
+        )
+    )
+    db.commit()
+
+    report = ExecutionStateMachineService(db).reconcile_trade_plan(plan.id)
+
+    assert report.healthy is False
+    assert report.filled_order_count == 0
+    assert any(event.event_type == "missing_filled_order" for event in report.drift_events)
+    assert any(event.event_type == "executed_with_rejected_orders" for event in report.drift_events)
+
+
+
 def test_reconcile_detects_rejected_order_on_executed_plan():
     db = build_db()
     plan = seed_trade_plan(db)

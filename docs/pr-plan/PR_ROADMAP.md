@@ -673,7 +673,7 @@ Desbloquear la primera ventana útil de shadow run testnet en Synology corrigien
 - estado real posterior: 3 ejecuciones `testnet_executed` iniciales (`BTCUSDT`, `ETHUSDT`, `SOLUSDT`)
 
 ### PR-43 — Normalización de fills testnet y reconciliación
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Corregir el falso drift crítico cuando Binance Testnet devuelve órdenes con `status=new` pero `executedQty > 0`, de modo que la persistencia y la reconciliación reflejen fills reales.
@@ -682,6 +682,17 @@ Corregir el falso drift crítico cuando Binance Testnet devuelve órdenes con `s
 - normalización de estado en `BinanceTestnetTradingService`
 - reconciliación robusta basada también en `executed_quantity`
 - tests para órdenes `NEW` con ejecución efectiva
+- mergeado en `a85c305`
+
+### PR-44 — Guard de reconciliación para órdenes rechazadas históricas
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Evitar que la reconciliación clasifique como fill órdenes rechazadas heredadas de versiones previas que pudieron quedar con `executed_quantity > 0` por un bug histórico.
+
+**Entregables**
+- exclusión explícita de estados terminales de fallo en `filled_orders`
+- test focal para orden `rejected` con `executed_quantity > 0`
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

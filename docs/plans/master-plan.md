@@ -62,9 +62,9 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Entrega: validación CI de links Markdown locales + gate auditable de shadow run para readiness testnet con artifacts JSON/Markdown.
 
 ### Etapa J — Activación operativa de testnet
-- PR-42 a PR-43.
+- PR-42 a PR-44.
 - Estado actual: en progreso.
-- Entrega: primeras ejecuciones testnet reales + normalización/reconciliación correcta de fills devueltos como `new` por Binance Testnet.
+- Entrega: primeras ejecuciones testnet reales + normalización de fills + reconciliación robusta frente a órdenes históricas rechazadas.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.
