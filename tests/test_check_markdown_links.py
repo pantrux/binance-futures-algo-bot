@@ -35,3 +35,15 @@ def test_validate_markdown_file_accepts_existing_targets() -> None:
 
     assert links_checked == 2
     assert issues == []
+
+
+
+def test_validate_markdown_file_counts_unresolvable_targets() -> None:
+    source = FIXTURE_ROOT / "unresolvable.md"
+
+    links_checked, issues = validate_markdown_file(source)
+
+    assert links_checked == 1
+    assert len(issues) == 1
+    assert issues[0].href == "../../../../outside.md"
+    assert issues[0].reason == "no se pudo resolver dentro del repo"

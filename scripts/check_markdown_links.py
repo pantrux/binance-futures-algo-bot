@@ -150,11 +150,11 @@ def validate_markdown_file(path: Path) -> tuple[int, List[LinkIssue]]:
             continue
 
         rel_path, _ = resolve_repo_relative_path(path, href)
+        links_checked += 1
         if not rel_path:
             issues.append(LinkIssue(path, occurrence.line_number, href, "no se pudo resolver dentro del repo"))
             continue
 
-        links_checked += 1
         resolved_path = REPO_ROOT / rel_path
         if not resolved_path.exists():
             issues.append(LinkIssue(path, occurrence.line_number, href, f"destino inexistente: {rel_path}"))

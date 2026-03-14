@@ -13,14 +13,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Validar links Markdown del repo
-        run: python scripts/check_markdown_links.py
-      - name: Tests del validador de links
+      - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest==8.4.1
-          pytest -q tests/test_check_markdown_links.py tests/test_sync_outline_docs.py
+      - name: Validar links Markdown del repo
+        run: python scripts/check_markdown_links.py
+      - name: Tests del validador de links
+        run: pytest -q tests/test_check_markdown_links.py tests/test_sync_outline_docs.py
 
   api-tests:
     runs-on: ubuntu-latest
