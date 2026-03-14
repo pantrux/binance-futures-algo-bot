@@ -46,6 +46,7 @@
 - artifact JSON
 - checksum / timestamp
 - validación humana breve
+- resultado (`OK` / `WARN` / `FAIL`)
 
 ### Drill 3 — Rollback dry-run
 
@@ -78,6 +79,7 @@
 - resumen de diferencias observadas
 - clasificación elegida y justificación
 - decisión operativa resultante
+- resultado (`OK` / `WARN` / `FAIL`)
 
 ## Paquete de evidencia obligatorio
 
@@ -122,9 +124,11 @@ Cada cutover o ensayo debe dejar un paquete mínimo con:
 
 ## Criterio de aprobación del ensayo
 
+Para esta fase, **todos los drills del catálogo se consideran críticos** hasta acumular historia operativa real.
+
 Un ensayo queda **aprobado** solo si:
 
-- no hay `FAIL` en drills críticos,
+- no hay `FAIL` en ningún drill crítico,
 - los tiempos objetivo se cumplen,
 - existe evidencia Markdown + JSON,
 - y cualquier `WARN` tiene mitigación explícita y fecha de seguimiento.
