@@ -34,7 +34,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 7 — Riesgo cuantitativo operativo | 🔵 Planificada | 0% | PR-25..PR-28 | Motor de decisión de riesgo listo para testnet serio |
 | Fase 8 — Ejecución exchange robusta | 🟡 En progreso | 75% | PR-29..PR-32 | Router testnet + reconciliación + paridad paper/testnet + reporting operativo |
 | Fase 9 — Go-live readiness | ✅ Completada | 100% | PR-33..PR-35 | Validación cuantitativa, gates formales de transición y cutover controlado |
-| Fase 10 — Ensayos operativos de cutover | 🟡 En progreso | 80% | PR-36..PR-38 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
+| Fase 10 — Ensayos operativos de cutover | 🟡 En progreso | 80% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 
 ---
 

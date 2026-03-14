@@ -608,7 +608,7 @@ Materializar el contrato documental de PR-36 en templates reutilizables para la 
 
 ---
 
-### PR-38 — Links navegables para documentación sincronizada en Outline
+### PR-39 — Links navegables para documentación sincronizada en Outline
 **Estado:** 🟡 En progreso
 
 **Objetivo**
