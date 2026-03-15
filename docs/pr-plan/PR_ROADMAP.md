@@ -82,7 +82,12 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-57 | Alinear docs del gate con evidencia del command center | ✅ Mergeado | runbook + checklist + ADR-040 actualizados para exigir/referenciar el bloque `command_center` |
 | PR-58 | Persistir y backfillear precios reales desde Binance | ✅ Mergeado | usar `userTrades` como fuente de fill real y corregir órdenes/posiciones testnet ya abiertas |
 | PR-59 | Bloquear ejecución testnet desde señales demo | ✅ Mergeado | impedir que `source=demo` dispare órdenes reales en Binance Testnet |
+<<<<<<< HEAD
 | PR-60 | Auto-ingestar mercado antes de caer a demo | 🟡 En progreso | si faltan candles/snapshot, el worker intenta `POST /market/ingest/{symbol}` y reintenta el setup market-driven |
+=======
+| PR-60 | Auto-ingestar mercado antes de caer a demo | ✅ Mergeado | si faltan candles/snapshot, el worker intenta `POST /market/ingest/{symbol}` y reintenta el setup market-driven |
+| PR-61 | Normalizar cantidad testnet para Binance | 🟡 En progreso | serialización limpia de quantity para evitar `400 Bad Request` por artefactos float |
+>>>>>>> 94f2e36 (fix: normalize testnet order quantities for binance)
 
 ## Secuencia de PRs actualizada
 
@@ -903,7 +908,11 @@ Evitar que el worker ejecute órdenes reales en Binance Testnet cuando el setup 
 - mergeado en `ea19847`
 
 ### PR-60 — Auto-ingestar mercado antes de caer a demo
+<<<<<<< HEAD
 **Estado:** 🟡 En progreso
+=======
+**Estado:** ✅ Mergeado
+>>>>>>> 94f2e36 (fix: normalize testnet order quantities for binance)
 
 **Objetivo**
 Atacar la raíz de `snapshot_incompleto` en Synology: si faltan candles/snapshot en la DB, el worker debe intentar ingestar mercado y reintentar el setup market-driven antes de caer al fallback demo.
@@ -912,7 +921,23 @@ Atacar la raíz de `snapshot_incompleto` en Synology: si faltan candles/snapshot
 - `TradingBotApiClient.ingest_market()`
 - `HybridSignalService` reintenta tras `POST /market/ingest/{symbol}` cuando faltan snapshot/candles o el snapshot viene incompleto
 - tests cubren recuperación por ingesta para `market_snapshot_missing` y `snapshot_incompleto`
+<<<<<<< HEAD
 - validación en NAS: tablas `market_candles` / `market_snapshots` dejan de estar vacías y el worker puede generar setups `source=market`
+=======
+- validación en NAS: logs del worker muestran nuevas corridas `source="market"`, `reason="ok"` para BTC/ETH/SOL tras auto-ingesta
+- mergeado en `3d2b5a1`
+
+### PR-61 — Normalizar cantidad testnet para Binance
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Eliminar rechazos `400 Bad Request` por serialización sucia de cantidades (`0.8100000000000001`, `18.0300000000000011`) al enviar órdenes market a Binance Testnet.
+
+**Entregables**
+- serialización de quantity con precisión estable y sin artefactos float
+- tests para `0.81` / `18.03`
+- validación en NAS reintentando ETH/SOL sin rechazo por precisión
+>>>>>>> 94f2e36 (fix: normalize testnet order quantities for binance)
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
