@@ -11,3 +11,20 @@ def test_serialize_quantity_trims_float_artifacts_for_sol_like_size():
 
 def test_serialize_quantity_preserves_reasonable_precision_without_trailing_zeros():
     assert BinanceFuturesClient._serialize_quantity(0.0015) == "0.0015"
+
+
+def test_serialize_quantity_formats_exact_integer_without_decimal_suffix():
+    assert BinanceFuturesClient._serialize_quantity(2.0) == "2"
+
+
+def test_serialize_quantity_trims_trailing_zero_fraction():
+    assert BinanceFuturesClient._serialize_quantity(0.100) == "0.1"
+
+
+def test_serialize_quantity_rejects_zero():
+    try:
+        BinanceFuturesClient._serialize_quantity(0.0)
+    except ValueError as exc:
+        assert "mayor a cero" in str(exc)
+    else:
+        raise AssertionError("_serialize_quantity debía rechazar cero")

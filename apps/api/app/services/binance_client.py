@@ -159,8 +159,10 @@ class BinanceFuturesClient:
 
     @staticmethod
     def _serialize_quantity(quantity: float) -> str:
+        if quantity <= 0:
+            raise ValueError("quantity debe ser mayor a cero para serialización")
         quantity_str = f"{quantity:.12f}".rstrip("0").rstrip(".")
-        if not quantity_str:
+        if not quantity_str or quantity_str == "0":
             raise ValueError("quantity inválida para serialización")
         return quantity_str
 
