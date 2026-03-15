@@ -112,9 +112,11 @@ import sys
 from pathlib import Path
 
 payload = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
-ops = payload.get('operation_snapshots') or []
+ops = payload.get('operation_snapshots')
 assert isinstance(ops, list), 'operation_snapshots no es lista'
-if ops:
+if not ops:
+    print('WARN_EMPTY_OPERATION_SNAPSHOTS')
+else:
     op = ops[0]
     required = [
         'order_history',
@@ -140,7 +142,6 @@ echo "WEB_BASE_URL=${WEB_BASE_URL}"
 check_status "API /health" "${API_BASE_URL}/health" 200
 check_status "API /dashboard/summary" "${API_BASE_URL}/dashboard/summary" 200
 check_status "API /trade-plans" "${API_BASE_URL}/trade-plans" 200
-check_status "API /dashboard/command-center" "${API_BASE_URL}/dashboard/command-center" 200
 check_command_center_json "API /dashboard/command-center payload" "${API_BASE_URL}/dashboard/command-center"
 if [[ "${STRICT_EXTERNAL_CHECKS}" == "true" ]]; then
   check_status "API /integrations/binance/testnet/ping" "${API_BASE_URL}/integrations/binance/testnet/ping" 200
