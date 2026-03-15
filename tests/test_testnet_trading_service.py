@@ -431,6 +431,20 @@ def test_confirm_exchange_order_does_not_degrade_existing_avg_price_with_zero_fr
 
 
 
+def test_prefer_refresh_value_does_not_swap_unknown_status_with_other_unknown_status():
+    db = build_db()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClient(),
+        execution_enabled=True,
+    )
+
+    should_replace = service._prefer_refresh_value("status", "PENDING_CANCEL", "SOME_FUTURE_STATUS")
+
+    assert should_replace is False
+
+
+
 def test_get_order_requires_at_least_one_exchange_identifier():
     client = BinanceFuturesClient()
     client.api_key = "test-key"

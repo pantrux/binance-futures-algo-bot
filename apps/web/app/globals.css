@@ -117,6 +117,7 @@ th { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-
 .detail-timeline-item { display:grid; grid-template-columns: auto 1fr; gap: 10px; align-items:start; }
 .detail-timeline-item p { margin: 4px 0; color: var(--muted); }
 .timeline-meta { color: var(--muted); opacity: 0.9; }
+.muted { color: var(--muted); }
 .positive { color: var(--accent); }
 .negative { color: var(--danger); }
 

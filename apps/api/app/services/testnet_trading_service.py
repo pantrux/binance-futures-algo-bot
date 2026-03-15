@@ -70,6 +70,10 @@ class BinanceTestnetTradingService:
                 "rejected": 2,
                 "filled": 3,
             }
+            original_known = original_status in rank
+            refreshed_known = refreshed_status in rank
+            if not original_known and not refreshed_known:
+                return False
             unknown_rank = -1
             return rank.get(refreshed_status, unknown_rank) >= rank.get(original_status, unknown_rank)
 
