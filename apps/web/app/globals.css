@@ -92,6 +92,10 @@ th { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-
 .risk-item p { margin: 0 0 8px; }
 .drill-link { color: var(--text); text-decoration: none; border-bottom: 1px dashed rgba(158, 180, 204, 0.45); }
 .drill-link:hover { color: var(--accent); border-bottom-color: rgba(77,212,172,0.5); }
+.technical-scope-note { margin-bottom: 18px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 16px; background: rgba(16, 28, 44, 0.52); }
+.technical-scope-note strong { display:block; margin-bottom: 8px; }
+.technical-scope-note p { margin: 0; color: var(--muted); line-height: 1.6; }
+.technical-scope-note code { color: var(--text); }
 .detail-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .detail-card { padding: 20px; border: 1px solid var(--border); border-radius: 18px; background: rgba(22, 36, 54, 0.62); }
 .detail-card-header { display:flex; justify-content:space-between; gap: 16px; align-items:flex-start; margin-bottom: 16px; }

@@ -433,9 +433,8 @@ export default async function HomePage() {
                     </ul>
                     <div className="thesis-box">
                       <strong>Tesis persistida</strong>
-                      <p>{operation.thesis}</p>
+                      <p>{operation.thesis || 'Sin tesis persistida'}</p>
                     </div>
-                    <p className="detail-note">Nota: hoy el sistema persiste scores + tesis + régimen/timeframe. Aún no guarda snapshots crudos por trade plan de RSI/MACD/EMA/patrones de velas.</p>
                   </section>
                 </div>
                 <section className="detail-box detail-box-timeline">
@@ -580,6 +579,29 @@ export default async function HomePage() {
               <article key={event.id} className="risk-item">
                 <div className="risk-item-top">
                   <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
+                  <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
+                </div>
+                <p>{event.message}</p>
+                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}
+              <p>{event.message}</p>
+                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}
+      <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
                   <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
                 </div>
                 <p>{event.message}</p>
