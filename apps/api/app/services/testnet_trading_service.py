@@ -70,7 +70,8 @@ class BinanceTestnetTradingService:
                 "rejected": 2,
                 "filled": 3,
             }
-            return rank.get(refreshed_status, 1) >= rank.get(original_status, 1)
+            unknown_rank = -1
+            return rank.get(refreshed_status, unknown_rank) >= rank.get(original_status, unknown_rank)
 
         try:
             refreshed_value = float(refreshed)
