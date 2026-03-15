@@ -13,12 +13,19 @@ class FakeApiClient:
         market_regime: dict | None = None,
         error: Exception | None = None,
         regime_error: Exception | None = None,
+        snapshot_after_ingest: dict | None = None,
+        market_after_ingest: dict | None = None,
+        market_regime_after_ingest: dict | None = None,
     ) -> None:
         self._snapshot = snapshot
         self._market = market
         self._market_regime = market_regime
         self._error = error
         self._regime_error = regime_error
+        self._snapshot_after_ingest = snapshot_after_ingest
+        self._market_after_ingest = market_after_ingest
+        self._market_regime_after_ingest = market_regime_after_ingest
+        self.ingest_calls = 0
 
     def _raise_error(self) -> None:
         if self._error:
@@ -42,6 +49,19 @@ class FakeApiClient:
         assert timeframe
         assert limit >= 0
         return None if self._market_regime is None else dict(self._market_regime)
+
+    async def ingest_market(self, symbol: str, timeframe: str = "15m", limit: int = 200) -> dict | None:
+        assert symbol
+        assert timeframe
+        assert limit >= 0
+        self.ingest_calls += 1
+        if self._snapshot_after_ingest is not None:
+            self._snapshot = dict(self._snapshot_after_ingest)
+        if self._market_after_ingest is not None:
+            self._market = dict(self._market_after_ingest)
+        if self._market_regime_after_ingest is not None:
+            self._market_regime = dict(self._market_regime_after_ingest)
+        return {"ok": True}
 
 
 def test_hybrid_uses_market_when_snapshot_is_usable():
@@ -160,7 +180,7 @@ def test_hybrid_falls_back_to_demo_on_api_error():
     assert levels == demo_levels
 
 
-def test_hybrid_falls_back_when_market_snapshot_missing():
+def test_hybrid_retries_ingest_when_market_snapshot_missing():
     snapshot = {
         "symbol": "BTCUSDT",
         "timeframe": "15m",
@@ -173,16 +193,18 @@ def test_hybrid_falls_back_when_market_snapshot_missing():
         "rsi_14": 55.0,
         "momentum_10": 2.0,
     }
-    service = HybridSignalService(api_client=FakeApiClient(snapshot=snapshot, market=None), demo_service=DemoSignalService())
+    market = {"mark_price": 50000.0, "volume_24h": 1_000_000.0}
+    api_client = FakeApiClient(snapshot=None, market=None, snapshot_after_ingest=snapshot, market_after_ingest=market)
+    service = HybridSignalService(api_client=api_client, demo_service=DemoSignalService())
 
     _, _, _, _, meta = asyncio.run(service.build_signal_pack("BTCUSDT"))
 
-    assert meta.source == "demo"
-    assert meta.reason == "market_snapshot_missing"
+    assert meta.source == "market"
+    assert api_client.ingest_calls == 1
 
 
-def test_hybrid_falls_back_when_snapshot_has_unknown_atr_pct():
-    snapshot = {
+def test_hybrid_retries_ingest_when_snapshot_is_incomplete():
+    bad_snapshot = {
         "symbol": "BTCUSDT",
         "timeframe": "15m",
         "last_candle_close_ms": 123,
@@ -194,13 +216,23 @@ def test_hybrid_falls_back_when_snapshot_has_unknown_atr_pct():
         "rsi_14": 55.0,
         "momentum_10": 2.0,
     }
+    good_snapshot = {
+        **bad_snapshot,
+        "atr_pct": 1.25,
+    }
     market = {"mark_price": 50000.0, "volume_24h": 1_000_000.0}
-    service = HybridSignalService(api_client=FakeApiClient(snapshot=snapshot, market=market), demo_service=DemoSignalService())
+    api_client = FakeApiClient(
+        snapshot=bad_snapshot,
+        market=market,
+        snapshot_after_ingest=good_snapshot,
+        market_after_ingest=market,
+    )
+    service = HybridSignalService(api_client=api_client, demo_service=DemoSignalService())
 
     _, _, _, _, meta = asyncio.run(service.build_signal_pack("BTCUSDT"))
 
-    assert meta.source == "demo"
-    assert meta.reason == "snapshot_incompleto"
+    assert meta.source == "market"
+    assert api_client.ingest_calls == 1
 
 
 def test_hybrid_uses_market_when_optional_fields_are_unknown():

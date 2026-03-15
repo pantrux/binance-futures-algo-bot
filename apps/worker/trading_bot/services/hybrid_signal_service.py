@@ -34,37 +34,51 @@ class HybridSignalService:
         self, symbol: str
     ) -> tuple[SignalPack, MarketContext, str, dict[str, float], HybridSignalResult]:
         try:
-            async with asyncio.TaskGroup() as task_group:
-                snapshot_task = task_group.create_task(
-                    self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
-                )
-                market_task = task_group.create_task(self.api_client.get_market_snapshot(symbol))
-                # `regime_task` siempre completa sin excepción porque `_safe_get_market_regime_snapshot`
-                # absorbe cualquier error y retorna `None`; así no puede tumbar este TaskGroup.
-                regime_task = task_group.create_task(self._safe_get_market_regime_snapshot(symbol))
+            return await self._build_signal_pack_from_market(symbol)
+        except Exception as first_exc:  # noqa: BLE001
+            if self._should_attempt_market_ingest(first_exc):
+                try:
+                    await self.api_client.ingest_market(symbol, timeframe=self.timeframe, limit=self.limit)
+                    return await self._build_signal_pack_from_market(symbol)
+                except Exception as second_exc:  # noqa: BLE001
+                    exc = second_exc
+                else:
+                    exc = first_exc
+            else:
+                exc = first_exc
 
-            snapshot = snapshot_task.result()
-            market = market_task.result()
-            market_regime_snapshot = regime_task.result()
-            if not self._is_snapshot_usable(snapshot):
-                raise ValueError("snapshot_incompleto")
-            if market is None:
-                raise ValueError("market_snapshot_missing")
-
-            pack, context, thesis, levels, side = self._build_from_market(
-                symbol=symbol,
-                snapshot=snapshot,
-                market=market,
-                market_regime_snapshot=market_regime_snapshot,
-            )
-            return pack, context, thesis, levels, HybridSignalResult(source="market", reason="ok", side=side)
-        except Exception as exc:  # noqa: BLE001
             pack, context, thesis, levels = self.demo_service.build_signal_pack(symbol)
             # Los presets demo actuales solo representan escenarios alcistas, por diseño.
             side = "long"
             return pack, context, thesis, levels, HybridSignalResult(
                 source="demo", reason=self._exception_reason(exc), side=side
             )
+
+    async def _build_signal_pack_from_market(
+        self, symbol: str
+    ) -> tuple[SignalPack, MarketContext, str, dict[str, float], HybridSignalResult]:
+        async with asyncio.TaskGroup() as task_group:
+            snapshot_task = task_group.create_task(
+                self.api_client.get_signal_snapshot(symbol, timeframe=self.timeframe, limit=self.limit)
+            )
+            market_task = task_group.create_task(self.api_client.get_market_snapshot(symbol))
+            regime_task = task_group.create_task(self._safe_get_market_regime_snapshot(symbol))
+
+        snapshot = snapshot_task.result()
+        market = market_task.result()
+        market_regime_snapshot = regime_task.result()
+        if not self._is_snapshot_usable(snapshot):
+            raise ValueError("snapshot_incompleto")
+        if market is None:
+            raise ValueError("market_snapshot_missing")
+
+        pack, context, thesis, levels, side = self._build_from_market(
+            symbol=symbol,
+            snapshot=snapshot,
+            market=market,
+            market_regime_snapshot=market_regime_snapshot,
+        )
+        return pack, context, thesis, levels, HybridSignalResult(source="market", reason="ok", side=side)
 
 
     @staticmethod
@@ -73,6 +87,11 @@ class HybridSignalService:
             first = exc.exceptions[0]
             return str(first)
         return str(exc)
+
+    @staticmethod
+    def _should_attempt_market_ingest(exc: Exception) -> bool:
+        reason = HybridSignalService._exception_reason(exc)
+        return reason in {"snapshot_incompleto", "market_snapshot_missing", "market_snapshot_missing_price"}
 
     async def _safe_get_market_regime_snapshot(self, symbol: str) -> dict | None:
         try:

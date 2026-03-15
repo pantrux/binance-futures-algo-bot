@@ -81,7 +81,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-56 | Evidencia operativa del command center para shadow run gate | ✅ Mergeado | artifact JSON/Markdown del gate incorpora snapshot operacional del command center |
 | PR-57 | Alinear docs del gate con evidencia del command center | ✅ Mergeado | runbook + checklist + ADR-040 actualizados para exigir/referenciar el bloque `command_center` |
 | PR-58 | Persistir y backfillear precios reales desde Binance | ✅ Mergeado | usar `userTrades` como fuente de fill real y corregir órdenes/posiciones testnet ya abiertas |
-| PR-59 | Bloquear ejecución testnet desde señales demo | 🟡 En progreso | impedir que `source=demo` dispare órdenes reales en Binance Testnet |
+| PR-59 | Bloquear ejecución testnet desde señales demo | ✅ Mergeado | impedir que `source=demo` dispare órdenes reales en Binance Testnet |
+| PR-60 | Auto-ingestar mercado antes de caer a demo | 🟡 En progreso | si faltan candles/snapshot, el worker intenta `POST /market/ingest/{symbol}` y reintenta el setup market-driven |
 
 ## Secuencia de PRs actualizada
 
@@ -889,7 +890,7 @@ Eliminar los precios ficticios del command center usando la fuente correcta de f
 - mergeado en `db51dbb`
 
 ### PR-59 — Bloquear ejecución testnet desde señales demo
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Evitar que el worker ejecute órdenes reales en Binance Testnet cuando el setup provenga del fallback demo (`source=demo`, típicamente por `snapshot_incompleto`).
@@ -899,6 +900,19 @@ Evitar que el worker ejecute órdenes reales en Binance Testnet cuando el setup 
 - opcionalmente cae a paper trading si `TESTNET_FALLBACK_TO_PAPER=true`
 - tests cubren bloqueo de ejecución real y fallback a paper
 - despliegue del worker actualizado en Synology para cortar nuevas ejecuciones distorsionadas
+- mergeado en `ea19847`
+
+### PR-60 — Auto-ingestar mercado antes de caer a demo
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Atacar la raíz de `snapshot_incompleto` en Synology: si faltan candles/snapshot en la DB, el worker debe intentar ingestar mercado y reintentar el setup market-driven antes de caer al fallback demo.
+
+**Entregables**
+- `TradingBotApiClient.ingest_market()`
+- `HybridSignalService` reintenta tras `POST /market/ingest/{symbol}` cuando faltan snapshot/candles o el snapshot viene incompleto
+- tests cubren recuperación por ingesta para `market_snapshot_missing` y `snapshot_incompleto`
+- validación en NAS: tablas `market_candles` / `market_snapshots` dejan de estar vacías y el worker puede generar setups `source=market`
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
