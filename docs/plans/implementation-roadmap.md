@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-59` ya quedó mergeado y cerró el guardrail para que señales demo no disparen órdenes reales en Testnet. El siguiente foco ya es la causa raíz operativa: en Synology no hay candles/snapshots de mercado, así que el worker cae a demo por falta de insumos. Ahora toca auto-ingestar mercado antes del fallback.
-- **PR activo:** `PR-60` — auto-ingestar mercado antes de caer a demo.
-- **Siguiente carril sugerido:** cerrar `PR-60` y validar en Synology que futuras corridas generen setups `source=market` con tablas `market_candles` / `market_snapshots` pobladas.
+- **Estado global actual:** `PR-59` y `PR-60` ya quedaron desplegados/mergeados, con dos efectos reales en Synology: (1) señales `demo` ya no disparan órdenes reales en Testnet y (2) el worker puede auto-ingestar mercado cuando la DB viene vacía, evitando `snapshot_incompleto`. El foco inmediato pasa a cerrar los `400 Bad Request` residuales de Binance por serialización sucia de cantidades.
+- **PR activo:** `PR-61` — normalizar cantidad testnet para Binance.
+- **Siguiente carril sugerido:** cerrar `PR-61` y validar en Synology que ETH/SOL ya no fallen con `testnet_api_error` por precisión de `quantity`.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -37,7 +37,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
-| Fase 13 — Profundización del command center | 🟡 En progreso | 97% | PR-53..PR-60 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo y auto-ingesta de mercado en Synology |
+| Fase 13 — Profundización del command center | 🟡 En progreso | 99% | PR-53..PR-61 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización de quantity hacia Binance |
 
 ---
 
@@ -191,10 +191,16 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - validar con tests + despliegue del worker en Synology
 - mergeado en `ea19847`
 
-### PR-60 — Auto-ingestar mercado antes de caer a demo 🟡
+### PR-60 — Auto-ingestar mercado antes de caer a demo ✅
 - si `/signals` o `/market/snapshot` no tienen insumos suficientes, el worker intenta `POST /market/ingest/{symbol}`
 - tras la ingesta, reintenta el setup market-driven antes de declarar `snapshot_incompleto`
-- validar con tests + corrida real en Synology sobre tablas vacías
+- validado en Synology: nuevas corridas del worker muestran `source="market"`, `reason="ok"` para BTC/ETH/SOL
+- mergeado en `3d2b5a1`
+
+### PR-61 — Normalizar cantidad testnet para Binance 🟡
+- serializar `quantity` sin artefactos float (`0.81`, `18.03`, no `0.8100000000000001` / `18.0300000000000011`)
+- cubrir con tests la serialización limpia de cantidades
+- validar en Synology que ETH/SOL dejen de fallar con `400 Bad Request`
 
 ---
 

@@ -157,6 +157,15 @@ class BinanceFuturesClient:
             payload = response.json()
         return payload if isinstance(payload, list) else []
 
+    @staticmethod
+    def _serialize_quantity(quantity: float) -> str:
+        if quantity <= 0:
+            raise ValueError("quantity debe ser mayor a cero para serialización")
+        quantity_str = f"{quantity:.12f}".rstrip("0").rstrip(".")
+        if not quantity_str or quantity_str == "0":
+            raise ValueError("quantity inválida para serialización")
+        return quantity_str
+
     async def place_market_order(
         self,
         *,
@@ -169,9 +178,7 @@ class BinanceFuturesClient:
         if quantity <= 0:
             raise ValueError("quantity debe ser mayor a cero")
 
-        quantity_str = f"{quantity:.16f}".rstrip("0").rstrip(".")
-        if not quantity_str:
-            raise ValueError("quantity inválida para serialización")
+        quantity_str = self._serialize_quantity(quantity)
 
         params: dict[str, str] = {
             "symbol": symbol,
