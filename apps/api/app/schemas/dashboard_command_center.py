@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -109,12 +110,16 @@ class DashboardCommandCenterOperationSnapshot(BaseModel):
     created_at: datetime
 
 
+TimelineEntityKind = Literal["trade_plan", "order", "position", "risk_event", "reconciliation"]
+TimelineTone = Literal["ok", "warn", "danger", "neutral"]
+
+
 class DashboardCommandCenterTimelineEntry(BaseModel):
     trade_plan_id: int | None = None
     symbol: str | None = None
-    entity_kind: str
+    entity_kind: TimelineEntityKind
     event_kind: str
-    tone: str
+    tone: TimelineTone
     title: str
     detail: str
     occurred_at: datetime

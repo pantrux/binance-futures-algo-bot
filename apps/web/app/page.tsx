@@ -178,6 +178,24 @@ function statusTone(status: string) {
   return "neutral";
 }
 
+function toneClassName(tone: string) {
+  if (["ok", "warn", "danger", "neutral"].includes(tone)) return tone;
+  return "neutral";
+}
+
+function timelineEntityLabel(entityKind: string) {
+  switch (entityKind) {
+    case "trade_plan":
+      return "trade plan";
+    case "risk_event":
+      return "risk";
+    case "reconciliation":
+      return "reconcile";
+    default:
+      return entityKind;
+  }
+}
+
 function reconcileTone(healthy: boolean, severity: string | null) {
   if (healthy) return "ok";
   if (severity === "critical") return "danger";
@@ -351,7 +369,7 @@ export default async function HomePage() {
             ) : commandCenter.timeline.map((item, index) => (
               <article key={`${item.entity_kind}-${item.trade_plan_id ?? 'na'}-${item.event_kind}-${index}`} className="risk-item timeline-item">
                 <div className="risk-item-top">
-                  <span className={`status-pill ${statusTone(item.tone)}`}>{item.entity_kind}</span>
+                  <span className={`status-pill ${toneClassName(item.tone)}`}>{timelineEntityLabel(item.entity_kind)}</span>
                   <span className="risk-meta">{item.event_kind} · {formatDate(item.occurred_at)}</span>
                 </div>
                 <p>{item.title}</p>
