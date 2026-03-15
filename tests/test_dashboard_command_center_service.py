@@ -104,6 +104,9 @@ def test_dashboard_command_center_builds_operational_snapshot():
     assert payload.operation_snapshots[1].latest_order_status == "filled"
     assert payload.operation_snapshots[1].latest_position_status == "open"
     assert payload.operation_snapshots[1].reconciliation_healthy is True
+    assert payload.operation_snapshots[1].technical_score == 80
+    assert payload.operation_snapshots[1].timeframe == "15m"
+    assert payload.operation_snapshots[1].thesis == "dashboard command center"
     assert payload.operation_snapshots[0].latest_risk_event_type == "shadow_run_check"
     assert payload.timeline[0].trade_plan_id in {approved.id, testnet.id}
     assert {item.entity_kind for item in payload.timeline} >= {"trade_plan", "order", "position", "risk_event"}

@@ -739,7 +739,7 @@ Mostrar cronológicamente en el centro de mando el flujo de cada operación (cre
 - mergeado en `722b49f` y desplegado en Synology
 
 ### PR-48 — Drill-down por trade plan en el centro de mando
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Permitir leer cada operación reciente como una ficha autosuficiente con setup, ejecución, salud y timeline asociada, evitando reconstruir contexto manualmente desde varias tablas.
@@ -749,6 +749,19 @@ Permitir leer cada operación reciente como una ficha autosuficiente con setup, 
 - enlaces desde radar/timeline al bloque detallado del trade plan
 - timeline asociada por operación dentro de cada ficha
 - build frontend verde
+- mergeado en `8d3d9d5` y desplegado en Synology
+
+### PR-50 — Justificación técnica por orden en el centro de mando
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Mostrar para cada operación la justificación técnica persistida (scores, régimen, timeframe y tesis) y separar explícitamente el dato que sí existe hoy del dato que aún no se persiste (snapshots crudos de indicadores/patrones).
+
+**Entregables**
+- scores `technical/fundamental/sentiment/confidence/aggregate` visibles en la ficha del trade plan
+- `thesis` visible en el dashboard
+- aclaración explícita de limitación actual sobre RSI/MACD/EMA/patrones no persistidos por trade plan
+- tests de servicio/ruta + build frontend verde
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

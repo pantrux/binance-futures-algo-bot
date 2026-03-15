@@ -81,8 +81,14 @@ class DashboardCommandCenterOperationSnapshot(BaseModel):
     symbol: str
     side: str
     status: str
+    timeframe: str
     market_regime: str
+    technical_score: float
+    fundamental_score: float
+    sentiment_score: float
+    confidence_score: float
     aggregate_score: float
+    thesis: str
     entry_price: float
     stop_loss: float
     take_profit: float

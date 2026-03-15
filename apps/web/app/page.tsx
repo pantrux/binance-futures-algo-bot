@@ -417,19 +417,24 @@ export default async function HomePage() {
                       <li><span>Posición</span><strong>{operation.latest_position_id ? `#${operation.latest_position_id}` : '—'}</strong></li>
                       <li><span>Estado posición</span><strong>{operation.latest_position_status ?? '—'}</strong></li>
                       <li><span>Qty posición</span><strong>{formatNumber(operation.latest_position_quantity, 3)}</strong></li>
-                      <li><span>Entry / Mark</span><strong>{formatNumber(operation.latest_position_entry_price, 2)} / {formatNumber(operation.latest_position_mark_price, 2)}</strong></li>
+                      <li><span>Entry real</span><strong>{formatNumber(actualEntry, 2)}</strong></li>
+                      <li><span>Δ vs plan</span><strong className={(entryDiffPct ?? 0) >= 0 ? 'positive' : 'negative'}>{formatPercent(entryDiffPct, 3)}</strong></li>
+                      <li><span>Mark</span><strong>{formatNumber(operation.latest_position_mark_price, 2)}</strong></li>
                       <li><span>PnL</span><strong className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? 'positive' : 'negative'}>{formatNumber(operation.latest_position_unrealized_pnl, 2)}</strong></li>
                     </ul>
                   </section>
                   <section className="detail-box">
-                    <h5>Salud operativa</h5>
+                    <h5>Justificación técnica</h5>
                     <ul className="detail-list">
-                      <li><span>Reconcile</span><strong>{operation.reconciliation_healthy ? 'healthy' : operation.reconciliation_primary_event ?? 'drift'}</strong></li>
-                      <li><span>Drift</span><strong>{operation.reconciliation_primary_message ?? 'Sin drift detectado'}</strong></li>
-                      <li><span>Último riesgo</span><strong>{operation.latest_risk_event_type ?? '—'}</strong></li>
-                      <li><span>Severidad</span><strong>{operation.latest_risk_severity ?? '—'}</strong></li>
-                      <li><span>Mensaje</span><strong>{operation.latest_risk_message ?? 'Sin evento reciente'}</strong></li>
+                      <li><span>Technical</span><strong>{formatNumber(operation.technical_score, 2)}</strong></li>
+                      <li><span>Fundamental</span><strong>{formatNumber(operation.fundamental_score, 2)}</strong></li>
+                      <li><span>Sentiment</span><strong>{formatNumber(operation.sentiment_score, 2)}</strong></li>
+                      <li><span>Confidence</span><strong>{formatNumber(operation.confidence_score, 2)}</strong></li>
                     </ul>
+                    <div className="thesis-box">
+                      <strong>Tesis persistida</strong>
+                      <p>{operation.thesis || 'Sin tesis persistida'}</p>
+                    </div>
                   </section>
                 </div>
                 <section className="detail-box detail-box-timeline">
@@ -577,6 +582,39 @@ export default async function HomePage() {
                   <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
                 </div>
                 <p>{event.message}</p>
+                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}
+              <p>{event.message}</p>
+                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}
+      <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
+                  <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
+                </div>
+                <p>{event.message}</p>
+                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}
+              <p>{event.message}</p>
                 <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
               </article>
             ))}
