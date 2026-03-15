@@ -202,10 +202,13 @@ class BinanceTestnetTradingService:
             self.db.commit()
             return {"executed": False, "reason": "testnet_api_error"}
 
-        exchange_price = self._to_float(exchange_order.get("avgPrice"), fallback=0.0)
-        if exchange_price <= 0:
-            exchange_price = trade_plan.entry_price
+        exchange_order = await self._confirm_exchange_order(
+            symbol=trade_plan.symbol,
+            exchange_order=exchange_order,
+            client_order_id=client_order_id,
+        )
 
+        exchange_price = self._extract_fill_price(exchange_order, fallback=trade_plan.entry_price)
         raw_executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
         order_status = self._normalize_order_status(
             exchange_order.get("status"),

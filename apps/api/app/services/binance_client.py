@@ -102,12 +102,27 @@ class BinanceFuturesClient:
         client_order_id: str | None = None,
         recv_window: int = 5000,
     ) -> dict:
-        params = {"symbol": symbol.upper(), "recvWindow": recv_window}
+        self.ensure_credentials()
+
+        params: dict[str, str | int] = {
+            "symbol": symbol.upper(),
+            "recvWindow": str(recv_window),
+            "timestamp": str(int(time.time() * 1000)),
+        }
         if order_id is not None:
             params["orderId"] = order_id
         if client_order_id:
             params["origClientOrderId"] = client_order_id
-        return await self._request("GET", "/fapi/v1/order", signed=True, params=params)
+        params["signature"] = self._sign({k: str(v) for k, v in params.items()})
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(
+                f"{self.base_url}/fapi/v1/order",
+                params=params,
+                headers=self._auth_headers(),
+            )
+            response.raise_for_status()
+            return response.json()
 
     async def place_market_order(
         self,
