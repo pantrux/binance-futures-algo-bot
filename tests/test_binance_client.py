@@ -1,3 +1,7 @@
+import math
+
+import pytest
+
 from apps.api.app.services.binance_client import BinanceFuturesClient
 
 
@@ -22,9 +26,11 @@ def test_serialize_quantity_trims_trailing_zero_fraction():
 
 
 def test_serialize_quantity_rejects_zero():
-    try:
+    with pytest.raises(ValueError, match="mayor a cero"):
         BinanceFuturesClient._serialize_quantity(0.0)
-    except ValueError as exc:
-        assert "mayor a cero" in str(exc)
-    else:
-        raise AssertionError("_serialize_quantity debía rechazar cero")
+
+
+
+def test_serialize_quantity_rejects_nan():
+    with pytest.raises(ValueError, match="mayor a cero"):
+        BinanceFuturesClient._serialize_quantity(math.nan)

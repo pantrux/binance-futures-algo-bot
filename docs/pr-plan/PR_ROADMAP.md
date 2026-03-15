@@ -83,7 +83,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-58 | Persistir y backfillear precios reales desde Binance | ✅ Mergeado | usar `userTrades` como fuente de fill real y corregir órdenes/posiciones testnet ya abiertas |
 | PR-59 | Bloquear ejecución testnet desde señales demo | ✅ Mergeado | impedir que `source=demo` dispare órdenes reales en Binance Testnet |
 | PR-60 | Auto-ingestar mercado antes de caer a demo | ✅ Mergeado | si faltan candles/snapshot, el worker intenta `POST /market/ingest/{symbol}` y reintenta el setup market-driven |
-| PR-61 | Normalizar cantidad testnet para Binance | 🟡 En progreso | serialización limpia de quantity para evitar `400 Bad Request` por artefactos float |
+| PR-61 | Normalizar cantidad testnet para Binance | ✅ Mergeado | serialización limpia de quantity para evitar `400 Bad Request` por artefactos float |
+| PR-62 | Hardening fino del serializer de quantity | 🟡 En progreso | rechazar `NaN` y usar `pytest.raises` en cobertura del cliente Binance |
 
 ## Secuencia de PRs actualizada
 
@@ -917,7 +918,7 @@ Atacar la raíz de `snapshot_incompleto` en Synology: si faltan candles/snapshot
 - mergeado en `3d2b5a1`
 
 ### PR-61 — Normalizar cantidad testnet para Binance
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Eliminar rechazos `400 Bad Request` por serialización sucia de cantidades (`0.8100000000000001`, `18.0300000000000011`) al enviar órdenes market a Binance Testnet.
@@ -926,6 +927,18 @@ Eliminar rechazos `400 Bad Request` por serialización sucia de cantidades (`0.8
 - serialización de quantity con precisión estable y sin artefactos float
 - tests para `0.81` / `18.03`
 - validación en NAS reintentando ETH/SOL sin rechazo por precisión
+- mergeado en `535c108`
+
+### PR-62 — Hardening fino del serializer de quantity
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Cerrar deuda técnica menor del serializer de `quantity`: rechazar explícitamente `NaN` y dejar la cobertura de errores usando `pytest.raises`.
+
+**Entregables**
+- `_serialize_quantity()` rechaza `NaN` / infinitos además de `<= 0`
+- tests usan `pytest.raises`
+- cobertura adicional para `math.nan`
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

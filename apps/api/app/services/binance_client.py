@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import math
 import time
 from urllib.parse import urlencode
 
@@ -159,7 +160,7 @@ class BinanceFuturesClient:
 
     @staticmethod
     def _serialize_quantity(quantity: float) -> str:
-        if quantity <= 0:
+        if not math.isfinite(quantity) or quantity <= 0:
             raise ValueError("quantity debe ser mayor a cero para serialización")
         quantity_str = f"{quantity:.12f}".rstrip("0").rstrip(".")
         if not quantity_str or quantity_str == "0":
