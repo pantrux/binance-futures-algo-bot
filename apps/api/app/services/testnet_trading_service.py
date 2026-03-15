@@ -43,16 +43,40 @@ class BinanceTestnetTradingService:
 
         return fallback
 
-    def _prefer_refresh_value(self, original: object, refreshed: object) -> bool:
+    def _prefer_refresh_value(self, key: str, original: object, refreshed: object) -> bool:
+        """Decide si un campo refrescado debe sobreescribir el valor original.
+
+        Regla general:
+        - Nunca pisar con None/"".
+        - Para valores numéricos: evitar degradar un valor positivo existente con 0.
+        - Para strings no numéricos: ser conservador y evitar downgrades (especialmente en status).
+        """
         if refreshed in (None, ""):
             return False
         if original in (None, ""):
             return True
+
+        if key == "status":
+            original_status = str(original or "").strip().lower()
+            refreshed_status = str(refreshed or "").strip().lower()
+            # Progreso típico de Binance (no exhaustivo pero suficiente para prevenir downgrades obvios)
+            rank = {
+                "pending_new": 0,
+                "new": 0,
+                "partially_filled": 1,
+                "filled": 2,
+                "canceled": 2,
+                "expired": 2,
+                "rejected": 2,
+            }
+            return rank.get(refreshed_status, 1) >= rank.get(original_status, 1)
+
         try:
             refreshed_value = float(refreshed)
             original_value = float(original)
         except (TypeError, ValueError):
-            return True
+            # Si no es numérico (e.g. strings varios), no pisar a menos que el original sea vacío.
+            return False
         if refreshed_value <= 0 < original_value:
             return False
         return True
@@ -69,7 +93,12 @@ class BinanceTestnetTradingService:
         status = str(exchange_order.get("status") or "").strip().lower()
         avg_price = self._to_float(exchange_order.get("avgPrice"), fallback=0.0)
         executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
-        needs_refresh = avg_price <= 0 or executed_qty <= 0 or status in {"new", "pending_new"}
+        terminal_no_fill = status in {"canceled", "expired", "rejected"} and executed_qty <= 0
+        needs_refresh = not terminal_no_fill and (
+            avg_price <= 0
+            or executed_qty <= 0
+            or status in {"new", "pending_new", "partially_filled"}
+        )
         if not needs_refresh or not hasattr(self.binance_client, "get_order"):
             return exchange_order
         try:
@@ -91,7 +120,7 @@ class BinanceTestnetTradingService:
             return exchange_order
         merged = dict(exchange_order)
         for key, value in refreshed.items():
-            if self._prefer_refresh_value(merged.get(key), value):
+            if self._prefer_refresh_value(key, merged.get(key), value):
                 merged[key] = value
         return merged
 
