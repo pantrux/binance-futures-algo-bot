@@ -9,21 +9,75 @@ from urllib import error as url_error
 from urllib import parse, request
 
 
+def fetch_json(url: str, *, headers: dict[str, str] | None = None, timeout: int = 40) -> dict:
+    req = request.Request(url, headers=headers or {})
+    try:
+        with request.urlopen(req, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except url_error.HTTPError as exc:
+        print(f"❌ Error HTTP {exc.code} al consultar {url}: {exc.reason}", file=sys.stderr)
+        raise SystemExit(2) from exc
+    except url_error.URLError as exc:
+        print(f"❌ Error de red al consultar {url}: {exc.reason}", file=sys.stderr)
+        raise SystemExit(2) from exc
+
+
 def fetch_shadow_run_summary(api_base_url: str, metrics_api_key: str, window_days: int) -> dict:
     query = parse.urlencode({"window_days": window_days})
-    req = request.Request(
+    return fetch_json(
         f"{api_base_url.rstrip('/')}/reporting/shadow-run-summary?{query}",
         headers={"x-metrics-key": metrics_api_key},
     )
-    try:
-        with request.urlopen(req, timeout=40) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except url_error.HTTPError as exc:
-        print(f"❌ Error HTTP {exc.code} al consultar shadow-run-summary: {exc.reason}", file=sys.stderr)
-        raise SystemExit(2) from exc
-    except url_error.URLError as exc:
-        print(f"❌ Error de red al consultar shadow-run-summary: {exc.reason}", file=sys.stderr)
-        raise SystemExit(2) from exc
+
+
+def fetch_command_center_snapshot(api_base_url: str, *, limit: int = 3) -> dict:
+    payload = fetch_json(f"{api_base_url.rstrip('/')}/dashboard/command-center")
+    snapshots = payload.get("operation_snapshots") or []
+    timeline = payload.get("timeline") or []
+    summary = payload.get("summary") or {}
+    shadow_run = payload.get("shadow_run") or {}
+
+    top_operations: list[dict] = []
+    for item in snapshots[:limit]:
+        top_operations.append(
+            {
+                "trade_plan_id": item.get("trade_plan_id"),
+                "symbol": item.get("symbol"),
+                "side": item.get("side"),
+                "status": item.get("status"),
+                "aggregate_score": item.get("aggregate_score"),
+                "latest_order_status": item.get("latest_order_status"),
+                "latest_position_status": item.get("latest_position_status"),
+                "reconciliation_healthy": item.get("reconciliation_healthy"),
+                "reconciliation_primary_event": item.get("reconciliation_primary_event"),
+                "risk_event_count": item.get("risk_event_count"),
+                "latest_risk_severity": item.get("latest_risk_severity"),
+                "reconciliation_recommended_actions": item.get("reconciliation_recommended_actions") or [],
+            }
+        )
+
+    return {
+        "generated_at": payload.get("generated_at"),
+        "summary": {
+            "trade_plans_total": summary.get("trade_plans_total"),
+            "approved_trade_plans": summary.get("approved_trade_plans"),
+            "paper_executed_trade_plans": summary.get("paper_executed_trade_plans"),
+            "testnet_executed_trade_plans": summary.get("testnet_executed_trade_plans"),
+            "open_positions": summary.get("open_positions"),
+            "risk_events_total": summary.get("risk_events_total"),
+        },
+        "shadow_run": {
+            "shadow_run_duration_days": shadow_run.get("shadow_run_duration_days"),
+            "compared_pairs": shadow_run.get("compared_pairs"),
+            "testnet_fill_rate_pct": shadow_run.get("testnet_fill_rate_pct"),
+            "avg_testnet_slippage_bps": shadow_run.get("avg_testnet_slippage_bps"),
+            "critical_risk_events_7d": shadow_run.get("critical_risk_events_7d"),
+            "warning_risk_events_7d": shadow_run.get("warning_risk_events_7d"),
+        },
+        "timeline_events_visible": len(timeline),
+        "operation_snapshots_visible": len(snapshots),
+        "top_operations": top_operations,
+    }
 
 
 def evaluate(summary: dict, args: argparse.Namespace) -> dict:
@@ -92,7 +146,7 @@ def evaluate(summary: dict, args: argparse.Namespace) -> dict:
     return {"overall": overall, "steps": steps}
 
 
-def to_markdown(summary: dict, evaluation: dict) -> str:
+def to_markdown(summary: dict, evaluation: dict, command_center: dict) -> str:
     lines = [
         "# Shadow Run Gate",
         "",
@@ -140,6 +194,44 @@ def to_markdown(summary: dict, evaluation: dict) -> str:
             )
         lines.append("")
 
+    lines.extend(
+        [
+            "## Evidencia operativa del command center",
+            "",
+            f"- Snapshot generado: **{command_center.get('generated_at')}**",
+            f"- Snapshots visibles: **{command_center.get('operation_snapshots_visible')}**",
+            f"- Eventos timeline visibles: **{command_center.get('timeline_events_visible')}**",
+            f"- Trade plans totales: **{command_center.get('summary', {}).get('trade_plans_total')}**",
+            f"- Open positions: **{command_center.get('summary', {}).get('open_positions')}**",
+            f"- Risk events totales: **{command_center.get('summary', {}).get('risk_events_total')}**",
+            "",
+        ]
+    )
+
+    if command_center.get("top_operations"):
+        lines.extend(["### Operaciones más recientes", ""])
+        for item in command_center["top_operations"]:
+            actions = item.get("reconciliation_recommended_actions") or []
+            actions_text = "; ".join(actions) if actions else "sin acciones sugeridas"
+            lines.append(
+                "- trade_plan={trade_plan_id} {symbol} {side} status={status} score={score} order={order} position={position} "
+                "reconcile_healthy={healthy} drift={drift} risk_events={risk_events} latest_risk={latest_risk} actions={actions}".format(
+                    trade_plan_id=item.get("trade_plan_id"),
+                    symbol=item.get("symbol"),
+                    side=item.get("side"),
+                    status=item.get("status"),
+                    score=item.get("aggregate_score"),
+                    order=item.get("latest_order_status"),
+                    position=item.get("latest_position_status"),
+                    healthy=item.get("reconciliation_healthy"),
+                    drift=item.get("reconciliation_primary_event"),
+                    risk_events=item.get("risk_event_count"),
+                    latest_risk=item.get("latest_risk_severity"),
+                    actions=actions_text,
+                )
+            )
+        lines.append("")
+
     return "\n".join(lines)
 
 
@@ -163,15 +255,16 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     summary = fetch_shadow_run_summary(args.api_base_url, args.metrics_api_key, args.window_days)
+    command_center = fetch_command_center_snapshot(args.api_base_url)
     evaluation = evaluate(summary, args)
-    payload = {"summary": summary, "evaluation": evaluation}
+    payload = {"summary": summary, "evaluation": evaluation, "command_center": command_center}
 
     output_json = Path(args.output_json)
     output_md = Path(args.output_md)
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_md.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    output_md.write_text(to_markdown(summary, evaluation) + "\n", encoding="utf-8")
+    output_md.write_text(to_markdown(summary, evaluation, command_center) + "\n", encoding="utf-8")
 
     print(json.dumps(payload, ensure_ascii=False))
     return 0 if evaluation["overall"] == "PASS" else 1

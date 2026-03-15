@@ -77,7 +77,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-52 | Hardening residual del refresh testnet | ✅ Mergeado | evita refresh innecesario en `PARTIALLY_FILLED` completos y blinda fallback por `clientOrderId` |
 | PR-53 | Historial operativo completo por `trade_plan_id` | ✅ Mergeado | historial end-to-end por operación + reconcile visible + payload endurecido post-review |
 | PR-54 | Smoke Synology del command center enriquecido | ✅ Mergeado | smoke script endurecido para `/dashboard/command-center` + runbook actualizado + validación real en NAS |
-| PR-55 | Deduplicar fetch web del smoke Synology | 🟡 En progreso | una sola descarga de `${WEB_BASE_URL}/` + validación múltiple de marcadores sobre el mismo HTML |
+| PR-55 | Deduplicar fetch web del smoke Synology | ✅ Mergeado | una sola descarga de `${WEB_BASE_URL}/` + validación múltiple de marcadores sobre el mismo HTML |
+| PR-56 | Evidencia operativa del command center para shadow run gate | 🟡 En progreso | artifact JSON/Markdown del gate incorpora snapshot operacional del command center |
 
 ## Secuencia de PRs actualizada
 
@@ -836,7 +837,7 @@ Convertir la validación manual post-PR-53 en una verificación repetible y audi
 - mergeado en `eefaa74` con `Greptile 4/5`
 
 ### PR-55 — Deduplicar fetch web del smoke Synology
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Eliminar la redundancia del smoke web para que la home del dashboard se descargue una sola vez y todos los marcadores UI se validen sobre el mismo HTML, reduciendo tráfico y oportunidades de fallo transitorio.
@@ -845,6 +846,18 @@ Eliminar la redundancia del smoke web para que la home del dashboard se descargu
 - helper de fetch único para `${WEB_BASE_URL}/`
 - validación múltiple de marcadores sobre el mismo body HTML
 - revalidación del smoke completo sobre el NAS real
+- mergeado en `6f2bdb5`
+
+### PR-56 — Evidencia operativa del command center para shadow run gate
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Enriquecer el artifact auditable del shadow run con una instantánea operacional del command center, para que el gate no entregue solo métricas agregadas sino también contexto visible de las operaciones recientes.
+
+**Entregables**
+- `scripts/synology_shadow_run_gate.py` consulta también `/dashboard/command-center`
+- artifact JSON incluye bloque `command_center`
+- artifact Markdown agrega sección de evidencia operativa con top operaciones recientes y estado de reconcile
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
