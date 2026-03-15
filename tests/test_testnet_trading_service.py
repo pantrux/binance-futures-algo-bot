@@ -169,6 +169,51 @@ class FakeBinanceClientRefreshDegradesAvgPrice:
         }
 
 
+class FakeBinanceClientUsesUserTrades:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": 2003,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "executedQty": "0",
+            "status": "NEW",
+        }
+
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": order_id or 2003,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "price": "0",
+            "executedQty": "0",
+            "status": "FILLED",
+        }
+
+    async def get_order_trades(self, *, symbol: str, order_id: int, recv_window: int = 5000) -> list[dict]:
+        return [
+            {
+                "price": "70681",
+                "qty": "0.020",
+                "quoteQty": "1413.62",
+            },
+            {
+                "price": "70690",
+                "qty": "0.016",
+                "quoteQty": "1131.04",
+            },
+        ]
+
+    async def get_position_risk(self, symbol: str, recv_window: int = 5000) -> dict:
+        return {
+            "symbol": symbol,
+            "markPrice": "71466.42",
+            "leverage": "20",
+        }
+
+
 class FakeBinanceClientSkipsRefreshForCompletePartial:
     async def get_symbol_step_size(self, symbol: str) -> float:
         return 0.001
@@ -605,6 +650,30 @@ def test_testnet_trading_logs_warning_when_order_refresh_fails_and_falls_back_to
     assert position.entry_price == plan.entry_price
     assert warning.severity == "warning"
     assert "timeout_refresh" in warning.message
+
+
+
+def test_testnet_trading_prefers_user_trades_fill_price_over_plan_price():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientUsesUserTrades(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    order = db.query(Order).filter(Order.trade_plan_id == plan.id).one()
+    position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
+    expected_fill = round((1413.62 + 1131.04) / 0.036, 8)
+    assert round(order.price, 8) == expected_fill
+    assert round(order.executed_quantity, 8) == 0.036
+    assert round(position.entry_price, 8) == expected_fill
+    assert position.mark_price == 71466.42
+    assert position.leverage == 20
+    assert position.unrealized_pnl > 0
 
 
 
