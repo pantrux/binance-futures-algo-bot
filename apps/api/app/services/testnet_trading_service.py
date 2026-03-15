@@ -103,7 +103,7 @@ class BinanceTestnetTradingService:
         needs_refresh = not terminal_no_fill and (
             avg_price <= 0
             or executed_qty <= 0
-            or status in {"new", "pending_new", "partially_filled"}
+            or status in {"new", "pending_new"}
         )
         get_order = getattr(self.binance_client, "get_order", None)
         if not needs_refresh or not callable(get_order):
@@ -111,7 +111,7 @@ class BinanceTestnetTradingService:
         try:
             refreshed = await get_order(
                 symbol=symbol,
-                order_id=int(order_id) if order_id is not None else None,
+                order_id=int(order_id) if order_id else None,
                 client_order_id=client_order_id,
             )
         except Exception as exc:  # noqa: BLE001

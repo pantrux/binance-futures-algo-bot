@@ -67,7 +67,14 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-42 | Activación de shadow run testnet en Synology | ✅ Mergeado | credenciales cargadas y primer gate útil con `testnet_executed > 0` |
 | PR-43 | Normalización de fills testnet y reconciliación | ✅ Mergeado | fills testnet normalizados + shadow run limpio con `fill_rate=100%` |
 | PR-44 | Guard de reconciliación para órdenes rechazadas históricas | ✅ Mergeado | follow-up de review para no inflar fills con rechazos heredados |
-| PR-45 | Centro de mando operacional | 🟡 En progreso | endpoint agregado + UI rica para mostrar operaciones, órdenes, posiciones, riesgo y shadow run |
+| PR-45 | Centro de mando operacional | ✅ Mergeado | endpoint agregado + UI rica para mostrar operaciones, órdenes, posiciones, riesgo y shadow run |
+| PR-46 | Radar unificado por operación en el centro de mando | ✅ Mergeado | vista consolidada por trade plan con setup, orden, posición, reconcile y riesgo |
+| PR-47 | Línea de tiempo operativa unificada | ✅ Mergeado | feed cronológico plan→orden→posición→riesgo→reconcile en el dashboard |
+| PR-48 | Drill-down por trade plan en el centro de mando | ✅ Mergeado | ficha detallada por operación con anchors y mini-timeline asociada |
+| PR-49 | Justificación técnica por trade plan en el centro de mando | ✅ Mergeado | scores, régimen, timeframe y tesis visibles por operación |
+| PR-50 | UX de entry real / delta vs plan en el command center | ✅ Mergeado | estados sin ejecución real ahora muestran `—` en vez de falsos `+0.000%` |
+| PR-51 | Persistencia de fill real desde Binance | ✅ Mergeado | refresh post-submit contra Binance Testnet + persistencia del fill real + cierre total de reviews |
+| PR-52 | Hardening residual del refresh testnet | 🟡 En progreso | evitar refresh innecesario para `partially_filled` completo y blindar `orderId` falsy en el fallback a `clientOrderId` |
 
 ## Secuencia de PRs actualizada
 
@@ -765,7 +772,7 @@ Mostrar para cada operación la justificación técnica persistida (scores, rég
 - mergeado / deploy en curso o siguiente turno de despliegue
 
 ### PR-51 — Persistencia de fill real desde Binance
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Confirmar la orden contra Binance Testnet después del submit y persistir el fill real del exchange, evitando que el sistema siga cayendo al precio planificado cuando el primer payload viene incompleto.
@@ -775,6 +782,19 @@ Confirmar la orden contra Binance Testnet después del submit y persistir el fil
 - `_confirm_exchange_order()` + `_extract_fill_price()` en `BinanceTestnetTradingService`
 - derivación de precio real desde `avgPrice`, `price` o `cumQuote / executedQty`
 - tests del servicio para refresh y cálculo de fill real
+- mergeado en `6c0b632` tras resolver todos los comments de Greptile/Codex y cerrar el último borde de `unknown_status`
+
+### PR-52 — Hardening residual del refresh testnet
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Cerrar dos bordes residuales del refresh post-submit para reducir ruido hacia Binance Testnet y blindar el fallback por `clientOrderId` cuando `orderId` llega como valor falsy.
+
+**Entregables**
+- no refrescar órdenes `PARTIALLY_FILLED` cuando ya traen `avgPrice` y `executedQty` válidos
+- usar `clientOrderId` como identificador efectivo cuando `orderId` llegue falsy (`0`, `""`, `False`)
+- tests específicos para ambos escenarios
+- actualización de roadmap y sync de Outline post-PR
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

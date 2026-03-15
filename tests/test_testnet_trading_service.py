@@ -169,6 +169,46 @@ class FakeBinanceClientRefreshDegradesAvgPrice:
         }
 
 
+class FakeBinanceClientSkipsRefreshForCompletePartial:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 1
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        raise AssertionError("No debería llamar place_market_order en este test")
+
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        raise AssertionError("No debería refrescar una orden PARTIALLY_FILLED con datos completos")
+
+
+class FakeBinanceClientFalsyOrderIdRefresh:
+    def __init__(self) -> None:
+        self.last_order_id: int | None = 999999
+        self.last_client_order_id: str | None = None
+
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 1
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        raise AssertionError("No debería llamar place_market_order en este test")
+
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        self.last_order_id = order_id
+        self.last_client_order_id = client_order_id
+        return {
+            "orderId": 321,
+            "clientOrderId": client_order_id,
+            "avgPrice": "50100",
+            "executedQty": "0.100",
+            "status": "FILLED",
+        }
+
+
 class FakeBinanceClientRejectedOrder:
     async def get_symbol_step_size(self, symbol: str) -> float:
         return 0.001
@@ -428,6 +468,68 @@ def test_confirm_exchange_order_does_not_degrade_existing_avg_price_with_zero_fr
 
     assert payload["avgPrice"] == "50000"
     assert payload["executedQty"] == "0.100"
+
+
+
+def test_confirm_exchange_order_skips_refresh_for_partially_filled_with_complete_data():
+    db = build_db()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientSkipsRefreshForCompletePartial(),
+        execution_enabled=True,
+    )
+
+    payload = asyncio.run(
+        service._confirm_exchange_order(
+            trade_plan_id=None,
+            symbol="BTCUSDT",
+            exchange_order={
+                "orderId": 2001,
+                "clientOrderId": "cid-partial",
+                "avgPrice": "50050",
+                "executedQty": "0.050",
+                "status": "PARTIALLY_FILLED",
+            },
+            client_order_id="cid-partial",
+        )
+    )
+
+    assert payload["avgPrice"] == "50050"
+    assert payload["executedQty"] == "0.050"
+    assert payload["status"] == "PARTIALLY_FILLED"
+
+
+
+def test_confirm_exchange_order_ignores_falsy_order_id_and_uses_client_order_id_for_refresh():
+    db = build_db()
+    client = FakeBinanceClientFalsyOrderIdRefresh()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=client,
+        execution_enabled=True,
+    )
+
+    payload = asyncio.run(
+        service._confirm_exchange_order(
+            trade_plan_id=None,
+            symbol="BTCUSDT",
+            exchange_order={
+                "orderId": 0,
+                "clientOrderId": "cid-falsy",
+                "avgPrice": "0",
+                "executedQty": "0",
+                "status": "NEW",
+            },
+            client_order_id="cid-falsy",
+        )
+    )
+
+    assert client.last_order_id is None
+    assert client.last_client_order_id == "cid-falsy"
+    assert payload["orderId"] == 321
+    assert payload["avgPrice"] == "50100"
+    assert payload["executedQty"] == "0.100"
+    assert payload["status"] == "FILLED"
 
 
 
