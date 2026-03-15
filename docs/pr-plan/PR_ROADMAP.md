@@ -76,7 +76,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-51 | Persistencia de fill real desde Binance | ✅ Mergeado | refresh post-submit contra Binance Testnet + persistencia del fill real + cierre total de reviews |
 | PR-52 | Hardening residual del refresh testnet | ✅ Mergeado | evita refresh innecesario en `PARTIALLY_FILLED` completos y blinda fallback por `clientOrderId` |
 | PR-53 | Historial operativo completo por `trade_plan_id` | ✅ Mergeado | historial end-to-end por operación + reconcile visible + payload endurecido post-review |
-| PR-54 | Smoke Synology del command center enriquecido | 🟡 En progreso | smoke script endurecido para `/dashboard/command-center` + runbook actualizado + validación real en NAS |
+| PR-54 | Smoke Synology del command center enriquecido | ✅ Mergeado | smoke script endurecido para `/dashboard/command-center` + runbook actualizado + validación real en NAS |
+| PR-55 | Deduplicar fetch web del smoke Synology | 🟡 En progreso | una sola descarga de `${WEB_BASE_URL}/` + validación múltiple de marcadores sobre el mismo HTML |
 
 ## Secuencia de PRs actualizada
 
@@ -823,7 +824,7 @@ Profundizar el command center para que cada trade plan permita inspección end-t
 - mergeado en `f5368c8` tras cierre completo de reviews Greptile
 
 ### PR-54 — Smoke Synology del command center enriquecido
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Convertir la validación manual post-PR-53 en una verificación repetible y auditable dentro del smoke Synology, para detectar drift entre API/UI y el entorno real del NAS.
@@ -832,6 +833,18 @@ Convertir la validación manual post-PR-53 en una verificación repetible y audi
 - `scripts/synology_smoke_test.sh` valida `GET /dashboard/command-center` y los marcadores UI del command center enriquecido
 - runbook Synology actualizado con criterio mínimo de aprobación específico para el dashboard enriquecido
 - validación real sobre NAS (`http://192.168.0.8:8010` / `http://192.168.0.8:3012`) documentada en el PR
+- mergeado en `eefaa74` con `Greptile 4/5`
+
+### PR-55 — Deduplicar fetch web del smoke Synology
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Eliminar la redundancia del smoke web para que la home del dashboard se descargue una sola vez y todos los marcadores UI se validen sobre el mismo HTML, reduciendo tráfico y oportunidades de fallo transitorio.
+
+**Entregables**
+- helper de fetch único para `${WEB_BASE_URL}/`
+- validación múltiple de marcadores sobre el mismo body HTML
+- revalidación del smoke completo sobre el NAS real
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

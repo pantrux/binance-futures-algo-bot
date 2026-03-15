@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-53` ya quedó mergeado en `main` y el command center enriquecido fue desplegado/validado en Synology; el foco inmediato pasa a convertir esa validación real en smoke auditable y reutilizable.
-- **PR activo:** `PR-54` — smoke Synology del command center enriquecido.
-- **Siguiente carril sugerido:** cerrar `PR-54` y luego evaluar evidencia operativa del shadow run con la nueva vista ya desplegada en NAS.
+- **Estado global actual:** `PR-54` ya quedó mergeado en `main` y el smoke del command center enriquecido ya cubre API/UI real en Synology; el foco inmediato pasa a cerrar la deuda menor de eficiencia detectada por Greptile en el smoke web.
+- **PR activo:** `PR-55` — deduplicar fetch web del smoke Synology.
+- **Siguiente carril sugerido:** cerrar `PR-55` y luego retomar evidencia operativa del shadow run con la nueva vista ya desplegada en NAS.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -37,7 +37,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
-| Fase 13 — Profundización del command center | 🟡 En progreso | 45% | PR-53..PR-55 | historial operativo completo por `trade_plan_id`, smoke Synology específico y trazabilidad end-to-end validada en NAS |
+| Fase 13 — Profundización del command center | 🟡 En progreso | 60% | PR-53..PR-55 | historial operativo completo por `trade_plan_id`, smoke Synology específico, dedupe del smoke web y trazabilidad end-to-end validada en NAS |
 
 ---
 
@@ -155,10 +155,16 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - vista detallada para inspección end-to-end sin joins manuales
 - mergeado en `f5368c8`
 
-### PR-54 — Smoke Synology del command center enriquecido 🟡
+### PR-54 — Smoke Synology del command center enriquecido ✅
 - smoke script endurecido para validar `GET /dashboard/command-center` y el payload enriquecido por operación
 - smoke UI endurecido para exigir marcadores reales del dashboard (`Historial de órdenes`, `Historial de posiciones`, `Historial de riesgo`, `Reconcile actual`)
-- validación real ya ejecutada con éxito contra NAS local (`192.168.0.8:8010` / `192.168.0.8:3012`)
+- validación real ejecutada con éxito contra NAS local (`192.168.0.8:8010` / `192.168.0.8:3012`)
+- mergeado en `eefaa74`
+
+### PR-55 — Deduplicar fetch web del smoke Synology 🟡
+- descargar la home del dashboard una sola vez por corrida
+- validar múltiples marcadores UI sobre el mismo HTML para reducir tráfico y blips transitorios
+- revalidación completa del smoke sobre el NAS real
 
 ---
 
