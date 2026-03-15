@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-57` ya quedó mergeado en `main`, pero apareció un gap operativo real en el dashboard del NAS: las operaciones abiertas siguen mostrando precio planificado en vez de fill real. El foco inmediato pasa a corregir fuente de datos + backfill de persistencia.
-- **PR activo:** `PR-58` — persistir y backfillear precios reales desde Binance.
-- **Siguiente carril sugerido:** cerrar `PR-58`, desplegar en Synology y verificar que el command center ya muestre los fills reales de las posiciones abiertas.
+- **Estado global actual:** `PR-58` ya quedó mergeado y corrigió los precios ficticios persistidos/visibles en el command center, pero el diagnóstico de raíz mostró otro guardrail faltante: el worker podía ejecutar en Testnet setups provenientes del fallback demo. El foco inmediato pasa a bloquear esa ruta.
+- **PR activo:** `PR-59` — bloquear ejecución testnet desde señales demo.
+- **Siguiente carril sugerido:** cerrar `PR-59` y confirmar en Synology que futuras ejecuciones `source=demo` queden bloqueadas o desviadas a paper, nunca a Binance Testnet.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -37,7 +37,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
-| Fase 13 — Profundización del command center | 🟡 En progreso | 88% | PR-53..PR-58 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate y corrección de precios reales persistidos/visibles en el dashboard |
+| Fase 13 — Profundización del command center | 🟡 En progreso | 94% | PR-53..PR-59 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales y bloqueo de ejecuciones testnet con setups demo |
 
 ---
 
@@ -179,10 +179,16 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - ADR-040 refleja que el gate ahora combina evidencia cuantitativa + operacional
 - mergeado en `bbf0248`
 
-### PR-58 — Persistir y backfillear precios reales desde Binance 🟡
+### PR-58 — Persistir y backfillear precios reales desde Binance ✅
 - usar `userTrades` como fuente de fill real por orden testnet
 - persistir `order.price` y `position.entry_price` con fill real, no con precio planificado
 - ejecutar backfill sobre órdenes/posiciones testnet ya abiertas en el NAS para corregir el command center actual
+- mergeado en `db51dbb`
+
+### PR-59 — Bloquear ejecución testnet desde señales demo 🟡
+- impedir que `meta.source != "market"` dispare órdenes reales en Binance Testnet
+- permitir fallback a paper cuando `TESTNET_FALLBACK_TO_PAPER=true`
+- validar con tests + despliegue del worker en Synology
 
 ---
 

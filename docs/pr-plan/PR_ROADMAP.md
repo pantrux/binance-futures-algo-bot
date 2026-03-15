@@ -80,7 +80,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-55 | Deduplicar fetch web del smoke Synology | ✅ Mergeado | una sola descarga de `${WEB_BASE_URL}/` + validación múltiple de marcadores sobre el mismo HTML |
 | PR-56 | Evidencia operativa del command center para shadow run gate | ✅ Mergeado | artifact JSON/Markdown del gate incorpora snapshot operacional del command center |
 | PR-57 | Alinear docs del gate con evidencia del command center | ✅ Mergeado | runbook + checklist + ADR-040 actualizados para exigir/referenciar el bloque `command_center` |
-| PR-58 | Persistir y backfillear precios reales desde Binance | 🟡 En progreso | usar `userTrades` como fuente de fill real y corregir órdenes/posiciones testnet ya abiertas |
+| PR-58 | Persistir y backfillear precios reales desde Binance | ✅ Mergeado | usar `userTrades` como fuente de fill real y corregir órdenes/posiciones testnet ya abiertas |
+| PR-59 | Bloquear ejecución testnet desde señales demo | 🟡 En progreso | impedir que `source=demo` dispare órdenes reales en Binance Testnet |
 
 ## Secuencia de PRs actualizada
 
@@ -875,7 +876,7 @@ Hacer explícito en runbook, checklist y ADR que el gate auditable del shadow ru
 - mergeado en `bbf0248`
 
 ### PR-58 — Persistir y backfillear precios reales desde Binance
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Eliminar los precios ficticios del command center usando la fuente correcta de fill real (`userTrades`) y corregir también las órdenes/posiciones testnet ya abiertas que quedaron persistidas con precio planificado.
@@ -885,6 +886,19 @@ Eliminar los precios ficticios del command center usando la fuente correcta de f
 - `BinanceTestnetTradingService` persiste `order.price` / `position.entry_price` desde `userTrades`
 - script `scripts/backfill_testnet_fill_prices.py` corrige registros testnet existentes en Postgres/NAS
 - validación en NAS contra posiciones reales abiertas (`BTCUSDT`, `ETHUSDT`, `SOLUSDT`)
+- mergeado en `db51dbb`
+
+### PR-59 — Bloquear ejecución testnet desde señales demo
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Evitar que el worker ejecute órdenes reales en Binance Testnet cuando el setup provenga del fallback demo (`source=demo`, típicamente por `snapshot_incompleto`).
+
+**Entregables**
+- `process_symbol()` bloquea ejecución testnet si `meta.source != "market"`
+- opcionalmente cae a paper trading si `TESTNET_FALLBACK_TO_PAPER=true`
+- tests cubren bloqueo de ejecución real y fallback a paper
+- despliegue del worker actualizado en Synology para cortar nuevas ejecuciones distorsionadas
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
