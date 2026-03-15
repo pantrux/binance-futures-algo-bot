@@ -8,6 +8,7 @@ from apps.api.app.schemas.dashboard_command_center import (
     DashboardCommandCenterOperationSnapshot,
     DashboardCommandCenterOrder,
     DashboardCommandCenterPosition,
+    DashboardCommandCenterReconciliationDrift,
     DashboardCommandCenterResponse,
     DashboardCommandCenterRiskEvent,
     DashboardCommandCenterShadowRun,
@@ -58,6 +59,48 @@ class DashboardCommandCenterService:
     @staticmethod
     def _timeline_anchor(*timestamps: datetime | None) -> datetime:
         return max(timestamp for timestamp in timestamps if timestamp is not None)
+
+    @staticmethod
+    def _serialize_order(order: Order) -> DashboardCommandCenterOrder:
+        return DashboardCommandCenterOrder(
+            id=order.id,
+            trade_plan_id=order.trade_plan_id,
+            symbol=order.symbol,
+            side=order.side,
+            venue=order.venue,
+            status=order.status,
+            price=order.price,
+            quantity=order.quantity,
+            executed_quantity=order.executed_quantity,
+            created_at=order.created_at,
+        )
+
+    @staticmethod
+    def _serialize_position(position: Position) -> DashboardCommandCenterPosition:
+        return DashboardCommandCenterPosition(
+            id=position.id,
+            trade_plan_id=position.trade_plan_id,
+            symbol=position.symbol,
+            side=position.side,
+            quantity=position.quantity,
+            entry_price=position.entry_price,
+            mark_price=position.mark_price,
+            unrealized_pnl=position.unrealized_pnl,
+            leverage=position.leverage,
+            status=position.status,
+            opened_at=position.opened_at,
+        )
+
+    @staticmethod
+    def _serialize_risk_event(event: RiskEvent) -> DashboardCommandCenterRiskEvent:
+        return DashboardCommandCenterRiskEvent(
+            id=event.id,
+            trade_plan_id=event.trade_plan_id,
+            event_type=event.event_type,
+            severity=event.severity,
+            message=event.message,
+            created_at=event.created_at,
+        )
 
     def build(self) -> DashboardCommandCenterResponse:
         summary = DashboardCommandCenterSummary(
@@ -114,35 +157,12 @@ class DashboardCommandCenterService:
         ]
 
         recent_orders = [
-            DashboardCommandCenterOrder(
-                id=order.id,
-                trade_plan_id=order.trade_plan_id,
-                symbol=order.symbol,
-                side=order.side,
-                venue=order.venue,
-                status=order.status,
-                price=order.price,
-                quantity=order.quantity,
-                executed_quantity=order.executed_quantity,
-                created_at=order.created_at,
-            )
+            self._serialize_order(order)
             for order in self.db.query(Order).order_by(desc(Order.created_at)).limit(12).all()
         ]
 
         open_positions = [
-            DashboardCommandCenterPosition(
-                id=position.id,
-                trade_plan_id=position.trade_plan_id,
-                symbol=position.symbol,
-                side=position.side,
-                quantity=position.quantity,
-                entry_price=position.entry_price,
-                mark_price=position.mark_price,
-                unrealized_pnl=position.unrealized_pnl,
-                leverage=position.leverage,
-                status=position.status,
-                opened_at=position.opened_at,
-            )
+            self._serialize_position(position)
             for position in self.db.query(Position)
             .filter(Position.status == "open")
             .order_by(desc(Position.opened_at))
@@ -151,34 +171,13 @@ class DashboardCommandCenterService:
         ]
 
         recent_risk_events_rows = self.db.query(RiskEvent).order_by(desc(RiskEvent.created_at)).limit(12).all()
-        recent_risk_events = [
-            DashboardCommandCenterRiskEvent(
-                id=event.id,
-                trade_plan_id=event.trade_plan_id,
-                event_type=event.event_type,
-                severity=event.severity,
-                message=event.message,
-                created_at=event.created_at,
-            )
-            for event in recent_risk_events_rows
-        ]
+        recent_risk_events = [self._serialize_risk_event(event) for event in recent_risk_events_rows]
 
         operation_snapshots: list[DashboardCommandCenterOperationSnapshot] = []
         timeline: list[DashboardCommandCenterTimelineEntry] = []
         execution_state_machine = ExecutionStateMachineService(self.db)
+
         for plan in recent_trade_plan_rows:
-            timeline.append(
-                DashboardCommandCenterTimelineEntry(
-                    trade_plan_id=plan.id,
-                    symbol=plan.symbol,
-                    entity_kind="trade_plan",
-                    event_kind=plan.status,
-                    tone=self._trade_plan_tone(plan.status),
-                    title=f"Trade plan #{plan.id} · {plan.symbol}",
-                    detail=f"{plan.side} · score {plan.aggregate_score:.2f} · regime {plan.market_regime}",
-                    occurred_at=plan.created_at,
-                )
-            )
             plan_orders = (
                 self.db.query(Order)
                 .filter(Order.trade_plan_id == plan.id)
@@ -191,65 +190,82 @@ class DashboardCommandCenterService:
                 .order_by(desc(Position.opened_at), desc(Position.id))
                 .all()
             )
-            latest_risk = (
+            plan_risk_events = (
                 self.db.query(RiskEvent)
                 .filter(RiskEvent.trade_plan_id == plan.id)
                 .order_by(desc(RiskEvent.created_at), desc(RiskEvent.id))
-                .first()
+                .all()
             )
-            risk_event_count = (
-                self.db.scalar(select(func.count()).select_from(RiskEvent).where(RiskEvent.trade_plan_id == plan.id))
-                or 0
-            )
+
             latest_order = plan_orders[0] if plan_orders else None
             latest_position = plan_positions[0] if plan_positions else None
-            if latest_order:
-                timeline.append(
-                    DashboardCommandCenterTimelineEntry(
-                        trade_plan_id=plan.id,
-                        symbol=plan.symbol,
-                        entity_kind="order",
-                        event_kind=latest_order.status,
-                        tone=self._order_tone(latest_order.status),
-                        title=f"Orden #{latest_order.id} · {latest_order.venue}",
-                        detail=f"status {latest_order.status} · px {latest_order.price:.2f} · exec {latest_order.executed_quantity:.3f}/{latest_order.quantity:.3f}",
-                        occurred_at=latest_order.created_at,
-                    )
-                )
-            if latest_position:
-                timeline.append(
-                    DashboardCommandCenterTimelineEntry(
-                        trade_plan_id=plan.id,
-                        symbol=plan.symbol,
-                        entity_kind="position",
-                        event_kind=latest_position.status,
-                        tone=self._position_tone(latest_position.status),
-                        title=f"Posición #{latest_position.id} · {latest_position.symbol}",
-                        detail=f"{latest_position.side} · qty {latest_position.quantity:.3f} · pnl {latest_position.unrealized_pnl:.2f}",
-                        occurred_at=latest_position.opened_at,
-                    )
-                )
-            if latest_risk:
-                timeline.append(
-                    DashboardCommandCenterTimelineEntry(
-                        trade_plan_id=plan.id,
-                        symbol=plan.symbol,
-                        entity_kind="risk_event",
-                        event_kind=latest_risk.event_type,
-                        tone=self._risk_tone(latest_risk.severity),
-                        title=f"Riesgo · {latest_risk.event_type}",
-                        detail=latest_risk.message,
-                        occurred_at=latest_risk.created_at,
-                    )
-                )
+            latest_risk = plan_risk_events[0] if plan_risk_events else None
+            risk_event_count = len(plan_risk_events)
+
             reconciliation = execution_state_machine.reconcile_loaded_trade_plan(
                 plan,
                 list(reversed(plan_orders)),
                 list(reversed(plan_positions)),
             )
             primary_drift = reconciliation.drift_events[0] if reconciliation.drift_events else None
+
+            plan_timeline: list[DashboardCommandCenterTimelineEntry] = [
+                DashboardCommandCenterTimelineEntry(
+                    trade_plan_id=plan.id,
+                    symbol=plan.symbol,
+                    entity_kind="trade_plan",
+                    event_kind=plan.status,
+                    tone=self._trade_plan_tone(plan.status),
+                    title=f"Trade plan #{plan.id} · {plan.symbol}",
+                    detail=f"{plan.side} · score {plan.aggregate_score:.2f} · regime {plan.market_regime}",
+                    occurred_at=plan.created_at,
+                )
+            ]
+
+            for order in plan_orders:
+                plan_timeline.append(
+                    DashboardCommandCenterTimelineEntry(
+                        trade_plan_id=plan.id,
+                        symbol=plan.symbol,
+                        entity_kind="order",
+                        event_kind=order.status,
+                        tone=self._order_tone(order.status),
+                        title=f"Orden #{order.id} · {order.venue}",
+                        detail=f"status {order.status} · px {order.price:.2f} · exec {order.executed_quantity:.3f}/{order.quantity:.3f}",
+                        occurred_at=order.created_at,
+                    )
+                )
+
+            for position in plan_positions:
+                plan_timeline.append(
+                    DashboardCommandCenterTimelineEntry(
+                        trade_plan_id=plan.id,
+                        symbol=plan.symbol,
+                        entity_kind="position",
+                        event_kind=position.status,
+                        tone=self._position_tone(position.status),
+                        title=f"Posición #{position.id} · {position.symbol}",
+                        detail=f"{position.side} · qty {position.quantity:.3f} · pnl {position.unrealized_pnl:.2f}",
+                        occurred_at=position.opened_at,
+                    )
+                )
+
+            for event in plan_risk_events:
+                plan_timeline.append(
+                    DashboardCommandCenterTimelineEntry(
+                        trade_plan_id=plan.id,
+                        symbol=plan.symbol,
+                        entity_kind="risk_event",
+                        event_kind=event.event_type,
+                        tone=self._risk_tone(event.severity),
+                        title=f"Riesgo · {event.event_type}",
+                        detail=event.message,
+                        occurred_at=event.created_at,
+                    )
+                )
+
             if primary_drift:
-                timeline.append(
+                plan_timeline.append(
                     DashboardCommandCenterTimelineEntry(
                         trade_plan_id=plan.id,
                         symbol=plan.symbol,
@@ -266,6 +282,9 @@ class DashboardCommandCenterService:
                         ),
                     )
                 )
+
+            plan_timeline.sort(key=lambda item: item.occurred_at, reverse=True)
+            timeline.extend(plan_timeline)
 
             operation_snapshots.append(
                 DashboardCommandCenterOperationSnapshot(
@@ -301,10 +320,26 @@ class DashboardCommandCenterService:
                     reconciliation_primary_severity=primary_drift.severity if primary_drift else None,
                     reconciliation_primary_event=primary_drift.event_type if primary_drift else None,
                     reconciliation_primary_message=primary_drift.message if primary_drift else None,
+                    reconciliation_order_count=reconciliation.order_count,
+                    reconciliation_open_position_count=reconciliation.open_position_count,
+                    reconciliation_filled_order_count=reconciliation.filled_order_count,
+                    reconciliation_drift_events=[
+                        DashboardCommandCenterReconciliationDrift(
+                            event_type=event.event_type,
+                            severity=event.severity,
+                            message=event.message,
+                        )
+                        for event in reconciliation.drift_events
+                    ],
+                    reconciliation_recommended_actions=reconciliation.recommended_actions,
                     risk_event_count=risk_event_count,
                     latest_risk_severity=latest_risk.severity if latest_risk else None,
                     latest_risk_event_type=latest_risk.event_type if latest_risk else None,
                     latest_risk_message=latest_risk.message if latest_risk else None,
+                    order_history=[self._serialize_order(order) for order in plan_orders],
+                    position_history=[self._serialize_position(position) for position in plan_positions],
+                    risk_event_history=[self._serialize_risk_event(event) for event in plan_risk_events],
+                    timeline_history=plan_timeline,
                     created_at=plan.created_at,
                 )
             )

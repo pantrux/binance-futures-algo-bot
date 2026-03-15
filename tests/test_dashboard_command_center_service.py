@@ -52,6 +52,22 @@ def test_dashboard_command_center_builds_operational_snapshot():
     testnet = seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", created_at=now - timedelta(hours=2))
     approved = seed_trade_plan(db, symbol="ETHUSDT", status="approved", created_at=now - timedelta(hours=1))
 
+    old_order = Order(
+        trade_plan_id=testnet.id,
+        venue="binance_futures_testnet",
+        external_order_id="ord-0",
+        symbol="BTCUSDT",
+        side="long",
+        order_type="market",
+        status="new",
+        price=49990,
+        quantity=0.1,
+        executed_quantity=0,
+        is_testnet=True,
+    )
+    old_order.created_at = now - timedelta(hours=2)
+    db.add(old_order)
+
     order = Order(
         trade_plan_id=testnet.id,
         venue="binance_futures_testnet",
@@ -68,6 +84,21 @@ def test_dashboard_command_center_builds_operational_snapshot():
     order.created_at = now - timedelta(hours=1)
     db.add(order)
 
+    old_position = Position(
+        trade_plan_id=testnet.id,
+        symbol="BTCUSDT",
+        side="long",
+        quantity=0.1,
+        entry_price=49990,
+        mark_price=50000,
+        unrealized_pnl=4,
+        leverage=5,
+        status="closed",
+        is_testnet=True,
+    )
+    old_position.opened_at = now - timedelta(hours=2)
+    db.add(old_position)
+
     position = Position(
         trade_plan_id=testnet.id,
         symbol="BTCUSDT",
@@ -83,6 +114,10 @@ def test_dashboard_command_center_builds_operational_snapshot():
     position.opened_at = now - timedelta(hours=1)
     db.add(position)
 
+    old_event = RiskEvent(trade_plan_id=testnet.id, event_type="preflight_note", severity="info", message="all good")
+    old_event.created_at = now - timedelta(minutes=80)
+    db.add(old_event)
+
     event = RiskEvent(trade_plan_id=approved.id, event_type="shadow_run_check", severity="warning", message="warning")
     event.created_at = now - timedelta(minutes=30)
     db.add(event)
@@ -95,10 +130,10 @@ def test_dashboard_command_center_builds_operational_snapshot():
     assert payload.summary.paper_executed_trade_plans == 1
     assert payload.summary.testnet_executed_trade_plans == 1
     assert payload.summary.open_positions == 1
-    assert payload.summary.risk_events_total == 1
-    assert payload.shadow_run.testnet_orders_total == 1
+    assert payload.summary.risk_events_total == 2
+    assert payload.shadow_run.testnet_orders_total == 2
     assert payload.shadow_run.testnet_orders_filled == 1
-    assert payload.shadow_run.testnet_fill_rate_pct == 100.0
+    assert payload.shadow_run.testnet_fill_rate_pct == 50.0
     assert payload.operation_snapshots[0].trade_plan_id == approved.id
     assert payload.operation_snapshots[1].trade_plan_id == testnet.id
     assert payload.operation_snapshots[1].latest_order_status == "filled"
@@ -107,6 +142,15 @@ def test_dashboard_command_center_builds_operational_snapshot():
     assert payload.operation_snapshots[1].technical_score == 80
     assert payload.operation_snapshots[1].timeframe == "15m"
     assert payload.operation_snapshots[1].thesis == "dashboard command center"
+    assert payload.operation_snapshots[1].reconciliation_order_count == 2
+    assert payload.operation_snapshots[1].reconciliation_filled_order_count == 1
+    assert len(payload.operation_snapshots[1].order_history) == 2
+    assert payload.operation_snapshots[1].order_history[0].status == "filled"
+    assert len(payload.operation_snapshots[1].position_history) == 2
+    assert payload.operation_snapshots[1].position_history[0].status == "open"
+    assert len(payload.operation_snapshots[1].risk_event_history) == 1
+    assert payload.operation_snapshots[1].risk_event_history[0].event_type == "preflight_note"
+    assert len(payload.operation_snapshots[1].timeline_history) >= 4
     assert payload.operation_snapshots[0].latest_risk_event_type == "shadow_run_check"
     assert payload.timeline[0].trade_plan_id in {approved.id, testnet.id}
     assert {item.entity_kind for item in payload.timeline} >= {"trade_plan", "order", "position", "risk_event"}

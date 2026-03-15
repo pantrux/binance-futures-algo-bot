@@ -76,6 +76,27 @@ class DashboardCommandCenterShadowRun(BaseModel):
     warning_risk_events_7d: int
 
 
+TimelineEntityKind = Literal["trade_plan", "order", "position", "risk_event", "reconciliation"]
+TimelineTone = Literal["ok", "warn", "danger", "neutral"]
+
+
+class DashboardCommandCenterTimelineEntry(BaseModel):
+    trade_plan_id: int | None = None
+    symbol: str | None = None
+    entity_kind: TimelineEntityKind
+    event_kind: str
+    tone: TimelineTone
+    title: str
+    detail: str
+    occurred_at: datetime
+
+
+class DashboardCommandCenterReconciliationDrift(BaseModel):
+    event_type: str
+    severity: str
+    message: str
+
+
 class DashboardCommandCenterOperationSnapshot(BaseModel):
     trade_plan_id: int
     symbol: str
@@ -109,26 +130,20 @@ class DashboardCommandCenterOperationSnapshot(BaseModel):
     reconciliation_primary_severity: str | None = None
     reconciliation_primary_event: str | None = None
     reconciliation_primary_message: str | None = None
+    reconciliation_order_count: int = 0
+    reconciliation_open_position_count: int = 0
+    reconciliation_filled_order_count: int = 0
+    reconciliation_drift_events: list[DashboardCommandCenterReconciliationDrift] = Field(default_factory=list)
+    reconciliation_recommended_actions: list[str] = Field(default_factory=list)
     risk_event_count: int = 0
     latest_risk_severity: str | None = None
     latest_risk_event_type: str | None = None
     latest_risk_message: str | None = None
+    order_history: list[DashboardCommandCenterOrder] = Field(default_factory=list)
+    position_history: list[DashboardCommandCenterPosition] = Field(default_factory=list)
+    risk_event_history: list[DashboardCommandCenterRiskEvent] = Field(default_factory=list)
+    timeline_history: list[DashboardCommandCenterTimelineEntry] = Field(default_factory=list)
     created_at: datetime
-
-
-TimelineEntityKind = Literal["trade_plan", "order", "position", "risk_event", "reconciliation"]
-TimelineTone = Literal["ok", "warn", "danger", "neutral"]
-
-
-class DashboardCommandCenterTimelineEntry(BaseModel):
-    trade_plan_id: int | None = None
-    symbol: str | None = None
-    entity_kind: TimelineEntityKind
-    event_kind: str
-    tone: TimelineTone
-    title: str
-    detail: str
-    occurred_at: datetime
 
 
 class DashboardCommandCenterResponse(BaseModel):

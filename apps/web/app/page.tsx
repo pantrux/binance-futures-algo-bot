@@ -55,10 +55,62 @@ type CommandCenterResponse = {
     reconciliation_primary_severity: string | null;
     reconciliation_primary_event: string | null;
     reconciliation_primary_message: string | null;
+    reconciliation_order_count: number;
+    reconciliation_open_position_count: number;
+    reconciliation_filled_order_count: number;
+    reconciliation_drift_events: Array<{
+      event_type: string;
+      severity: string;
+      message: string;
+    }>;
+    reconciliation_recommended_actions: string[];
     risk_event_count: number;
     latest_risk_severity: string | null;
     latest_risk_event_type: string | null;
     latest_risk_message: string | null;
+    order_history: Array<{
+      id: number;
+      trade_plan_id: number;
+      symbol: string;
+      side: string;
+      venue: string;
+      status: string;
+      price: number;
+      quantity: number;
+      executed_quantity: number;
+      created_at: string;
+    }>;
+    position_history: Array<{
+      id: number;
+      trade_plan_id: number | null;
+      symbol: string;
+      side: string;
+      quantity: number;
+      entry_price: number;
+      mark_price: number;
+      unrealized_pnl: number;
+      leverage: number;
+      status: string;
+      opened_at: string;
+    }>;
+    risk_event_history: Array<{
+      id: number;
+      trade_plan_id: number | null;
+      event_type: string;
+      severity: string;
+      message: string;
+      created_at: string;
+    }>;
+    timeline_history: Array<{
+      trade_plan_id: number | null;
+      symbol: string | null;
+      entity_kind: string;
+      event_kind: string;
+      tone: string;
+      title: string;
+      detail: string;
+      occurred_at: string;
+    }>;
     created_at: string;
   }>;
   timeline: Array<{
@@ -219,13 +271,6 @@ function reconcileTone(healthy: boolean, severity: string | null) {
 export default async function HomePage() {
   const commandCenter = await getCommandCenter();
   const { summary, shadow_run: shadowRun } = commandCenter;
-  const timelineByTradePlan = new Map<number, typeof commandCenter.timeline>();
-  for (const item of commandCenter.timeline) {
-    if (item.trade_plan_id == null) continue;
-    const current = timelineByTradePlan.get(item.trade_plan_id) ?? [];
-    current.push(item);
-    timelineByTradePlan.set(item.trade_plan_id, current);
-  }
 
   const cards = [
     { title: "Trade plans", value: String(summary.trade_plans_total), hint: "Planes persistidos" },
@@ -391,7 +436,7 @@ export default async function HomePage() {
           {commandCenter.operation_snapshots.length === 0 ? (
             <p className="empty">Sin detalles de operaciones recientes.</p>
           ) : commandCenter.operation_snapshots.slice(0, 6).map((operation) => {
-            const relatedTimeline = (timelineByTradePlan.get(operation.trade_plan_id) ?? []).slice(0, 4);
+            const relatedTimeline = operation.timeline_history.slice(0, 8);
             const actualEntry = operation.latest_position_entry_price ?? operation.latest_order_price ?? null;
             const entryDiffPct = actualEntry != null && operation.entry_price > 0
               ? ((actualEntry - operation.entry_price) / operation.entry_price) * 100
@@ -454,6 +499,104 @@ export default async function HomePage() {
                     </div>
                   </section>
                 </div>
+                <section className="history-grid">
+                  <article className="detail-box history-box">
+                    <div className="history-box-header">
+                      <h5>Historial de órdenes</h5>
+                      <span className="badge subtle">{operation.order_history.length}</span>
+                    </div>
+                    <div className="history-list">
+                      {operation.order_history.length === 0 ? (
+                        <p className="empty">Sin órdenes asociadas.</p>
+                      ) : operation.order_history.map((order) => (
+                        <article key={order.id} className="history-item">
+                          <div className="risk-item-top">
+                            <span className={`status-pill ${statusTone(order.status)}`}>{order.status}</span>
+                            <span className="risk-meta">#{order.id} · {formatDate(order.created_at)}</span>
+                          </div>
+                          <p>{order.venue} · {order.symbol} · {order.side}</p>
+                          <small>Px {formatNumber(order.price, 2)} · Qty {formatNumber(order.quantity, 3)} · Exec {formatNumber(order.executed_quantity, 3)}</small>
+                        </article>
+                      ))}
+                    </div>
+                  </article>
+                  <article className="detail-box history-box">
+                    <div className="history-box-header">
+                      <h5>Historial de posiciones</h5>
+                      <span className="badge subtle">{operation.position_history.length}</span>
+                    </div>
+                    <div className="history-list">
+                      {operation.position_history.length === 0 ? (
+                        <p className="empty">Sin posiciones asociadas.</p>
+                      ) : operation.position_history.map((position) => (
+                        <article key={position.id} className="history-item">
+                          <div className="risk-item-top">
+                            <span className={`status-pill ${statusTone(position.status)}`}>{position.status}</span>
+                            <span className="risk-meta">#{position.id} · {formatDate(position.opened_at)}</span>
+                          </div>
+                          <p>{position.symbol} · {position.side} · {formatNumber(position.quantity, 3)}</p>
+                          <small>Entry {formatNumber(position.entry_price, 2)} · Mark {formatNumber(position.mark_price, 2)} · Lev {position.leverage}x · PnL {formatNumber(position.unrealized_pnl, 2)}</small>
+                        </article>
+                      ))}
+                    </div>
+                  </article>
+                  <article className="detail-box history-box">
+                    <div className="history-box-header">
+                      <h5>Historial de riesgo</h5>
+                      <span className="badge subtle">{operation.risk_event_history.length}</span>
+                    </div>
+                    <div className="history-list">
+                      {operation.risk_event_history.length === 0 ? (
+                        <p className="empty">Sin eventos de riesgo asociados.</p>
+                      ) : operation.risk_event_history.map((event) => (
+                        <article key={event.id} className="history-item">
+                          <div className="risk-item-top">
+                            <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
+                            <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
+                          </div>
+                          <p>{event.message}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </article>
+                  <article className="detail-box history-box">
+                    <div className="history-box-header">
+                      <h5>Reconcile actual</h5>
+                      <span className={`status-pill ${reconcileTone(operation.reconciliation_healthy, operation.reconciliation_primary_severity)}`}>
+                        {operation.reconciliation_healthy ? "healthy" : operation.reconciliation_primary_event ?? "drift"}
+                      </span>
+                    </div>
+                    <ul className="detail-list compact">
+                      <li><span>Orders</span><strong>{operation.reconciliation_order_count}</strong></li>
+                      <li><span>Filled</span><strong>{operation.reconciliation_filled_order_count}</strong></li>
+                      <li><span>Open positions</span><strong>{operation.reconciliation_open_position_count}</strong></li>
+                      <li><span>Drifts</span><strong>{operation.reconciliation_drift_events.length}</strong></li>
+                    </ul>
+                    <div className="history-list compact-list">
+                      {operation.reconciliation_drift_events.length === 0 ? (
+                        <p className="empty">Sin drift detectado.</p>
+                      ) : operation.reconciliation_drift_events.map((drift, index) => (
+                        <article key={`${operation.trade_plan_id}-drift-${index}`} className="history-item">
+                          <div className="risk-item-top">
+                            <span className={`status-pill ${statusTone(drift.severity)}`}>{drift.severity}</span>
+                            <span className="risk-meta">{drift.event_type}</span>
+                          </div>
+                          <p>{drift.message}</p>
+                        </article>
+                      ))}
+                      {operation.reconciliation_recommended_actions.length > 0 ? (
+                        <div className="history-actions">
+                          <strong>Acciones sugeridas</strong>
+                          <ul>
+                            {operation.reconciliation_recommended_actions.map((action) => (
+                              <li key={action}>{action}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  </article>
+                </section>
                 <section className="detail-box detail-box-timeline">
                   <h5>Timeline asociada</h5>
                   <div className="detail-timeline">

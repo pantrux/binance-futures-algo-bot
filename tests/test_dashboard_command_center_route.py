@@ -65,6 +65,22 @@ def test_dashboard_command_center_route_returns_payload():
 
     plan = seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", created_at=now - timedelta(hours=1))
 
+    old_order = Order(
+        trade_plan_id=plan.id,
+        venue="binance_futures_testnet",
+        external_order_id="ord-0",
+        symbol="BTCUSDT",
+        side="long",
+        order_type="market",
+        status="new",
+        price=50000,
+        quantity=0.1,
+        executed_quantity=0,
+        is_testnet=True,
+    )
+    old_order.created_at = now - timedelta(minutes=55)
+    db.add(old_order)
+
     order = Order(
         trade_plan_id=plan.id,
         venue="binance_futures_testnet",
@@ -80,6 +96,21 @@ def test_dashboard_command_center_route_returns_payload():
     )
     order.created_at = now - timedelta(minutes=50)
     db.add(order)
+
+    old_position = Position(
+        trade_plan_id=plan.id,
+        symbol="BTCUSDT",
+        side="long",
+        quantity=0.1,
+        entry_price=49980,
+        mark_price=50000,
+        unrealized_pnl=2,
+        leverage=5,
+        status="closed",
+        is_testnet=True,
+    )
+    old_position.opened_at = now - timedelta(minutes=48)
+    db.add(old_position)
 
     position = Position(
         trade_plan_id=plan.id,
@@ -107,8 +138,8 @@ def test_dashboard_command_center_route_returns_payload():
     assert response.status_code == 200
     payload = response.json()
     assert payload["summary"]["testnet_executed_trade_plans"] == 1
-    assert payload["shadow_run"]["testnet_orders_total"] == 1
-    assert payload["shadow_run"]["testnet_fill_rate_pct"] == 100.0
+    assert payload["shadow_run"]["testnet_orders_total"] == 2
+    assert payload["shadow_run"]["testnet_fill_rate_pct"] == 50.0
     assert payload["operation_snapshots"][0]["trade_plan_id"] == plan.id
     assert payload["operation_snapshots"][0]["latest_order_status"] == "filled"
     assert payload["operation_snapshots"][0]["latest_position_status"] == "open"
@@ -116,8 +147,14 @@ def test_dashboard_command_center_route_returns_payload():
     assert payload["operation_snapshots"][0]["technical_score"] == 80
     assert payload["operation_snapshots"][0]["timeframe"] == "15m"
     assert payload["operation_snapshots"][0]["thesis"] == "dashboard route"
+    assert payload["operation_snapshots"][0]["reconciliation_order_count"] == 2
+    assert len(payload["operation_snapshots"][0]["order_history"]) == 2
+    assert payload["operation_snapshots"][0]["order_history"][0]["status"] == "filled"
+    assert len(payload["operation_snapshots"][0]["position_history"]) == 2
+    assert len(payload["operation_snapshots"][0]["risk_event_history"]) == 1
+    assert len(payload["operation_snapshots"][0]["timeline_history"]) >= 4
     assert payload["timeline"][0]["trade_plan_id"] == plan.id
-    assert len(payload["timeline"]) >= 4
+    assert len(payload["timeline"]) >= 5
     assert payload["recent_trade_plans"][0]["id"] == plan.id
     assert payload["recent_orders"][0]["trade_plan_id"] == plan.id
     assert payload["open_positions"][0]["trade_plan_id"] == plan.id
