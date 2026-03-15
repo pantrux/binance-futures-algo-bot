@@ -101,10 +101,11 @@ class BinanceTestnetTradingService:
             or executed_qty <= 0
             or status in {"new", "pending_new", "partially_filled"}
         )
-        if not needs_refresh or not hasattr(self.binance_client, "get_order"):
+        get_order = getattr(self.binance_client, "get_order", None)
+        if not needs_refresh or not callable(get_order):
             return exchange_order
         try:
-            refreshed = await self.binance_client.get_order(
+            refreshed = await get_order(
                 symbol=symbol,
                 order_id=int(order_id) if order_id is not None else None,
                 client_order_id=client_order_id,
