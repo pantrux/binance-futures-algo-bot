@@ -90,6 +90,7 @@ th { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-
 .risk-item { padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: rgba(22, 36, 54, 0.55); }
 .risk-item-top { display:flex; justify-content:space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
 .risk-item p { margin: 0 0 8px; }
+.timeline-meta { color: var(--muted); opacity: 0.9; }
 .positive { color: var(--accent); }
 .negative { color: var(--danger); }
 
