@@ -52,3 +52,14 @@ class TradingBotApiClient:
                 return None
             response.raise_for_status()
             return response.json()
+
+    async def ingest_market(self, symbol: str, timeframe: str = "15m", limit: int = 200) -> dict | None:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{self.base_url}/market/ingest/{symbol}",
+                params={"timeframe": timeframe, "limit": limit},
+            )
+            if response.status_code in (400, 404):
+                return None
+            response.raise_for_status()
+            return response.json()
