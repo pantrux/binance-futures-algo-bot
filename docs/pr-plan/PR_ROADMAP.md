@@ -14,7 +14,7 @@ A partir de este punto, todo cambio funcional, de infraestructura o documentaci�
 8. Configurar y mantener branch protection sobre `main` para exigir PRs y checks requeridos cuando el repositorio ya esté estabilizado operativamente.
 9. **Regla de documentación permanente:** después de cada PR se debe actualizar el roadmap, el estado de avance y la documentación afectada.
 10. **Regla Gantt permanente:** el proyecto debe mantener un Gantt/tabla de avance visible y actualizado para distinguir etapas completadas, en progreso y pendientes.
-11. **Regla Greptile de oro:** leer siempre resumen + comentarios; resolver cada comentario antes de merge. Objetivo por defecto: `Confidence Score 5/5`, salvo instrucción explícita del owner.
+11. **Regla Greptile de oro:** leer siempre resumen + comentarios; resolver cada comentario antes de merge. Se puede mergear con `Confidence Score` **4/5 o 5/5** si no hay blockers reales; cualquier deuda técnica remanente debe quedar documentada como follow-up.
 
 ## Estado actual del proyecto
 Las fases fundacionales iniciales fueron empujadas directamente a `main` para bootstrap del repo greenfield. Desde este documento en adelante, el proyecto migra formalmente a workflow por PR.
@@ -71,10 +71,11 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-46 | Radar unificado por operación en el centro de mando | ✅ Mergeado | vista consolidada por trade plan con setup, orden, posición, reconcile y riesgo |
 | PR-47 | Línea de tiempo operativa unificada | ✅ Mergeado | feed cronológico plan→orden→posición→riesgo→reconcile en el dashboard |
 | PR-48 | Drill-down por trade plan en el centro de mando | ✅ Mergeado | ficha detallada por operación con anchors y mini-timeline asociada |
-| PR-49 | Justificación técnica por trade plan en el centro de mando | ✅ Mergeado | scores, régimen, timeframe y tesis visibles por operación |
-| PR-50 | UX de entry real / delta vs plan en el command center | ✅ Mergeado | estados sin ejecución real ahora muestran `—` en vez de falsos `+0.000%` |
+| PR-49 | Aclarar entry planificada vs entry real en el centro de mando | ⚪ Cerrado | branch fallido/superado; su intención quedó absorbida por cambios posteriores sin mergearlo |
+| PR-50 | Justificación técnica por orden en el centro de mando | ✅ Mergeado | scores, régimen, timeframe y tesis visibles por operación |
 | PR-51 | Persistencia de fill real desde Binance | ✅ Mergeado | refresh post-submit contra Binance Testnet + persistencia del fill real + cierre total de reviews |
-| PR-52 | Hardening residual del refresh testnet | 🟡 En progreso | evitar refresh innecesario para `partially_filled` completo y blindar `orderId` falsy en el fallback a `clientOrderId` |
+| PR-52 | Hardening residual del refresh testnet | ✅ Mergeado | evita refresh innecesario en `PARTIALLY_FILLED` completos y blinda fallback por `clientOrderId` |
+| PR-53 | Historial operativo completo por `trade_plan_id` | 🟡 En preparación | siguiente carril propuesto para profundizar trazabilidad end-to-end en el command center |
 
 ## Secuencia de PRs actualizada
 
@@ -758,6 +759,17 @@ Permitir leer cada operación reciente como una ficha autosuficiente con setup, 
 - build frontend verde
 - mergeado en `8d3d9d5` y desplegado en Synology
 
+### PR-49 — Aclarar entry planificada vs entry real en el centro de mando
+**Estado:** ⚪ Cerrado (superado)
+
+**Objetivo**
+Distinguir visualmente `entry planificada` vs `entry real` dentro del drill-down operativo.
+
+**Resultado**
+- el branch quedó con `web-build` rojo y errores reales de compilación
+- no se mergeó
+- su intención funcional quedó absorbida por la secuencia posterior del command center (`PR-50`/`PR-51`), por lo que se cerró explícitamente para limpiar ruido histórico
+
 ### PR-50 — Justificación técnica por orden en el centro de mando
 **Estado:** ✅ Mergeado
 
@@ -769,7 +781,7 @@ Mostrar para cada operación la justificación técnica persistida (scores, rég
 - `thesis` visible en el dashboard
 - aclaración explícita de limitación actual sobre RSI/MACD/EMA/patrones no persistidos por trade plan
 - tests de servicio/ruta + build frontend verde
-- mergeado / deploy en curso o siguiente turno de despliegue
+- mergeado en `7ae60a9`
 
 ### PR-51 — Persistencia de fill real desde Binance
 **Estado:** ✅ Mergeado
@@ -785,7 +797,7 @@ Confirmar la orden contra Binance Testnet después del submit y persistir el fil
 - mergeado en `6c0b632` tras resolver todos los comments de Greptile/Codex y cerrar el último borde de `unknown_status`
 
 ### PR-52 — Hardening residual del refresh testnet
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Cerrar dos bordes residuales del refresh post-submit para reducir ruido hacia Binance Testnet y blindar el fallback por `clientOrderId` cuando `orderId` llega como valor falsy.
@@ -794,7 +806,19 @@ Cerrar dos bordes residuales del refresh post-submit para reducir ruido hacia Bi
 - no refrescar órdenes `PARTIALLY_FILLED` cuando ya traen `avgPrice` y `executedQty` válidos
 - usar `clientOrderId` como identificador efectivo cuando `orderId` llegue falsy (`0`, `""`, `False`)
 - tests específicos para ambos escenarios
-- actualización de roadmap y sync de Outline post-PR
+- actualización de roadmap + sync de Outline post-merge
+- mergeado en `2f8293c` con `Greptile 5/5`
+
+### PR-53 — Historial operativo completo por `trade_plan_id`
+**Estado:** 🟡 En preparación
+
+**Objetivo**
+Profundizar el command center para que cada trade plan permita inspección end-to-end de órdenes, posiciones, risk events y timeline relacionada sin reconstrucción manual.
+
+**Entregables**
+- payload enriquecido por `trade_plan_id` en `/dashboard/command-center`
+- UI detallada para historial operativo completo por operación
+- validación de `api-tests`, `web-build`, `docs-links` y review Greptile
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

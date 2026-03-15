@@ -108,7 +108,19 @@ th { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-
 .detail-list li { display:flex; justify-content:space-between; gap: 12px; }
 .detail-list span { color: var(--muted); }
 .detail-list strong { text-align:right; }
-.detail-box-timeline { margin-top: 4px; }
+.detail-list.compact li { align-items: baseline; }
+.detail-box-timeline { margin-top: 14px; }
+.history-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+.history-box-header { display:flex; justify-content:space-between; gap: 12px; align-items:center; margin-bottom: 12px; }
+.history-box-header .badge { margin-bottom: 0; }
+.history-list { display:flex; flex-direction:column; gap: 10px; }
+.history-list.compact-list { margin-top: 12px; }
+.history-item { padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: rgba(7, 17, 31, 0.42); }
+.history-item p { margin: 0 0 6px; }
+.history-item small { color: var(--muted); line-height: 1.5; }
+.history-actions { margin-top: 8px; padding: 12px; border-radius: 12px; border: 1px dashed var(--border); background: rgba(7, 17, 31, 0.35); }
+.history-actions strong { display:block; margin-bottom: 6px; }
+.history-actions ul { margin: 0; padding-left: 18px; color: var(--muted); }
 .thesis-box { margin-top: 14px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: rgba(7, 17, 31, 0.45); }
 .thesis-box strong { display:block; margin-bottom: 6px; }
 .thesis-box p { margin: 0; color: var(--text); line-height: 1.5; }
@@ -125,10 +137,10 @@ th { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-
   .grid-six { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .detail-grid { grid-template-columns: 1fr; }
-  .detail-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .detail-columns, .history-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 900px) {
-  .hero, .two-column, .grid-six, .status-metrics, .stats-grid, .detail-columns { grid-template-columns: 1fr; }
-  .panel-header, .detail-card-header { align-items:flex-start; flex-direction:column; }
+  .hero, .two-column, .grid-six, .status-metrics, .stats-grid, .detail-columns, .history-grid { grid-template-columns: 1fr; }
+  .panel-header, .detail-card-header, .history-box-header { align-items:flex-start; flex-direction:column; }
 }

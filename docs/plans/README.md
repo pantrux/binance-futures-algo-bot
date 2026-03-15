@@ -9,14 +9,16 @@
 - `cutover-and-post-cutover-monitoring.md`
 - `cutover-drills-and-evidence-package.md`
 
-## Fases de implementación
+## Histórico archivado
 
-- `market-ingestion-phase.md`
-- `market-ingestion-hardening-phase.md`
-- `technical-indicators-phase.md`
-- `signal-features-phase.md`
-- `domain-expansion-phase.md`
-- `data-model-and-testnet-phase.md`
+Los planes tácticos de las fases iniciales fueron absorbidos por `master-plan.md` + `implementation-roadmap.md` y se movieron a `archive/` para no seguir apareciendo como roadmaps activos.
+
+- `archive/market-ingestion-phase.md`
+- `archive/market-ingestion-hardening-phase.md`
+- `archive/technical-indicators-phase.md`
+- `archive/signal-features-phase.md`
+- `archive/domain-expansion-phase.md`
+- `archive/data-model-and-testnet-phase.md`
 
 ## Operación / despliegue
 
