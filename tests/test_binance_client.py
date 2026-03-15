@@ -26,11 +26,15 @@ def test_serialize_quantity_trims_trailing_zero_fraction():
 
 
 def test_serialize_quantity_rejects_zero():
-    with pytest.raises(ValueError, match="mayor a cero"):
+    with pytest.raises(ValueError, match="número finito y mayor a cero"):
         BinanceFuturesClient._serialize_quantity(0.0)
 
 
-
 def test_serialize_quantity_rejects_nan():
-    with pytest.raises(ValueError, match="mayor a cero"):
+    with pytest.raises(ValueError, match="número finito y mayor a cero"):
         BinanceFuturesClient._serialize_quantity(math.nan)
+
+
+def test_serialize_quantity_rejects_inf():
+    with pytest.raises(ValueError, match="número finito y mayor a cero"):
+        BinanceFuturesClient._serialize_quantity(math.inf)
