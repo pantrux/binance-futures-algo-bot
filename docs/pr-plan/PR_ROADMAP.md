@@ -78,7 +78,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-53 | Historial operativo completo por `trade_plan_id` | ✅ Mergeado | historial end-to-end por operación + reconcile visible + payload endurecido post-review |
 | PR-54 | Smoke Synology del command center enriquecido | ✅ Mergeado | smoke script endurecido para `/dashboard/command-center` + runbook actualizado + validación real en NAS |
 | PR-55 | Deduplicar fetch web del smoke Synology | ✅ Mergeado | una sola descarga de `${WEB_BASE_URL}/` + validación múltiple de marcadores sobre el mismo HTML |
-| PR-56 | Evidencia operativa del command center para shadow run gate | 🟡 En progreso | artifact JSON/Markdown del gate incorpora snapshot operacional del command center |
+| PR-56 | Evidencia operativa del command center para shadow run gate | ✅ Mergeado | artifact JSON/Markdown del gate incorpora snapshot operacional del command center |
+| PR-57 | Alinear docs del gate con evidencia del command center | 🟡 En progreso | runbook + checklist + ADR-040 actualizados para exigir/referenciar el bloque `command_center` |
 
 ## Secuencia de PRs actualizada
 
@@ -849,7 +850,7 @@ Eliminar la redundancia del smoke web para que la home del dashboard se descargu
 - mergeado en `6f2bdb5`
 
 ### PR-56 — Evidencia operativa del command center para shadow run gate
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Enriquecer el artifact auditable del shadow run con una instantánea operacional del command center, para que el gate no entregue solo métricas agregadas sino también contexto visible de las operaciones recientes.
@@ -858,6 +859,18 @@ Enriquecer el artifact auditable del shadow run con una instantánea operacional
 - `scripts/synology_shadow_run_gate.py` consulta también `/dashboard/command-center`
 - artifact JSON incluye bloque `command_center`
 - artifact Markdown agrega sección de evidencia operativa con top operaciones recientes y estado de reconcile
+- mergeado en `1850eec`
+
+### PR-57 — Alinear docs del gate con evidencia del command center
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Hacer explícito en runbook, checklist y ADR que el gate auditable del shadow run ya no es solo cuantitativo: también incorpora contexto operacional del command center y debe revisarse como parte de la evidencia mínima.
+
+**Entregables**
+- `synology-runbook.md` exige revisar bloque `command_center` del artifact
+- `transition-checklist-and-capital-ramp.md` pide evidencia operacional reciente dentro del gate
+- `ADR-040` refleja la evolución del artifact hacia evidencia cuantitativa + operacional
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-55` ya quedó mergeado en `main` y el smoke Synology del command center quedó cerrado; el foco inmediato pasa a convertir la nueva visibilidad del dashboard en evidencia operativa reutilizable dentro del shadow run gate.
-- **PR activo:** `PR-56` — evidencia operativa del command center para shadow run gate.
-- **Siguiente carril sugerido:** cerrar `PR-56` y luego evaluar si esa evidencia debe exponerse también como artifact separado en workflows/reports operativos.
+- **Estado global actual:** `PR-56` ya quedó mergeado en `main` y el shadow run gate ya incorpora evidencia operacional del command center; el foco inmediato pasa a alinear la documentación operativa para exigir/referenciar explícitamente ese nuevo bloque de evidencia.
+- **PR activo:** `PR-57` — alinear docs del gate con evidencia del command center.
+- **Siguiente carril sugerido:** cerrar `PR-57` y luego evaluar si conviene exponer esa evidencia también como artifact separado o resumen dedicado en otros workflows/reportes operativos.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -37,7 +37,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
-| Fase 13 — Profundización del command center | 🟡 En progreso | 72% | PR-53..PR-56 | historial operativo completo por `trade_plan_id`, smoke Synology específico, dedupe del smoke web y evidencia operativa reusable desde el gate de shadow run |
+| Fase 13 — Profundización del command center | 🟡 En progreso | 80% | PR-53..PR-57 | historial operativo completo por `trade_plan_id`, smoke Synology específico, dedupe del smoke web, evidencia operativa reusable desde el gate de shadow run y docs operativas alineadas |
 
 ---
 
@@ -167,10 +167,16 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - revalidación completa del smoke sobre el NAS real
 - mergeado en `6f2bdb5`
 
-### PR-56 — Evidencia operativa del command center para shadow run gate 🟡
+### PR-56 — Evidencia operativa del command center para shadow run gate ✅
 - enriquecer `synology_shadow_run_gate.py` con snapshot operacional del command center
 - persistir bloque `command_center` dentro del artifact JSON del gate
 - agregar sección Markdown con contexto de operaciones recientes + reconcile
+- mergeado en `1850eec`
+
+### PR-57 — Alinear docs del gate con evidencia del command center 🟡
+- runbook Synology exige revisar bloque `command_center` del artifact
+- checklist de transición pide confirmación explícita de evidencia operacional reciente
+- ADR-040 refleja que el gate ahora combina evidencia cuantitativa + operacional
 
 ---
 

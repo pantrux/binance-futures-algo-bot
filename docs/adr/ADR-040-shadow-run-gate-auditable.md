@@ -31,7 +31,8 @@ Agregar una capa auditable de readiness de shadow run compuesta por:
    - `GET /reporting/shadow-run-summary?window_days=...`
 3. Script operativo:
    - `scripts/synology_shadow_run_gate.py`
-   - consume el endpoint, evalúa umbrales y genera artefactos JSON + Markdown.
+   - consume el endpoint de shadow run, evalúa umbrales y genera artefactos JSON + Markdown.
+   - adicionalmente consulta `/dashboard/command-center` para adjuntar evidencia operativa reciente del command center dentro del mismo artifact.
 4. Workflow GitHub Actions:
    - `.github/workflows/synology-shadow-run-gate.yml`
    - permite ejecutar/manualizar el Gate C y subir evidencia auditable como artifact.
@@ -41,6 +42,7 @@ Agregar una capa auditable de readiness de shadow run compuesta por:
 - El readiness hacia testnet serio queda medible y repetible.
 - La decisión de avanzar o no deja de depender de lectura manual dispersa.
 - Se genera evidencia reutilizable para runbooks, auditoría y cutover.
+- El artifact deja de ser solo cuantitativo y pasa a incluir contexto operacional del command center para inspección rápida de las operaciones recientes.
 - Los umbrales quedan parametrizables sin reescribir la API.
 
 ### Negativas
