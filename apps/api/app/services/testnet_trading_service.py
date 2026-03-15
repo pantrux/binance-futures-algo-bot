@@ -64,10 +64,11 @@ class BinanceTestnetTradingService:
                 "pending_new": 0,
                 "new": 0,
                 "partially_filled": 1,
-                "filled": 2,
+                # Estados terminales negativos: pueden ocurrir tras parcial fill, pero no deben pisar un FILLED.
                 "canceled": 2,
                 "expired": 2,
                 "rejected": 2,
+                "filled": 3,
             }
             return rank.get(refreshed_status, 1) >= rank.get(original_status, 1)
 
