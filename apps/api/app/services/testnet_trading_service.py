@@ -43,6 +43,27 @@ class BinanceTestnetTradingService:
 
         return fallback
 
+    def _extract_fill_price_from_trades(self, trades: list[dict], *, fallback: float) -> float:
+        total_qty = 0.0
+        total_quote = 0.0
+        for trade in trades:
+            qty = self._to_float(trade.get("qty"), fallback=0.0)
+            price = self._to_float(trade.get("price"), fallback=0.0)
+            quote_qty = self._to_float(trade.get("quoteQty"), fallback=0.0)
+            if qty <= 0:
+                continue
+            total_qty += qty
+            total_quote += quote_qty if quote_qty > 0 else price * qty
+        if total_qty > 0 and total_quote > 0:
+            return total_quote / total_qty
+        return fallback
+
+    def _extract_executed_quantity_from_trades(self, trades: list[dict], *, fallback: float) -> float:
+        total_qty = 0.0
+        for trade in trades:
+            total_qty += self._to_float(trade.get("qty"), fallback=0.0)
+        return total_qty if total_qty > 0 else fallback
+
     def _prefer_refresh_value(self, key: str, original: object, refreshed: object) -> bool:
         """Decide si un campo refrescado debe sobreescribir el valor original.
 
@@ -278,8 +299,28 @@ class BinanceTestnetTradingService:
                 message=f"Error inesperado en confirmación post-orden; se persiste payload original: {exc}",
             )
 
-        exchange_price = self._extract_fill_price(exchange_order, fallback=trade_plan.entry_price)
-        raw_executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
+        order_id = exchange_order.get("orderId")
+        order_trades: list[dict] = []
+        get_order_trades = getattr(self.binance_client, "get_order_trades", None)
+        if callable(get_order_trades) and order_id is not None:
+            try:
+                order_trades = await get_order_trades(symbol=trade_plan.symbol, order_id=int(order_id))
+            except Exception as exc:  # noqa: BLE001
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_order_trades_lookup_failed",
+                    severity="warning",
+                    message=f"No fue posible obtener fills reales de userTrades: {exc}",
+                )
+
+        exchange_price = self._extract_fill_price_from_trades(
+            order_trades,
+            fallback=self._extract_fill_price(exchange_order, fallback=trade_plan.entry_price),
+        )
+        raw_executed_qty = self._extract_executed_quantity_from_trades(
+            order_trades,
+            fallback=self._to_float(exchange_order.get("executedQty"), fallback=0.0),
+        )
         order_status = self._normalize_order_status(
             exchange_order.get("status"),
             executed_qty=raw_executed_qty,
@@ -291,15 +332,37 @@ class BinanceTestnetTradingService:
         external_order_id = str(exchange_order.get("orderId") or exchange_order.get("clientOrderId") or client_order_id)
 
         leverage = 1
-        try:
-            leverage = await self.binance_client.get_symbol_leverage(trade_plan.symbol)
-        except Exception as exc:  # noqa: BLE001
-            self._log_risk_event(
-                trade_plan_id=trade_plan.id,
-                event_type="testnet_execution_leverage_fallback",
-                severity="warning",
-                message=f"No fue posible obtener leverage real; fallback a 1x ({exc})",
-            )
+        mark_price = exchange_price
+        unrealized_pnl = 0.0
+        get_position_risk = getattr(self.binance_client, "get_position_risk", None)
+        if callable(get_position_risk):
+            try:
+                position_risk = await get_position_risk(trade_plan.symbol)
+            except Exception as exc:  # noqa: BLE001
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_position_risk_lookup_failed",
+                    severity="warning",
+                    message=f"No fue posible obtener positionRisk real; fallback local ({exc})",
+                )
+            else:
+                if isinstance(position_risk, dict):
+                    leverage = int(self._to_float(position_risk.get("leverage"), fallback=float(leverage)) or leverage)
+                    live_mark_price = self._to_float(position_risk.get("markPrice"), fallback=0.0)
+                    if live_mark_price > 0:
+                        mark_price = live_mark_price
+                    direction = 1 if trade_plan.side == "long" else -1
+                    unrealized_pnl = round((mark_price - exchange_price) * executed_qty * direction, 8)
+        else:
+            try:
+                leverage = await self.binance_client.get_symbol_leverage(trade_plan.symbol)
+            except Exception as exc:  # noqa: BLE001
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_execution_leverage_fallback",
+                    severity="warning",
+                    message=f"No fue posible obtener leverage real; fallback a 1x ({exc})",
+                )
 
         order = Order(
             trade_plan_id=trade_plan.id,
@@ -320,8 +383,8 @@ class BinanceTestnetTradingService:
             side=trade_plan.side,
             quantity=executed_qty,
             entry_price=exchange_price,
-            mark_price=exchange_price,
-            unrealized_pnl=0,
+            mark_price=mark_price,
+            unrealized_pnl=unrealized_pnl,
             leverage=leverage,
             status="open",
             is_testnet=True,
