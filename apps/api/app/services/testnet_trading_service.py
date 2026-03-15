@@ -256,12 +256,21 @@ class BinanceTestnetTradingService:
             self.db.commit()
             return {"executed": False, "reason": "testnet_api_error"}
 
-        exchange_order = await self._confirm_exchange_order(
-            trade_plan_id=trade_plan.id,
-            symbol=trade_plan.symbol,
-            exchange_order=exchange_order,
-            client_order_id=client_order_id,
-        )
+        try:
+            exchange_order = await self._confirm_exchange_order(
+                trade_plan_id=trade_plan.id,
+                symbol=trade_plan.symbol,
+                exchange_order=exchange_order,
+                client_order_id=client_order_id,
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Última línea de defensa: la orden ya fue enviada, así que preferimos persistir con el payload original.
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_order_refresh_unexpected_error",
+                severity="warning",
+                message=f"Error inesperado en confirmación post-orden; se persiste payload original: {exc}",
+            )
 
         exchange_price = self._extract_fill_price(exchange_order, fallback=trade_plan.entry_price)
         raw_executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
