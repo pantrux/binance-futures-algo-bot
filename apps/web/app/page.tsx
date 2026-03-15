@@ -374,7 +374,7 @@ export default async function HomePage() {
                 </div>
                 <p>{item.title}</p>
                 <small>{item.detail}</small>
-                <small>trade_plan_id: {item.trade_plan_id ?? '—'} · symbol: {item.symbol ?? '—'}</small>
+                <small className="timeline-meta">plan #{item.trade_plan_id ?? '—'} · {item.symbol ?? '—'}</small>
               </article>
             ))}
           </div>
