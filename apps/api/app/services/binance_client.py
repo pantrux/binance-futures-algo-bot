@@ -93,6 +93,22 @@ class BinanceFuturesClient:
         self.ensure_credentials()
         return {"X-MBX-APIKEY": self.api_key}
 
+
+    async def get_order(
+        self,
+        *,
+        symbol: str,
+        order_id: int | None = None,
+        client_order_id: str | None = None,
+        recv_window: int = 5000,
+    ) -> dict:
+        params = {"symbol": symbol.upper(), "recvWindow": recv_window}
+        if order_id is not None:
+            params["orderId"] = order_id
+        if client_order_id:
+            params["origClientOrderId"] = client_order_id
+        return await self._request("GET", "/fapi/v1/order", signed=True, params=params)
+
     async def place_market_order(
         self,
         *,

@@ -26,6 +26,51 @@ class BinanceTestnetTradingService:
         except (TypeError, ValueError):
             return fallback
 
+    def _extract_fill_price(self, exchange_order: dict, *, fallback: float) -> float:
+        avg_price = self._to_float(exchange_order.get("avgPrice"), fallback=0.0)
+        if avg_price > 0:
+            return avg_price
+
+        status = str(exchange_order.get("status") or "").strip().lower()
+        price = self._to_float(exchange_order.get("price"), fallback=0.0)
+        if price > 0 and status in {"filled", "partially_filled"}:
+            return price
+
+        executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
+        cum_quote = self._to_float(exchange_order.get("cumQuote"), fallback=0.0)
+        if executed_qty > 0 and cum_quote > 0:
+            return cum_quote / executed_qty
+
+        return fallback
+
+    async def _confirm_exchange_order(
+        self,
+        *,
+        symbol: str,
+        exchange_order: dict,
+        client_order_id: str,
+    ) -> dict:
+        order_id = exchange_order.get("orderId")
+        status = str(exchange_order.get("status") or "").strip().lower()
+        avg_price = self._to_float(exchange_order.get("avgPrice"), fallback=0.0)
+        executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
+        needs_refresh = avg_price <= 0 or executed_qty <= 0 or status in {"new", "pending_new"}
+        if not needs_refresh or not hasattr(self.binance_client, "get_order"):
+            return exchange_order
+        try:
+            refreshed = await self.binance_client.get_order(
+                symbol=symbol,
+                order_id=int(order_id) if order_id is not None else None,
+                client_order_id=client_order_id,
+            )
+        except Exception:
+            return exchange_order
+        if not isinstance(refreshed, dict) or not refreshed:
+            return exchange_order
+        merged = dict(exchange_order)
+        merged.update({k: v for k, v in refreshed.items() if v not in (None, "")})
+        return merged
+
     @staticmethod
     def _normalize_order_status(raw_status: object, *, executed_qty: float, requested_qty: float) -> str:
         status = str(raw_status or "new").strip().lower()

@@ -67,6 +67,61 @@ class FakeBinanceClientNewStatusButExecuted:
         }
 
 
+class FakeBinanceClientRequiresOrderRefresh:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 5
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": 999,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "executedQty": "0",
+            "status": "NEW",
+        }
+
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": order_id or 999,
+            "clientOrderId": client_order_id,
+            "avgPrice": "50123.45",
+            "executedQty": "0.100",
+            "status": "FILLED",
+        }
+
+
+class FakeBinanceClientRefreshWithCumQuote:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 5
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": 1001,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "price": "0",
+            "executedQty": "0",
+            "status": "NEW",
+        }
+
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": order_id or 1001,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "price": "0",
+            "cumQuote": "5012.345",
+            "executedQty": "0.100",
+            "status": "FILLED",
+        }
+
+
 class FakeBinanceClientRejectedOrder:
     async def get_symbol_step_size(self, symbol: str) -> float:
         return 0.001
@@ -241,6 +296,62 @@ def test_testnet_trading_normalizes_new_status_with_executed_qty_as_filled():
     assert order.status == "filled"
     assert order.executed_quantity > 0
 
+
+
+def test_confirm_exchange_order_refreshes_missing_fill_fields():
+    db = build_db()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientRequiresOrderRefresh(),
+        execution_enabled=True,
+    )
+
+    payload = asyncio.run(
+        service._confirm_exchange_order(
+            symbol="BTCUSDT",
+            exchange_order={
+                "orderId": 999,
+                "clientOrderId": "cid-1",
+                "avgPrice": "0",
+                "executedQty": "0",
+                "status": "NEW",
+            },
+            client_order_id="cid-1",
+        )
+    )
+
+    assert payload["status"] == "FILLED"
+    assert payload["avgPrice"] == "50123.45"
+    assert payload["executedQty"] == "0.100"
+
+
+
+def test_testnet_trading_derives_fill_price_from_cum_quote_when_avg_price_is_zero():
+    db = build_db()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientRefreshWithCumQuote(),
+        execution_enabled=True,
+    )
+
+    exchange_order = asyncio.run(
+        service._confirm_exchange_order(
+            symbol="BTCUSDT",
+            exchange_order={
+                "orderId": 1001,
+                "clientOrderId": "cid-2",
+                "avgPrice": "0",
+                "price": "0",
+                "executedQty": "0",
+                "status": "NEW",
+            },
+            client_order_id="cid-2",
+        )
+    )
+
+    price = service._extract_fill_price(exchange_order, fallback=12345.0)
+
+    assert round(price, 3) == 50123.45
 
 
 def test_testnet_trading_preserves_rejected_status_without_reclassifying_as_fill():
