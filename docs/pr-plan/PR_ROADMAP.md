@@ -727,7 +727,7 @@ Subir la granularidad del centro de mando consolidando por operación el plan, l
 - mergeado en `4285d30` y desplegado en Synology
 
 ### PR-47 — Línea de tiempo operativa unificada
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Mostrar cronológicamente en el centro de mando el flujo de cada operación (creación de plan, orden, posición, riesgo y drift) para entender qué pasó y cuándo sin saltar entre widgets.
@@ -736,6 +736,19 @@ Mostrar cronológicamente en el centro de mando el flujo de cada operación (cre
 - `timeline` en `GET /dashboard/command-center`
 - feed visual “Línea de tiempo operativa” en la home del dashboard
 - tests de servicio/ruta + build frontend verde
+- mergeado en `722b49f` y desplegado en Synology
+
+### PR-48 — Drill-down por trade plan en el centro de mando
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Permitir leer cada operación reciente como una ficha autosuficiente con setup, ejecución, salud y timeline asociada, evitando reconstruir contexto manualmente desde varias tablas.
+
+**Entregables**
+- sección “Detalle por trade plan” en la home del dashboard
+- enlaces desde radar/timeline al bloque detallado del trade plan
+- timeline asociada por operación dentro de cada ficha
+- build frontend verde
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
