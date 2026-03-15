@@ -21,6 +21,10 @@ from apps.api.app.services.shadow_run_reporting_service import ShadowRunReportin
 
 
 class DashboardCommandCenterService:
+    PLAN_ORDER_HISTORY_LIMIT = 50
+    PLAN_POSITION_HISTORY_LIMIT = 50
+    PLAN_RISK_EVENT_HISTORY_LIMIT = 100
+
     def __init__(self, db: Session) -> None:
         self.db = db
 
@@ -182,18 +186,21 @@ class DashboardCommandCenterService:
                 self.db.query(Order)
                 .filter(Order.trade_plan_id == plan.id)
                 .order_by(desc(Order.created_at), desc(Order.id))
+                .limit(self.PLAN_ORDER_HISTORY_LIMIT)
                 .all()
             )
             plan_positions = (
                 self.db.query(Position)
                 .filter(Position.trade_plan_id == plan.id)
                 .order_by(desc(Position.opened_at), desc(Position.id))
+                .limit(self.PLAN_POSITION_HISTORY_LIMIT)
                 .all()
             )
             plan_risk_events = (
                 self.db.query(RiskEvent)
                 .filter(RiskEvent.trade_plan_id == plan.id)
                 .order_by(desc(RiskEvent.created_at), desc(RiskEvent.id))
+                .limit(self.PLAN_RISK_EVENT_HISTORY_LIMIT)
                 .all()
             )
 
