@@ -62,7 +62,10 @@ class DashboardCommandCenterService:
 
     @staticmethod
     def _timeline_anchor(*timestamps: datetime | None) -> datetime:
-        return max(timestamp for timestamp in timestamps if timestamp is not None)
+        candidates = [timestamp for timestamp in timestamps if timestamp is not None]
+        if not candidates:
+            return datetime.now(timezone.utc)
+        return max(candidates)
 
     @staticmethod
     def _serialize_order(order: Order) -> DashboardCommandCenterOrder:
@@ -207,7 +210,12 @@ class DashboardCommandCenterService:
             latest_order = plan_orders[0] if plan_orders else None
             latest_position = plan_positions[0] if plan_positions else None
             latest_risk = plan_risk_events[0] if plan_risk_events else None
-            risk_event_count = len(plan_risk_events)
+            risk_event_count = (
+                self.db.query(func.count(RiskEvent.id))
+                .filter(RiskEvent.trade_plan_id == plan.id)
+                .scalar()
+                or 0
+            )
 
             reconciliation = execution_state_machine.reconcile_loaded_trade_plan(
                 plan,

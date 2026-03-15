@@ -588,8 +588,8 @@ export default async function HomePage() {
                         <div className="history-actions">
                           <strong>Acciones sugeridas</strong>
                           <ul>
-                            {operation.reconciliation_recommended_actions.map((action) => (
-                              <li key={action}>{action}</li>
+                            {operation.reconciliation_recommended_actions.map((action, index) => (
+                              <li key={`${operation.trade_plan_id}-${index}-${action}`}>{action}</li>
                             ))}
                           </ul>
                         </div>
