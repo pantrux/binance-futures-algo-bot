@@ -68,8 +68,8 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa K — Profundización del command center
 - PR-53 en adelante.
-- Estado actual: en preparación.
-- Entrega esperada: historial operativo completo por `trade_plan_id`, navegación de detalle más profunda y trazabilidad end-to-end por operación.
+- Estado actual: en progreso (`PR-53` mergeado, `PR-54` activo para endurecer smoke/validación real en Synology).
+- Entrega esperada: historial operativo completo por `trade_plan_id`, navegación de detalle más profunda, smoke Synology específico del command center y trazabilidad end-to-end por operación.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.
