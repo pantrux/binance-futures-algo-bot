@@ -33,16 +33,16 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - PR-19 y PR-20.
 - Entrega: estructura documental ordenada + sync idempotente sin duplicados en Outline + estabilización de operación one-shot del worker en Synology.
 
-### Etapa D — Infraestructura recurrente (en progreso)
+### Etapa D — Infraestructura recurrente (completada)
 - PR-22 a PR-24 (con PR-21 como ajuste documental de alineación).
-- Estado actual: PR-22 ✅ mergeado (retención de artifacts), PR-23 ✅ mergeado (observabilidad/alerting), PR-24 🟡 en progreso.
+- Estado actual: PR-22 ✅, PR-23 ✅ y PR-24 ✅ mergeados.
 - Entrega: gobierno de artifacts, cron operativo, alerting, DR y hardening de seguridad.
 
-### Etapa E — Riesgo cuantitativo avanzado
+### Etapa E — Riesgo cuantitativo avanzado (completada)
 - PR-25 a PR-28.
-- Entrega: régimen de mercado, sizing dinámico, correlación de portafolio, gate final avanzado.
+- Entrega: régimen de mercado, sizing dinámico, correlación de portafolio y gate final avanzado.
 
-### Etapa F — Ejecución robusta en exchange
+### Etapa F — Ejecución robusta en exchange (completada)
 - PR-29 a PR-32.
 - Entrega: router testnet, reconciliación/state machine, paridad paper-vs-testnet y visibilidad operativa diaria.
 
@@ -61,10 +61,15 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Estado actual: completada.
 - Entrega: validación CI de links Markdown locales + gate auditable de shadow run para readiness testnet con artifacts JSON/Markdown.
 
-### Etapa J — Activación operativa de testnet
+### Etapa J — Activación operativa de testnet (completada)
 - PR-42 a PR-52.
-- Estado actual: en progreso (PR-51 ya mergeado; PR-52 abierto como hardening residual corto sobre el refresh testnet).
+- Estado actual: completada; `PR-49` quedó cerrado sin merge por branch fallido/superado, y `PR-50`/`PR-51`/`PR-52` consolidaron el command center + persistencia de fill real + hardening del refresh testnet.
 - Entrega: primeras ejecuciones testnet reales + normalización de fills + reconciliación robusta + centro de mando con radar/timeline/drill-down/justificación técnica + persistencia de fill real desde Binance + hardening fino del refresh post-submit.
+
+### Etapa K — Profundización del command center
+- PR-53 en adelante.
+- Estado actual: en preparación.
+- Entrega esperada: historial operativo completo por `trade_plan_id`, navegación de detalle más profunda y trazabilidad end-to-end por operación.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.
