@@ -113,6 +113,8 @@ class BinanceFuturesClient:
             params["orderId"] = order_id
         if client_order_id:
             params["origClientOrderId"] = client_order_id
+        if "orderId" not in params and "origClientOrderId" not in params:
+            raise ValueError("get_order requiere al menos 'order_id' o 'client_order_id'")
         params["signature"] = self._sign({k: str(v) for k, v in params.items()})
 
         async with httpx.AsyncClient(timeout=20.0) as client:

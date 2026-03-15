@@ -43,6 +43,20 @@ class BinanceTestnetTradingService:
 
         return fallback
 
+    def _prefer_refresh_value(self, original: object, refreshed: object) -> bool:
+        if refreshed in (None, ""):
+            return False
+        if original in (None, ""):
+            return True
+        try:
+            refreshed_value = float(refreshed)
+            original_value = float(original)
+        except (TypeError, ValueError):
+            return True
+        if refreshed_value <= 0 < original_value:
+            return False
+        return True
+
     async def _confirm_exchange_order(
         self,
         *,
@@ -76,7 +90,9 @@ class BinanceTestnetTradingService:
         if not isinstance(refreshed, dict) or not refreshed:
             return exchange_order
         merged = dict(exchange_order)
-        merged.update({k: v for k, v in refreshed.items() if v not in (None, "")})
+        for key, value in refreshed.items():
+            if self._prefer_refresh_value(merged.get(key), value):
+                merged[key] = value
         return merged
 
     @staticmethod
