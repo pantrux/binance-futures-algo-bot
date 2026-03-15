@@ -417,7 +417,9 @@ export default async function HomePage() {
                       <li><span>Posición</span><strong>{operation.latest_position_id ? `#${operation.latest_position_id}` : '—'}</strong></li>
                       <li><span>Estado posición</span><strong>{operation.latest_position_status ?? '—'}</strong></li>
                       <li><span>Qty posición</span><strong>{formatNumber(operation.latest_position_quantity, 3)}</strong></li>
-                      <li><span>Entry / Mark</span><strong>{formatNumber(operation.latest_position_entry_price, 2)} / {formatNumber(operation.latest_position_mark_price, 2)}</strong></li>
+                      <li><span>Entry real</span><strong>{formatNumber(actualEntry, 2)}</strong></li>
+                      <li><span>Δ vs plan</span><strong className={(entryDiffPct ?? 0) >= 0 ? 'positive' : 'negative'}>{formatPercent(entryDiffPct, 3)}</strong></li>
+                      <li><span>Mark</span><strong>{formatNumber(operation.latest_position_mark_price, 2)}</strong></li>
                       <li><span>PnL</span><strong className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? 'positive' : 'negative'}>{formatNumber(operation.latest_position_unrealized_pnl, 2)}</strong></li>
                     </ul>
                   </section>
@@ -577,6 +579,16 @@ export default async function HomePage() {
                   <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
                 </div>
                 <p>{event.message}</p>
+                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}
+              <p>{event.message}</p>
                 <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
               </article>
             ))}
