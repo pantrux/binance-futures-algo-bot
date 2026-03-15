@@ -92,7 +92,7 @@ fetch_body() {
   local status
   local body
 
-  echo "→ ${name}: descargando ${url}"
+  echo "→ ${name}: descargando ${url}" >&2
 
   tmpfile="$(mktemp)"
   trap 'rm -f "${tmpfile}"' RETURN
@@ -101,9 +101,9 @@ fetch_body() {
   body="$(cat "${tmpfile}" || true)"
 
   if [[ "${status}" != "200" ]]; then
-    echo "--- body ---"
-    echo "${body}"
-    echo "------------"
+    echo "--- body ---" >&2
+    echo "${body}" >&2
+    echo "------------" >&2
     echo "❌ ${name} respondió HTTP ${status} (esperado 200)" >&2
     return 1
   fi
