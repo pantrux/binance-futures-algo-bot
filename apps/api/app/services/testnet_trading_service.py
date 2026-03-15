@@ -46,6 +46,7 @@ class BinanceTestnetTradingService:
     async def _confirm_exchange_order(
         self,
         *,
+        trade_plan_id: int | None,
         symbol: str,
         exchange_order: dict,
         client_order_id: str,
@@ -63,7 +64,14 @@ class BinanceTestnetTradingService:
                 order_id=int(order_id) if order_id is not None else None,
                 client_order_id=client_order_id,
             )
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            if trade_plan_id is not None:
+                self._log_risk_event(
+                    trade_plan_id=trade_plan_id,
+                    event_type="testnet_order_refresh_failed",
+                    severity="warning",
+                    message=f"No fue posible refrescar la orden testnet: {exc}",
+                )
             return exchange_order
         if not isinstance(refreshed, dict) or not refreshed:
             return exchange_order
@@ -203,6 +211,7 @@ class BinanceTestnetTradingService:
             return {"executed": False, "reason": "testnet_api_error"}
 
         exchange_order = await self._confirm_exchange_order(
+            trade_plan_id=trade_plan.id,
             symbol=trade_plan.symbol,
             exchange_order=exchange_order,
             client_order_id=client_order_id,

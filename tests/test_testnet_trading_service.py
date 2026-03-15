@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.db.base import Base
-from apps.api.app.db.models import Order, Position, TradePlan
+from apps.api.app.db.models import Order, Position, RiskEvent, TradePlan
 from apps.api.app.services.testnet_trading_service import BinanceTestnetTradingService
 
 
@@ -120,6 +120,26 @@ class FakeBinanceClientRefreshWithCumQuote:
             "executedQty": "0.100",
             "status": "FILLED",
         }
+
+
+class FakeBinanceClientRefreshFails:
+    async def get_symbol_step_size(self, symbol: str) -> float:
+        return 0.001
+
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        return 2
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": 1002,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "executedQty": "0",
+            "status": "NEW",
+        }
+
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        raise RuntimeError("timeout_refresh")
 
 
 class FakeBinanceClientRejectedOrder:
@@ -308,6 +328,7 @@ def test_confirm_exchange_order_refreshes_missing_fill_fields():
 
     payload = asyncio.run(
         service._confirm_exchange_order(
+            trade_plan_id=None,
             symbol="BTCUSDT",
             exchange_order={
                 "orderId": 999,
@@ -336,6 +357,7 @@ def test_testnet_trading_derives_fill_price_from_cum_quote_when_avg_price_is_zer
 
     exchange_order = asyncio.run(
         service._confirm_exchange_order(
+            trade_plan_id=None,
             symbol="BTCUSDT",
             exchange_order={
                 "orderId": 1001,
@@ -352,6 +374,54 @@ def test_testnet_trading_derives_fill_price_from_cum_quote_when_avg_price_is_zer
     price = service._extract_fill_price(exchange_order, fallback=12345.0)
 
     assert round(price, 3) == 50123.45
+
+
+def test_testnet_trading_persists_refreshed_fill_price_and_status_end_to_end():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientRequiresOrderRefresh(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    order = db.query(Order).filter(Order.trade_plan_id == plan.id).one()
+    position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
+    assert order.status == "filled"
+    assert order.price == 50123.45
+    assert order.executed_quantity == 0.1
+    assert position.entry_price == 50123.45
+    assert position.quantity == 0.1
+
+
+
+def test_testnet_trading_logs_warning_when_order_refresh_fails_and_falls_back_to_plan_price():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientRefreshFails(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    order = db.query(Order).filter(Order.trade_plan_id == plan.id).one()
+    position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
+    warning = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_order_refresh_failed")
+        .one()
+    )
+    assert order.price == plan.entry_price
+    assert position.entry_price == plan.entry_price
+    assert warning.severity == "warning"
+    assert "timeout_refresh" in warning.message
+
 
 
 def test_testnet_trading_preserves_rejected_status_without_reclassifying_as_fill():
