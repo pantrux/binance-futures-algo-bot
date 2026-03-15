@@ -26,6 +26,111 @@ class BinanceTestnetTradingService:
         except (TypeError, ValueError):
             return fallback
 
+    def _extract_fill_price(self, exchange_order: dict, *, fallback: float) -> float:
+        avg_price = self._to_float(exchange_order.get("avgPrice"), fallback=0.0)
+        if avg_price > 0:
+            return avg_price
+
+        status = str(exchange_order.get("status") or "").strip().lower()
+        price = self._to_float(exchange_order.get("price"), fallback=0.0)
+        if price > 0 and status in {"filled", "partially_filled"}:
+            return price
+
+        executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
+        cum_quote = self._to_float(exchange_order.get("cumQuote"), fallback=0.0)
+        if executed_qty > 0 and cum_quote > 0:
+            return cum_quote / executed_qty
+
+        return fallback
+
+    def _prefer_refresh_value(self, key: str, original: object, refreshed: object) -> bool:
+        """Decide si un campo refrescado debe sobreescribir el valor original.
+
+        Regla general:
+        - Nunca pisar con None/"".
+        - Para valores numéricos: evitar degradar un valor positivo existente con 0.
+        - Para strings no numéricos: ser conservador y evitar downgrades (especialmente en status).
+        """
+        if refreshed in (None, ""):
+            return False
+        if original in (None, ""):
+            return True
+
+        if key == "status":
+            original_status = str(original or "").strip().lower()
+            refreshed_status = str(refreshed or "").strip().lower()
+            # Progreso típico de Binance (no exhaustivo pero suficiente para prevenir downgrades obvios)
+            rank = {
+                "pending_new": 0,
+                "new": 0,
+                "partially_filled": 1,
+                # Estados terminales negativos: pueden ocurrir tras parcial fill, pero no deben pisar un FILLED.
+                "canceled": 2,
+                "expired": 2,
+                "rejected": 2,
+                "filled": 3,
+            }
+            original_known = original_status in rank
+            refreshed_known = refreshed_status in rank
+            if not original_known and not refreshed_known:
+                return False
+            unknown_rank = -1
+            return rank.get(refreshed_status, unknown_rank) >= rank.get(original_status, unknown_rank)
+
+        try:
+            refreshed_value = float(refreshed)
+            original_value = float(original)
+        except (TypeError, ValueError):
+            # Si no es numérico (e.g. strings varios), no pisar a menos que el original sea vacío.
+            return False
+        if refreshed_value <= 0 < original_value:
+            return False
+        return True
+
+    async def _confirm_exchange_order(
+        self,
+        *,
+        trade_plan_id: int | None,
+        symbol: str,
+        exchange_order: dict,
+        client_order_id: str,
+    ) -> dict:
+        order_id = exchange_order.get("orderId")
+        status = str(exchange_order.get("status") or "").strip().lower()
+        avg_price = self._to_float(exchange_order.get("avgPrice"), fallback=0.0)
+        executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
+        terminal_no_fill = status in {"canceled", "expired", "rejected"} and executed_qty <= 0
+        needs_refresh = not terminal_no_fill and (
+            avg_price <= 0
+            or executed_qty <= 0
+            or status in {"new", "pending_new", "partially_filled"}
+        )
+        get_order = getattr(self.binance_client, "get_order", None)
+        if not needs_refresh or not callable(get_order):
+            return exchange_order
+        try:
+            refreshed = await get_order(
+                symbol=symbol,
+                order_id=int(order_id) if order_id is not None else None,
+                client_order_id=client_order_id,
+            )
+        except Exception as exc:  # noqa: BLE001
+            if trade_plan_id is not None:
+                self._log_risk_event(
+                    trade_plan_id=trade_plan_id,
+                    event_type="testnet_order_refresh_failed",
+                    severity="warning",
+                    message=f"No fue posible refrescar la orden testnet: {exc}",
+                )
+            return exchange_order
+        if not isinstance(refreshed, dict) or not refreshed:
+            return exchange_order
+        merged = dict(exchange_order)
+        for key, value in refreshed.items():
+            if self._prefer_refresh_value(key, merged.get(key), value):
+                merged[key] = value
+        return merged
+
     @staticmethod
     def _normalize_order_status(raw_status: object, *, executed_qty: float, requested_qty: float) -> str:
         status = str(raw_status or "new").strip().lower()
@@ -157,10 +262,23 @@ class BinanceTestnetTradingService:
             self.db.commit()
             return {"executed": False, "reason": "testnet_api_error"}
 
-        exchange_price = self._to_float(exchange_order.get("avgPrice"), fallback=0.0)
-        if exchange_price <= 0:
-            exchange_price = trade_plan.entry_price
+        try:
+            exchange_order = await self._confirm_exchange_order(
+                trade_plan_id=trade_plan.id,
+                symbol=trade_plan.symbol,
+                exchange_order=exchange_order,
+                client_order_id=client_order_id,
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Última línea de defensa: la orden ya fue enviada, así que preferimos persistir con el payload original.
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_order_refresh_unexpected_error",
+                severity="warning",
+                message=f"Error inesperado en confirmación post-orden; se persiste payload original: {exc}",
+            )
 
+        exchange_price = self._extract_fill_price(exchange_order, fallback=trade_plan.entry_price)
         raw_executed_qty = self._to_float(exchange_order.get("executedQty"), fallback=0.0)
         order_status = self._normalize_order_status(
             exchange_order.get("status"),

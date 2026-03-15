@@ -27,8 +27,14 @@ type CommandCenterResponse = {
     symbol: string;
     side: string;
     status: string;
+    timeframe: string;
     market_regime: string;
+    technical_score: number;
+    fundamental_score: number;
+    sentiment_score: number;
+    confidence_score: number;
     aggregate_score: number;
+    thesis: string;
     entry_price: number;
     stop_loss: number;
     take_profit: number;
@@ -169,6 +175,13 @@ function formatDate(value: string) {
     hour12: false,
   }).format(new Date(value));
 }
+
+function formatPercent(value: number | null | undefined, digits = 2) {
+  if (value == null || Number.isNaN(value)) return "—";
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${formatNumber(value, digits)}%`;
+}
+
 
 function statusTone(status: string) {
   const normalized = status.toLowerCase();
@@ -379,6 +392,10 @@ export default async function HomePage() {
             <p className="empty">Sin detalles de operaciones recientes.</p>
           ) : commandCenter.operation_snapshots.slice(0, 6).map((operation) => {
             const relatedTimeline = (timelineByTradePlan.get(operation.trade_plan_id) ?? []).slice(0, 4);
+            const actualEntry = operation.latest_position_entry_price ?? operation.latest_order_price ?? null;
+            const entryDiffPct = actualEntry != null && operation.entry_price > 0
+              ? ((actualEntry - operation.entry_price) / operation.entry_price) * 100
+              : null;
             return (
               <article key={operation.trade_plan_id} id={`trade-plan-${operation.trade_plan_id}`} className="detail-card">
                 <div className="detail-card-header">
@@ -418,7 +435,7 @@ export default async function HomePage() {
                       <li><span>Estado posición</span><strong>{operation.latest_position_status ?? '—'}</strong></li>
                       <li><span>Qty posición</span><strong>{formatNumber(operation.latest_position_quantity, 3)}</strong></li>
                       <li><span>Entry real</span><strong>{formatNumber(actualEntry, 2)}</strong></li>
-                      <li><span>Δ vs plan</span><strong className={(entryDiffPct ?? 0) >= 0 ? 'positive' : 'negative'}>{formatPercent(entryDiffPct, 3)}</strong></li>
+                      <li><span>Δ vs plan</span><strong className={entryDiffPct == null ? 'muted' : entryDiffPct >= 0 ? 'positive' : 'negative'}>{formatPercent(entryDiffPct, 3)}</strong></li>
                       <li><span>Mark</span><strong>{formatNumber(operation.latest_position_mark_price, 2)}</strong></li>
                       <li><span>PnL</span><strong className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? 'positive' : 'negative'}>{formatNumber(operation.latest_position_unrealized_pnl, 2)}</strong></li>
                     </ul>
@@ -582,39 +599,6 @@ export default async function HomePage() {
                   <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
                 </div>
                 <p>{event.message}</p>
-                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
-              </article>
-            ))}
-          </div>
-        </section>
-      </section>
-    </main>
-  );
-}
-              <p>{event.message}</p>
-                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
-              </article>
-            ))}
-          </div>
-        </section>
-      </section>
-    </main>
-  );
-}
-      <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
-                  <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
-                </div>
-                <p>{event.message}</p>
-                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
-              </article>
-            ))}
-          </div>
-        </section>
-      </section>
-    </main>
-  );
-}
-              <p>{event.message}</p>
                 <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
               </article>
             ))}

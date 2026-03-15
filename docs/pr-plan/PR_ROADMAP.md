@@ -752,7 +752,7 @@ Permitir leer cada operación reciente como una ficha autosuficiente con setup, 
 - mergeado en `8d3d9d5` y desplegado en Synology
 
 ### PR-50 — Justificación técnica por orden en el centro de mando
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Mostrar para cada operación la justificación técnica persistida (scores, régimen, timeframe y tesis) y separar explícitamente el dato que sí existe hoy del dato que aún no se persiste (snapshots crudos de indicadores/patrones).
@@ -762,6 +762,19 @@ Mostrar para cada operación la justificación técnica persistida (scores, rég
 - `thesis` visible en el dashboard
 - aclaración explícita de limitación actual sobre RSI/MACD/EMA/patrones no persistidos por trade plan
 - tests de servicio/ruta + build frontend verde
+- mergeado / deploy en curso o siguiente turno de despliegue
+
+### PR-51 — Persistencia de fill real desde Binance
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Confirmar la orden contra Binance Testnet después del submit y persistir el fill real del exchange, evitando que el sistema siga cayendo al precio planificado cuando el primer payload viene incompleto.
+
+**Entregables**
+- `get_order` en cliente Binance para refresco post-orden
+- `_confirm_exchange_order()` + `_extract_fill_price()` en `BinanceTestnetTradingService`
+- derivación de precio real desde `avgPrice`, `price` o `cumQuote / executedQty`
+- tests del servicio para refresh y cálculo de fill real
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
