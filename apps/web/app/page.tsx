@@ -206,6 +206,13 @@ function reconcileTone(healthy: boolean, severity: string | null) {
 export default async function HomePage() {
   const commandCenter = await getCommandCenter();
   const { summary, shadow_run: shadowRun } = commandCenter;
+  const timelineByTradePlan = new Map<number, typeof commandCenter.timeline>();
+  for (const item of commandCenter.timeline) {
+    if (item.trade_plan_id == null) continue;
+    const current = timelineByTradePlan.get(item.trade_plan_id) ?? [];
+    current.push(item);
+    timelineByTradePlan.set(item.trade_plan_id, current);
+  }
 
   const cards = [
     { title: "Trade plans", value: String(summary.trade_plans_total), hint: "Planes persistidos" },
@@ -305,7 +312,9 @@ export default async function HomePage() {
               ) : commandCenter.operation_snapshots.map((operation) => (
                 <tr key={operation.trade_plan_id}>
                   <td>
-                    <strong>#{operation.trade_plan_id}</strong><br />
+                    <a className="drill-link" href={`#trade-plan-${operation.trade_plan_id}`}>
+                      <strong>#{operation.trade_plan_id}</strong>
+                    </a><br />
                     {operation.symbol} · {operation.side}<br />
                     <span className={`status-pill ${statusTone(operation.status)}`}>{operation.status}</span>
                   </td>
@@ -357,6 +366,95 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <h3>Detalle por trade plan</h3>
+            <p className="panel-copy">Ficha operativa completa para las últimas operaciones visibles en el radar.</p>
+          </div>
+          <span className="badge subtle">drill-down operativo</span>
+        </div>
+        <div className="detail-grid">
+          {commandCenter.operation_snapshots.length === 0 ? (
+            <p className="empty">Sin detalles de operaciones recientes.</p>
+          ) : commandCenter.operation_snapshots.slice(0, 6).map((operation) => {
+            const relatedTimeline = (timelineByTradePlan.get(operation.trade_plan_id) ?? []).slice(0, 4);
+            return (
+              <article key={operation.trade_plan_id} id={`trade-plan-${operation.trade_plan_id}`} className="detail-card">
+                <div className="detail-card-header">
+                  <div>
+                    <h4>Trade plan #{operation.trade_plan_id} · {operation.symbol}</h4>
+                    <p>{operation.side} · {operation.market_regime} · creado {formatDate(operation.created_at)}</p>
+                  </div>
+                  <div className="chip-row">
+                    <span className={`status-pill ${statusTone(operation.status)}`}>{operation.status}</span>
+                    <span className={`status-pill ${reconcileTone(operation.reconciliation_healthy, operation.reconciliation_primary_severity)}`}>
+                      {operation.reconciliation_healthy ? "healthy" : operation.reconciliation_primary_event ?? "drift"}
+                    </span>
+                    <span className="status-pill neutral">risk count: {operation.risk_event_count}</span>
+                  </div>
+                </div>
+                <div className="detail-columns">
+                  <section className="detail-box">
+                    <h5>Setup</h5>
+                    <ul className="detail-list">
+                      <li><span>Score</span><strong>{formatNumber(operation.aggregate_score, 2)}</strong></li>
+                      <li><span>Risk</span><strong>{formatNumber(operation.applied_risk_pct, 3)}%</strong></li>
+                      <li><span>Max notional</span><strong>{formatNumber(operation.max_position_notional, 2)}</strong></li>
+                      <li><span>Entry</span><strong>{formatNumber(operation.entry_price, 2)}</strong></li>
+                      <li><span>Stop loss</span><strong>{formatNumber(operation.stop_loss, 2)}</strong></li>
+                      <li><span>Take profit</span><strong>{formatNumber(operation.take_profit, 2)}</strong></li>
+                    </ul>
+                  </section>
+                  <section className="detail-box">
+                    <h5>Ejecución</h5>
+                    <ul className="detail-list">
+                      <li><span>Orden</span><strong>{operation.latest_order_id ? `#${operation.latest_order_id}` : '—'}</strong></li>
+                      <li><span>Venue</span><strong>{operation.latest_order_venue ?? '—'}</strong></li>
+                      <li><span>Estado orden</span><strong>{operation.latest_order_status ?? '—'}</strong></li>
+                      <li><span>Px orden</span><strong>{formatNumber(operation.latest_order_price, 2)}</strong></li>
+                      <li><span>Exec qty</span><strong>{formatNumber(operation.latest_order_executed_quantity, 3)}</strong></li>
+                      <li><span>Posición</span><strong>{operation.latest_position_id ? `#${operation.latest_position_id}` : '—'}</strong></li>
+                      <li><span>Estado posición</span><strong>{operation.latest_position_status ?? '—'}</strong></li>
+                      <li><span>Qty posición</span><strong>{formatNumber(operation.latest_position_quantity, 3)}</strong></li>
+                      <li><span>Entry / Mark</span><strong>{formatNumber(operation.latest_position_entry_price, 2)} / {formatNumber(operation.latest_position_mark_price, 2)}</strong></li>
+                      <li><span>PnL</span><strong className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? 'positive' : 'negative'}>{formatNumber(operation.latest_position_unrealized_pnl, 2)}</strong></li>
+                    </ul>
+                  </section>
+                  <section className="detail-box">
+                    <h5>Salud operativa</h5>
+                    <ul className="detail-list">
+                      <li><span>Reconcile</span><strong>{operation.reconciliation_healthy ? 'healthy' : operation.reconciliation_primary_event ?? 'drift'}</strong></li>
+                      <li><span>Drift</span><strong>{operation.reconciliation_primary_message ?? 'Sin drift detectado'}</strong></li>
+                      <li><span>Último riesgo</span><strong>{operation.latest_risk_event_type ?? '—'}</strong></li>
+                      <li><span>Severidad</span><strong>{operation.latest_risk_severity ?? '—'}</strong></li>
+                      <li><span>Mensaje</span><strong>{operation.latest_risk_message ?? 'Sin evento reciente'}</strong></li>
+                    </ul>
+                  </section>
+                </div>
+                <section className="detail-box detail-box-timeline">
+                  <h5>Timeline asociada</h5>
+                  <div className="detail-timeline">
+                    {relatedTimeline.length === 0 ? (
+                      <p className="empty">Sin eventos asociados en timeline.</p>
+                    ) : relatedTimeline.map((item, index) => (
+                      <div key={`${operation.trade_plan_id}-${item.entity_kind}-${index}`} className="detail-timeline-item">
+                        <span className={`status-pill ${toneClassName(item.tone)}`}>{timelineEntityLabel(item.entity_kind)}</span>
+                        <div>
+                          <strong>{item.title}</strong>
+                          <p>{item.detail}</p>
+                          <small>{item.event_kind} · {formatDate(item.occurred_at)}</small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="two-column">
         <section className="panel">
           <div className="panel-header">
@@ -374,7 +472,15 @@ export default async function HomePage() {
                 </div>
                 <p>{item.title}</p>
                 <small>{item.detail}</small>
-                <small className="timeline-meta">plan #{item.trade_plan_id ?? '—'} · {item.symbol ?? '—'}</small>
+                <small className="timeline-meta">
+                  {item.trade_plan_id ? (
+                    <a className="drill-link" href={`#trade-plan-${item.trade_plan_id}`}>
+                      plan #{item.trade_plan_id} · {item.symbol ?? '—'}
+                    </a>
+                  ) : (
+                    `plan #— · ${item.symbol ?? '—'}`
+                  )}
+                </small>
               </article>
             ))}
           </div>
