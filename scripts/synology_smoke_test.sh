@@ -85,6 +85,55 @@ check_contains() {
   echo "✅ ${name}"
 }
 
+fetch_body() {
+  local name="$1"
+  local url="$2"
+  local tmpfile
+  local status
+  local body
+
+  echo "→ ${name}: descargando ${url}"
+
+  tmpfile="$(mktemp)"
+  trap 'rm -f "${tmpfile}"' RETURN
+
+  status="$(curl "${CURL_OPTS[@]}" -o "${tmpfile}" -w "%{http_code}" "${url}" || true)"
+  body="$(cat "${tmpfile}" || true)"
+
+  if [[ "${status}" != "200" ]]; then
+    echo "--- body ---"
+    echo "${body}"
+    echo "------------"
+    echo "❌ ${name} respondió HTTP ${status} (esperado 200)" >&2
+    return 1
+  fi
+
+  if [[ -z "${body}" ]]; then
+    echo "❌ ${name} sin respuesta desde ${url}" >&2
+    return 1
+  fi
+
+  printf '%s' "${body}"
+}
+
+check_body_contains() {
+  local name="$1"
+  local body="$2"
+  local needle="$3"
+
+  echo "→ ${name}: contiene '${needle}'"
+
+  if ! grep -qF "${needle}" <<<"${body}"; then
+    echo "--- body ---"
+    echo "${body}"
+    echo "------------"
+    echo "❌ ${name} no contiene '${needle}'" >&2
+    return 1
+  fi
+
+  echo "✅ ${name}"
+}
+
 check_command_center_json() {
   local name="$1"
   local url="$2"
@@ -174,11 +223,12 @@ else
   esac
 fi
 
-check_contains "WEB /" "${WEB_BASE_URL}/" "bot"
-check_contains "WEB command center" "${WEB_BASE_URL}/" "Detalle por trade plan"
-check_contains "WEB command center" "${WEB_BASE_URL}/" "Historial de órdenes"
-check_contains "WEB command center" "${WEB_BASE_URL}/" "Historial de posiciones"
-check_contains "WEB command center" "${WEB_BASE_URL}/" "Historial de riesgo"
-check_contains "WEB command center" "${WEB_BASE_URL}/" "Reconcile actual"
+web_home_body="$(fetch_body "WEB /" "${WEB_BASE_URL}/")"
+check_body_contains "WEB /" "${web_home_body}" "bot"
+check_body_contains "WEB command center" "${web_home_body}" "Detalle por trade plan"
+check_body_contains "WEB command center" "${web_home_body}" "Historial de órdenes"
+check_body_contains "WEB command center" "${web_home_body}" "Historial de posiciones"
+check_body_contains "WEB command center" "${web_home_body}" "Historial de riesgo"
+check_body_contains "WEB command center" "${web_home_body}" "Reconcile actual"
 
 echo "✅ Smoke tests Synology completados"
