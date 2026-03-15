@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** Fase 12 ya tiene command center con radar unificado por operación; el siguiente salto visible es la línea de tiempo operativa para ver el orden cronológico de plan → orden → posición → riesgo sin hacer joins mentales.
-- **PR activo:** `PR-47` — línea de tiempo operativa unificada.
-- **Etapa actual:** **Fase 12 — Activación operativa de testnet** (`PR-42`, `PR-43`, `PR-44`, `PR-45`, `PR-46`, `PR-47`).
+- **Estado global actual:** Fase 12 ya consolidó el command center operativo, corrigió la persistencia del fill real desde Binance Testnet y ahora entra a una ronda corta de hardening residual sobre el refresh post-submit.
+- **PR activo:** `PR-52` — hardening residual del refresh testnet.
+- **Etapa actual:** **Fase 12 — Activación operativa de testnet** (`PR-42`..`PR-52`).
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -36,7 +36,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 9 — Go-live readiness | ✅ Completada | 100% | PR-33..PR-35 | Validación cuantitativa, gates formales de transición y cutover controlado |
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
-| Fase 12 — Activación operativa de testnet | 🟡 En progreso | 94% | PR-42..PR-51 | primeras ejecuciones testnet reales + command center enriquecido + fix estructural de persistencia del fill real |
+| Fase 12 — Activación operativa de testnet | 🟡 En progreso | 96% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 
 ---
 
@@ -150,10 +150,22 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 
 ## Fase 12 — Activación operativa de testnet
 
-### PR-42 — Activación de shadow run testnet en Synology 🟡
-- documentar bloqueo real detectado tras deploy: `BINANCE_API_KEY`/`BINANCE_API_SECRET` vacíos en `infra/docker/synology/.env`
-- definir variable pública/operativa `SYNOLOGY_API_BASE_URL` para workflow remoto
-- rerun del gate cuando existan primeras ejecuciones `testnet_executed`
+### Estado consolidado reciente
+- **PR-42** ✅ — activación real de shadow run testnet en Synology.
+- **PR-43** ✅ — normalización de fills testnet y reconciliación base.
+- **PR-44** ✅ — guard para rechazos históricos en reconciliación.
+- **PR-45** ✅ — centro de mando operacional inicial.
+- **PR-46** ✅ — radar unificado por operación.
+- **PR-47** ✅ — línea de tiempo operativa unificada.
+- **PR-48** ✅ — drill-down por trade plan.
+- **PR-49** ✅ — justificación técnica por trade plan visible en dashboard.
+- **PR-50** ✅ — UX de `entry real` / `Δ vs plan` corregida para estados sin fill real.
+- **PR-51** ✅ — persistencia de fill real desde Binance Testnet mediante refresh post-submit y derivación defensiva del precio/cantidad ejecutados.
+
+### PR-52 — Hardening residual del refresh testnet 🟡
+- evitar refresh innecesario cuando una orden `PARTIALLY_FILLED` ya trae `avgPrice` y `executedQty` completos
+- usar `clientOrderId` como fallback limpio cuando `orderId` llega falsy en el payload inicial
+- dejar tests focales para ambos bordes antes de cerrar el ciclo
 
 ---
 
@@ -171,8 +183,3 @@ Un sistema de trading **auditable, operable y seguro**, con:
 - `PAPER_TRADING=true` obligatorio hasta cumplir criterios de transición definidos en Fase 9 y aprobar los ensayos operativos de Fase 10.
 - No habilitar live trading por defecto en ninguna fase intermedia.
 - Cada PR debe cerrar con: checks verdes + comentarios/reviews resueltos + roadmap/docs/memoria actualizados.
-dos.
-.
-ctualizados.
-dos.
-.
