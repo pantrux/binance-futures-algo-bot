@@ -354,7 +354,7 @@ class DashboardCommandCenterService:
                     order_history=[self._serialize_order(order) for order in plan_orders],
                     position_history=[self._serialize_position(position) for position in plan_positions],
                     risk_event_history=[self._serialize_risk_event(event) for event in plan_risk_events],
-                    timeline_history=plan_timeline,
+                    timeline_history=plan_timeline[:20],
                     created_at=plan.created_at,
                 )
             )

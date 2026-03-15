@@ -543,7 +543,7 @@ export default async function HomePage() {
                   <article className="detail-box history-box">
                     <div className="history-box-header">
                       <h5>Historial de riesgo</h5>
-                      <span className="badge subtle">{operation.risk_event_history.length}</span>
+                      <span className="badge subtle">{operation.risk_event_count}</span>
                     </div>
                     <div className="history-list">
                       {operation.risk_event_history.length === 0 ? (
