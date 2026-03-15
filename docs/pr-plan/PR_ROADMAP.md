@@ -75,7 +75,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-50 | Justificación técnica por orden en el centro de mando | ✅ Mergeado | scores, régimen, timeframe y tesis visibles por operación |
 | PR-51 | Persistencia de fill real desde Binance | ✅ Mergeado | refresh post-submit contra Binance Testnet + persistencia del fill real + cierre total de reviews |
 | PR-52 | Hardening residual del refresh testnet | ✅ Mergeado | evita refresh innecesario en `PARTIALLY_FILLED` completos y blinda fallback por `clientOrderId` |
-| PR-53 | Historial operativo completo por `trade_plan_id` | 🟡 En preparación | siguiente carril propuesto para profundizar trazabilidad end-to-end en el command center |
+| PR-53 | Historial operativo completo por `trade_plan_id` | ✅ Mergeado | historial end-to-end por operación + reconcile visible + payload endurecido post-review |
+| PR-54 | Smoke Synology del command center enriquecido | 🟡 En progreso | smoke script endurecido para `/dashboard/command-center` + runbook actualizado + validación real en NAS |
 
 ## Secuencia de PRs actualizada
 
@@ -810,7 +811,7 @@ Cerrar dos bordes residuales del refresh post-submit para reducir ruido hacia Bi
 - mergeado en `2f8293c` con `Greptile 5/5`
 
 ### PR-53 — Historial operativo completo por `trade_plan_id`
-**Estado:** 🟡 En preparación
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Profundizar el command center para que cada trade plan permita inspección end-to-end de órdenes, posiciones, risk events y timeline relacionada sin reconstrucción manual.
@@ -818,7 +819,19 @@ Profundizar el command center para que cada trade plan permita inspección end-t
 **Entregables**
 - payload enriquecido por `trade_plan_id` en `/dashboard/command-center`
 - UI detallada para historial operativo completo por operación
-- validación de `api-tests`, `web-build`, `docs-links` y review Greptile
+- métricas/acciones de reconcile visibles por operación
+- mergeado en `f5368c8` tras cierre completo de reviews Greptile
+
+### PR-54 — Smoke Synology del command center enriquecido
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Convertir la validación manual post-PR-53 en una verificación repetible y auditable dentro del smoke Synology, para detectar drift entre API/UI y el entorno real del NAS.
+
+**Entregables**
+- `scripts/synology_smoke_test.sh` valida `GET /dashboard/command-center` y los marcadores UI del command center enriquecido
+- runbook Synology actualizado con criterio mínimo de aprobación específico para el dashboard enriquecido
+- validación real sobre NAS (`http://192.168.0.8:8010` / `http://192.168.0.8:3012`) documentada en el PR
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

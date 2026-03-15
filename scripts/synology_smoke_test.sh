@@ -85,6 +85,54 @@ check_contains() {
   echo "✅ ${name}"
 }
 
+check_command_center_json() {
+  local name="$1"
+  local url="$2"
+  local tmpfile
+  local status
+
+  echo "→ ${name}: ${url} responde payload enriquecido"
+
+  tmpfile="$(mktemp)"
+  trap 'rm -f "${tmpfile}"' RETURN
+
+  status="$(curl "${CURL_OPTS[@]}" -o "${tmpfile}" -w "%{http_code}" "${url}" || true)"
+
+  if [[ "${status}" != "200" ]]; then
+    echo "--- body ---"
+    cat "${tmpfile}" || true
+    echo "------------"
+    echo "❌ ${name} respondió HTTP ${status} (esperado 200)" >&2
+    return 1
+  fi
+
+  python3 - <<'PY' "${tmpfile}"
+import json
+import sys
+from pathlib import Path
+
+payload = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+ops = payload.get('operation_snapshots') or []
+assert isinstance(ops, list), 'operation_snapshots no es lista'
+if ops:
+    op = ops[0]
+    required = [
+        'order_history',
+        'position_history',
+        'risk_event_history',
+        'timeline_history',
+        'reconciliation_recommended_actions',
+    ]
+    missing = [key for key in required if key not in op]
+    assert not missing, f'faltan campos en operation_snapshot: {missing}'
+    assert isinstance(op['timeline_history'], list), 'timeline_history no es lista'
+    assert len(op['timeline_history']) <= 20, 'timeline_history excede límite esperado de 20'
+print('OK')
+PY
+
+  echo "✅ ${name}"
+}
+
 echo "🚦 Iniciando smoke tests Synology"
 echo "API_BASE_URL=${API_BASE_URL}"
 echo "WEB_BASE_URL=${WEB_BASE_URL}"
@@ -92,6 +140,8 @@ echo "WEB_BASE_URL=${WEB_BASE_URL}"
 check_status "API /health" "${API_BASE_URL}/health" 200
 check_status "API /dashboard/summary" "${API_BASE_URL}/dashboard/summary" 200
 check_status "API /trade-plans" "${API_BASE_URL}/trade-plans" 200
+check_status "API /dashboard/command-center" "${API_BASE_URL}/dashboard/command-center" 200
+check_command_center_json "API /dashboard/command-center payload" "${API_BASE_URL}/dashboard/command-center"
 if [[ "${STRICT_EXTERNAL_CHECKS}" == "true" ]]; then
   check_status "API /integrations/binance/testnet/ping" "${API_BASE_URL}/integrations/binance/testnet/ping" 200
 else
@@ -124,5 +174,10 @@ else
 fi
 
 check_contains "WEB /" "${WEB_BASE_URL}/" "bot"
+check_contains "WEB command center" "${WEB_BASE_URL}/" "Detalle por trade plan"
+check_contains "WEB command center" "${WEB_BASE_URL}/" "Historial de órdenes"
+check_contains "WEB command center" "${WEB_BASE_URL}/" "Historial de posiciones"
+check_contains "WEB command center" "${WEB_BASE_URL}/" "Historial de riesgo"
+check_contains "WEB command center" "${WEB_BASE_URL}/" "Reconcile actual"
 
 echo "✅ Smoke tests Synology completados"

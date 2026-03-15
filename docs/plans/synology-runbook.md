@@ -250,10 +250,11 @@ METRICS_API_KEY="<opcional>" \
 ### Criterio mínimo de aprobación
 1. Todos los checks del script en verde.
 2. `docker compose ps` sin servicios `unhealthy`.
-3. Dashboard responde y muestra resumen sin errores 5xx.
-4. API responde `testnet/ping` correctamente.
-5. Gate C de shadow run puede evaluarse con artifact auditable (`synology-shadow-run-gate`).
-6. No activar live trading; mantener `PAPER_TRADING=true`.
+3. Dashboard responde sin errores 5xx y la home renderiza el command center enriquecido (`Detalle por trade plan`, `Historial de órdenes`, `Historial de posiciones`, `Historial de riesgo`, `Reconcile actual`).
+4. `GET /dashboard/command-center` responde 200 y expone payload enriquecido por operación (`order_history`, `position_history`, `risk_event_history`, `timeline_history`, `reconciliation_recommended_actions`).
+5. API responde `testnet/ping` correctamente.
+6. Gate C de shadow run puede evaluarse con artifact auditable (`synology-shadow-run-gate`).
+7. No activar live trading; mantener `PAPER_TRADING=true`.
 
 > Nota operativa: `/integrations/binance/testnet/ping` depende de disponibilidad externa de Binance Testnet.
 > Si Binance está intermitente, repetir el smoke o ejecutar temporalmente con `STRICT_EXTERNAL_CHECKS=false`

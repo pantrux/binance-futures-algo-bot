@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** se cerró la **Fase 12 — Activación operativa de testnet** con `PR-52` mergeado y se limpió la capa documental/Outline para dejar visibles solo los roadmaps vigentes.
-- **PR activo:** ninguno abierto en GitHub al momento de esta actualización.
-- **Siguiente carril sugerido:** `PR-53` — historial operativo completo por `trade_plan_id` en el command center.
+- **Estado global actual:** `PR-53` ya quedó mergeado en `main` y el command center enriquecido fue desplegado/validado en Synology; el foco inmediato pasa a convertir esa validación real en smoke auditable y reutilizable.
+- **PR activo:** `PR-54` — smoke Synology del command center enriquecido.
+- **Siguiente carril sugerido:** cerrar `PR-54` y luego evaluar evidencia operativa del shadow run con la nueva vista ya desplegada en NAS.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -37,7 +37,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
-| Fase 13 — Profundización del command center | 🟡 En preparación | 5% | PR-53..PR-55 | historial operativo completo por `trade_plan_id`, navegación de detalle y trazabilidad end-to-end |
+| Fase 13 — Profundización del command center | 🟡 En progreso | 45% | PR-53..PR-55 | historial operativo completo por `trade_plan_id`, smoke Synology específico y trazabilidad end-to-end validada en NAS |
 
 ---
 
@@ -148,12 +148,17 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - **PR-51** ✅ — persistencia de fill real desde Binance Testnet mediante refresh post-submit y derivación defensiva del precio/cantidad ejecutados.
 - **PR-52** ✅ — hardening residual del refresh testnet: evita refresh innecesario en `PARTIALLY_FILLED` completos y blinda fallback por `clientOrderId`.
 
-## Fase 13 — Profundización del command center (siguiente)
+## Fase 13 — Profundización del command center (en progreso)
 
-### PR-53 — Historial operativo completo por `trade_plan_id` 🟡 En preparación
+### PR-53 — Historial operativo completo por `trade_plan_id` ✅
 - payload enriquecido por operación para órdenes, posiciones, risk events y timeline asociada
 - vista detallada para inspección end-to-end sin joins manuales
-- validación completa de API/UI/docs antes de abrir continuidad real sobre Synology
+- mergeado en `f5368c8`
+
+### PR-54 — Smoke Synology del command center enriquecido 🟡
+- smoke script endurecido para validar `GET /dashboard/command-center` y el payload enriquecido por operación
+- smoke UI endurecido para exigir marcadores reales del dashboard (`Historial de órdenes`, `Historial de posiciones`, `Historial de riesgo`, `Reconcile actual`)
+- validación real ya ejecutada con éxito contra NAS local (`192.168.0.8:8010` / `192.168.0.8:3012`)
 
 ---
 
