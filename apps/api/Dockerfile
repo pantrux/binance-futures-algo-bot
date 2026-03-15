@@ -10,6 +10,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 COPY apps ./apps
+COPY scripts ./scripts
 COPY .env.example ./.env.example
 COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic

@@ -79,7 +79,14 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-54 | Smoke Synology del command center enriquecido | ✅ Mergeado | smoke script endurecido para `/dashboard/command-center` + runbook actualizado + validación real en NAS |
 | PR-55 | Deduplicar fetch web del smoke Synology | ✅ Mergeado | una sola descarga de `${WEB_BASE_URL}/` + validación múltiple de marcadores sobre el mismo HTML |
 | PR-56 | Evidencia operativa del command center para shadow run gate | ✅ Mergeado | artifact JSON/Markdown del gate incorpora snapshot operacional del command center |
-| PR-57 | Alinear docs del gate con evidencia del command center | 🟡 En progreso | runbook + checklist + ADR-040 actualizados para exigir/referenciar el bloque `command_center` |
+| PR-57 | Alinear docs del gate con evidencia del command center | ✅ Mergeado | runbook + checklist + ADR-040 actualizados para exigir/referenciar el bloque `command_center` |
+| PR-58 | Persistir y backfillear precios reales desde Binance | ✅ Mergeado | usar `userTrades` como fuente de fill real y corregir órdenes/posiciones testnet ya abiertas |
+| PR-59 | Bloquear ejecución testnet desde señales demo | ✅ Mergeado | impedir que `source=demo` dispare órdenes reales en Binance Testnet |
+| PR-60 | Auto-ingestar mercado antes de caer a demo | ✅ Mergeado | si faltan candles/snapshot, el worker intenta `POST /market/ingest/{symbol}` y reintenta el setup market-driven |
+| PR-61 | Normalizar cantidad testnet para Binance | ✅ Mergeado | serialización limpia de quantity para evitar `400 Bad Request` por artefactos float |
+| PR-62 | Hardening fino del serializer de quantity | ✅ Mergeado | rechazar `NaN` / infinitos y completar la cobertura del serializer de quantity |
+| PR-63 | Metadata estructurada para `risk_events` | 🔵 Propuesto | agregar contexto JSON auditable a errores/eventos críticos para acelerar debugging operativo |
+
 
 ## Secuencia de PRs actualizada
 
@@ -862,7 +869,7 @@ Enriquecer el artifact auditable del shadow run con una instantánea operacional
 - mergeado en `1850eec`
 
 ### PR-57 — Alinear docs del gate con evidencia del command center
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Hacer explícito en runbook, checklist y ADR que el gate auditable del shadow run ya no es solo cuantitativo: también incorpora contexto operacional del command center y debe revisarse como parte de la evidencia mínima.
@@ -871,6 +878,82 @@ Hacer explícito en runbook, checklist y ADR que el gate auditable del shadow ru
 - `synology-runbook.md` exige revisar bloque `command_center` del artifact
 - `transition-checklist-and-capital-ramp.md` pide evidencia operacional reciente dentro del gate
 - `ADR-040` refleja la evolución del artifact hacia evidencia cuantitativa + operacional
+- mergeado en `bbf0248`
+
+### PR-58 — Persistir y backfillear precios reales desde Binance
+**Estado:** ✅ Mergeado
+
+**Objetivo**
+Eliminar los precios ficticios del command center usando la fuente correcta de fill real (`userTrades`) y corregir también las órdenes/posiciones testnet ya abiertas que quedaron persistidas con precio planificado.
+
+**Entregables**
+- `BinanceFuturesClient.get_order_trades()` para recuperar fills reales por `orderId`
+- `BinanceTestnetTradingService` persiste `order.price` / `position.entry_price` desde `userTrades`
+- script `scripts/backfill_testnet_fill_prices.py` corrige registros testnet existentes en Postgres/NAS
+- validación en NAS contra posiciones reales abiertas (`BTCUSDT`, `ETHUSDT`, `SOLUSDT`)
+- mergeado en `db51dbb`
+
+### PR-59 — Bloquear ejecución testnet desde señales demo
+**Estado:** ✅ Mergeado
+
+**Objetivo**
+Evitar que el worker ejecute órdenes reales en Binance Testnet cuando el setup provenga del fallback demo (`source=demo`, típicamente por `snapshot_incompleto`).
+
+**Entregables**
+- `process_symbol()` bloquea ejecución testnet si `meta.source != "market"`
+- opcionalmente cae a paper trading si `TESTNET_FALLBACK_TO_PAPER=true`
+- tests cubren bloqueo de ejecución real y fallback a paper
+- despliegue del worker actualizado en Synology para cortar nuevas ejecuciones distorsionadas
+- mergeado en `ea19847`
+
+### PR-60 — Auto-ingestar mercado antes de caer a demo
+**Estado:** ✅ Mergeado
+
+**Objetivo**
+Atacar la raíz de `snapshot_incompleto` en Synology: si faltan candles/snapshot en la DB, el worker debe intentar ingestar mercado y reintentar el setup market-driven antes de caer al fallback demo.
+
+**Entregables**
+- `TradingBotApiClient.ingest_market()`
+- `HybridSignalService` reintenta tras `POST /market/ingest/{symbol}` cuando faltan snapshot/candles o el snapshot viene incompleto
+- tests cubren recuperación por ingesta para `market_snapshot_missing` y `snapshot_incompleto`
+- validación en NAS: logs del worker muestran nuevas corridas `source="market"`, `reason="ok"` para BTC/ETH/SOL tras auto-ingesta
+- mergeado en `3d2b5a1`
+
+### PR-61 — Normalizar cantidad testnet para Binance
+**Estado:** ✅ Mergeado
+
+**Objetivo**
+Eliminar rechazos `400 Bad Request` por serialización sucia de cantidades (`0.8100000000000001`, `18.0300000000000011`) al enviar órdenes market a Binance Testnet.
+
+**Entregables**
+- serialización de quantity con precisión estable y sin artefactos float
+- tests para `0.81` / `18.03`
+- validación en NAS reintentando ETH/SOL sin rechazo por precisión
+- mergeado en `535c108`
+
+### PR-62 — Hardening fino del serializer de quantity
+**Estado:** ✅ Mergeado
+
+**Objetivo**
+Cerrar deuda técnica menor del serializer de `quantity`: rechazar explícitamente `NaN` / infinitos y dejar la cobertura de errores usando `pytest.raises`.
+
+**Entregables**
+- `_serialize_quantity()` rechaza `NaN` / infinitos además de `<= 0`
+- tests usan `pytest.raises`
+- cobertura adicional para `math.nan` y `math.inf`
+- mergeado en `526f240`
+
+### PR-63 — Metadata estructurada para `risk_events`
+**Estado:** 🔵 Propuesto
+
+**Objetivo**
+Agregar contexto estructurado a `risk_events` (por ejemplo símbolo, source, códigos de error y payload operativo mínimo) para acelerar debugging y postmortems sin depender de parsear `message` libre.
+
+**Entregables**
+- columna JSON estructurada en `risk_events`
+- helpers para persistir contexto en eventos críticos de ejecución/reconcile
+- command center y/o reportes exponen metadata útil cuando exista
+
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

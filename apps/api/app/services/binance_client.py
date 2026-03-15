@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import math
 import time
 from urllib.parse import urlencode
 
@@ -55,7 +56,7 @@ class BinanceFuturesClient:
                         break
         raise RuntimeError(f"symbol_step_size_not_found:{symbol}")
 
-    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+    async def get_position_risk(self, symbol: str, recv_window: int = 5000) -> dict | None:
         self.ensure_credentials()
 
         params: dict[str, str] = {
@@ -74,15 +75,19 @@ class BinanceFuturesClient:
             positions = response.json()
 
         for position in positions:
-            if position.get("symbol") != symbol:
-                continue
-            try:
-                leverage = int(position.get("leverage", 1))
-                return leverage if leverage > 0 else 1
-            except (TypeError, ValueError):
-                return 1
+            if position.get("symbol") == symbol:
+                return position
+        return None
 
-        return 1
+    async def get_symbol_leverage(self, symbol: str, recv_window: int = 5000) -> int:
+        position = await self.get_position_risk(symbol, recv_window=recv_window)
+        if not position:
+            return 1
+        try:
+            leverage = int(position.get("leverage", 1))
+            return leverage if leverage > 0 else 1
+        except (TypeError, ValueError):
+            return 1
 
     def _sign(self, params: dict[str, str]) -> str:
         self.ensure_credentials()
@@ -126,6 +131,42 @@ class BinanceFuturesClient:
             response.raise_for_status()
             return response.json()
 
+    async def get_order_trades(
+        self,
+        *,
+        symbol: str,
+        order_id: int,
+        recv_window: int = 5000,
+    ) -> list[dict]:
+        self.ensure_credentials()
+
+        params: dict[str, str | int] = {
+            "symbol": symbol.upper(),
+            "orderId": order_id,
+            "recvWindow": str(recv_window),
+            "timestamp": str(int(time.time() * 1000)),
+        }
+        params["signature"] = self._sign({k: str(v) for k, v in params.items()})
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(
+                f"{self.base_url}/fapi/v1/userTrades",
+                params=params,
+                headers=self._auth_headers(),
+            )
+            response.raise_for_status()
+            payload = response.json()
+        return payload if isinstance(payload, list) else []
+
+    @staticmethod
+    def _serialize_quantity(quantity: float) -> str:
+        if not math.isfinite(quantity) or quantity <= 0:
+            raise ValueError("quantity debe ser un número finito y mayor a cero para serialización")
+        quantity_str = f"{quantity:.12f}".rstrip("0").rstrip(".")
+        if not quantity_str or quantity_str == "0":
+            raise ValueError("quantity inválida para serialización")
+        return quantity_str
+
     async def place_market_order(
         self,
         *,
@@ -138,9 +179,7 @@ class BinanceFuturesClient:
         if quantity <= 0:
             raise ValueError("quantity debe ser mayor a cero")
 
-        quantity_str = f"{quantity:.16f}".rstrip("0").rstrip(".")
-        if not quantity_str:
-            raise ValueError("quantity inválida para serialización")
+        quantity_str = self._serialize_quantity(quantity)
 
         params: dict[str, str] = {
             "symbol": symbol,

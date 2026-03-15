@@ -85,7 +85,26 @@ async def process_symbol(
 
     if settings.paper_trading:
         executed = await api_client.execute_paper_trade(trade_plan_id)
-        log_event("paper_trade_executed", symbol=symbol, execution=executed)
+        log_event("paper_trade_executed", symbol=symbol, source=meta.source, execution=executed)
+        return True
+
+    if meta.source != "market":
+        log_event(
+            "testnet_trade_execution_blocked_non_market_source",
+            symbol=symbol,
+            trade_plan_id=trade_plan_id,
+            source=meta.source,
+            reason=meta.reason,
+        )
+        if settings.testnet_fallback_to_paper:
+            executed = await api_client.execute_paper_trade(trade_plan_id)
+            log_event(
+                "paper_trade_fallback_executed_non_market_source",
+                symbol=symbol,
+                source=meta.source,
+                reason=meta.reason,
+                execution=executed,
+            )
         return True
 
     testnet_execution = await testnet_router.execute_trade_plan(symbol=symbol, trade_plan=created)

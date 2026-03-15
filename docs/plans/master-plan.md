@@ -67,9 +67,14 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Entrega: primeras ejecuciones testnet reales + normalización de fills + reconciliación robusta + centro de mando con radar/timeline/drill-down/justificación técnica + persistencia de fill real desde Binance + hardening fino del refresh post-submit.
 
 ### Etapa K — Profundización del command center
-- PR-53 en adelante.
-- Estado actual: en progreso (`PR-53`..`PR-56` mergeados; `PR-57` activo para alinear la documentación del gate con la nueva evidencia operacional del command center).
+- PR-53 a PR-62.
+- Estado actual: completada; el carril del command center/testnet quedó cerrado con historial operativo completo, smoke Synology específico, evidencia operacional del gate, fills reales, bloqueo de setups demo, auto-ingesta de mercado y hardening final del serializer de quantity.
 - Entrega esperada: historial operativo completo por `trade_plan_id`, navegación de detalle más profunda, smoke Synology específico del command center y trazabilidad end-to-end por operación.
+
+### Etapa L — Observabilidad operativa post-corrección
+- PR-63 en adelante.
+- Estado actual: propuesta; siguiente foco sugerido es agregar metadata estructurada a `risk_events` para debugging y postmortems más rápidos sobre la operación real en Synology.
+- Entrega esperada: errores/eventos críticos con contexto JSON útil, visible y consultable sin parsear solo texto libre.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.

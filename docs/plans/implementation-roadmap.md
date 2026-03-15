@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-56` ya quedó mergeado en `main` y el shadow run gate ya incorpora evidencia operacional del command center; el foco inmediato pasa a alinear la documentación operativa para exigir/referenciar explícitamente ese nuevo bloque de evidencia.
-- **PR activo:** `PR-57` — alinear docs del gate con evidencia del command center.
-- **Siguiente carril sugerido:** cerrar `PR-57` y luego evaluar si conviene exponer esa evidencia también como artifact separado o resumen dedicado en otros workflows/reportes operativos.
+- **Estado global actual:** `PR-57` y `PR-62` ya quedaron mergeados en `main`; el carril correctivo del command center/testnet quedó consolidado con evidencia operacional alineada, fills reales persistidos, bloqueo de setups demo, auto-ingesta de mercado y hardening final del serializer de quantity.
+- **PR activo:** por definir tras el despliegue/sanity final de `main` en Synology y la selección del siguiente frente operativo.
+- **Siguiente carril sugerido:** abrir `PR-63` para agregar metadata estructurada a `risk_events` y acelerar el debugging operativo de errores reales sin depender solo de texto libre.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -37,7 +37,9 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
-| Fase 13 — Profundización del command center | 🟡 En progreso | 80% | PR-53..PR-57 | historial operativo completo por `trade_plan_id`, smoke Synology específico, dedupe del smoke web, evidencia operativa reusable desde el gate de shadow run y docs operativas alineadas |
+| Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
+| Fase 14 — Observabilidad operativa post-corrección | 🔵 Propuesta | 0% | PR-63.. | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology |
+
 
 ---
 
@@ -173,10 +175,47 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - agregar sección Markdown con contexto de operaciones recientes + reconcile
 - mergeado en `1850eec`
 
-### PR-57 — Alinear docs del gate con evidencia del command center 🟡
+### PR-57 — Alinear docs del gate con evidencia del command center ✅
 - runbook Synology exige revisar bloque `command_center` del artifact
 - checklist de transición pide confirmación explícita de evidencia operacional reciente
 - ADR-040 refleja que el gate ahora combina evidencia cuantitativa + operacional
+- mergeado en `bbf0248`
+
+### PR-58 — Persistir y backfillear precios reales desde Binance ✅
+- usar `userTrades` como fuente de fill real por orden testnet
+- persistir `order.price` y `position.entry_price` con fill real, no con precio planificado
+- ejecutar backfill sobre órdenes/posiciones testnet ya abiertas en el NAS para corregir el command center actual
+- mergeado en `db51dbb`
+
+### PR-59 — Bloquear ejecución testnet desde señales demo ✅
+- impedir que `meta.source != "market"` dispare órdenes reales en Binance Testnet
+- permitir fallback a paper cuando `TESTNET_FALLBACK_TO_PAPER=true`
+- validar con tests + despliegue del worker en Synology
+- mergeado en `ea19847`
+
+### PR-60 — Auto-ingestar mercado antes de caer a demo ✅
+- si `/signals` o `/market/snapshot` no tienen insumos suficientes, el worker intenta `POST /market/ingest/{symbol}`
+- tras la ingesta, reintenta el setup market-driven antes de declarar `snapshot_incompleto`
+- validado en Synology: nuevas corridas del worker muestran `source="market"`, `reason="ok"` para BTC/ETH/SOL
+- mergeado en `3d2b5a1`
+
+### PR-61 — Normalizar cantidad testnet para Binance ✅
+- serializar `quantity` sin artefactos float (`0.81`, `18.03`, no `0.8100000000000001` / `18.0300000000000011`)
+- cubrir con tests la serialización limpia de cantidades
+- validar en Synology que ETH/SOL dejen de fallar con `400 Bad Request`
+- mergeado en `535c108`
+
+### PR-62 — Hardening fino del serializer de quantity ✅
+- rechazar `NaN` / infinitos en `_serialize_quantity()`
+- usar `pytest.raises` para las validaciones de error
+- cerrar observaciones menores post-merge del cliente Binance
+- mergeado en `526f240`
+
+### PR-63 — Metadata estructurada para `risk_events` 🔵
+- agregar columna JSON estructurada para contexto operativo de eventos críticos
+- persistir detalles útiles de ejecución/reconcile en errores reales
+- exponer esa metadata en command center y/o reportes para debugging más rápido
+
 
 ---
 
