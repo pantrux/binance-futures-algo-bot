@@ -68,7 +68,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa K — Profundización del command center
 - PR-53 en adelante.
-- Estado actual: en progreso (`PR-53`..`PR-60` mergeados; `PR-61` activo para normalizar cantidades enviadas a Binance Testnet y eliminar rechazos `400` por artefactos float).
+- Estado actual: en progreso (`PR-53`..`PR-61` mergeados; `PR-62` activo para hardening fino del serializer de quantity y cierre de deuda técnica menor del cliente Binance).
 - Entrega esperada: historial operativo completo por `trade_plan_id`, navegación de detalle más profunda, smoke Synology específico del command center y trazabilidad end-to-end por operación.
 
 ## Reglas inmutables del plan
