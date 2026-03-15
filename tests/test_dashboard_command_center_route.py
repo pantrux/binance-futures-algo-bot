@@ -113,6 +113,9 @@ def test_dashboard_command_center_route_returns_payload():
     assert payload["operation_snapshots"][0]["latest_order_status"] == "filled"
     assert payload["operation_snapshots"][0]["latest_position_status"] == "open"
     assert payload["operation_snapshots"][0]["reconciliation_healthy"] is True
+    assert payload["operation_snapshots"][0]["technical_score"] == 80
+    assert payload["operation_snapshots"][0]["timeframe"] == "15m"
+    assert payload["operation_snapshots"][0]["thesis"] == "dashboard route"
     assert payload["timeline"][0]["trade_plan_id"] == plan.id
     assert len(payload["timeline"]) >= 4
     assert payload["recent_trade_plans"][0]["id"] == plan.id

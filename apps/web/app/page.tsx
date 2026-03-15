@@ -424,14 +424,18 @@ export default async function HomePage() {
                     </ul>
                   </section>
                   <section className="detail-box">
-                    <h5>Salud operativa</h5>
+                    <h5>Justificación técnica</h5>
                     <ul className="detail-list">
-                      <li><span>Reconcile</span><strong>{operation.reconciliation_healthy ? 'healthy' : operation.reconciliation_primary_event ?? 'drift'}</strong></li>
-                      <li><span>Drift</span><strong>{operation.reconciliation_primary_message ?? 'Sin drift detectado'}</strong></li>
-                      <li><span>Último riesgo</span><strong>{operation.latest_risk_event_type ?? '—'}</strong></li>
-                      <li><span>Severidad</span><strong>{operation.latest_risk_severity ?? '—'}</strong></li>
-                      <li><span>Mensaje</span><strong>{operation.latest_risk_message ?? 'Sin evento reciente'}</strong></li>
+                      <li><span>Technical</span><strong>{formatNumber(operation.technical_score, 2)}</strong></li>
+                      <li><span>Fundamental</span><strong>{formatNumber(operation.fundamental_score, 2)}</strong></li>
+                      <li><span>Sentiment</span><strong>{formatNumber(operation.sentiment_score, 2)}</strong></li>
+                      <li><span>Confidence</span><strong>{formatNumber(operation.confidence_score, 2)}</strong></li>
                     </ul>
+                    <div className="thesis-box">
+                      <strong>Tesis persistida</strong>
+                      <p>{operation.thesis}</p>
+                    </div>
+                    <p className="detail-note">Nota: hoy el sistema persiste scores + tesis + régimen/timeframe. Aún no guarda snapshots crudos por trade plan de RSI/MACD/EMA/patrones de velas.</p>
                   </section>
                 </div>
                 <section className="detail-box detail-box-timeline">
