@@ -103,3 +103,40 @@ def test_reporting_shadow_run_summary_route_returns_payload() -> None:
     assert payload["testnet_orders_total"] == 1
     assert payload["warning_risk_events_7d"] == 1
     assert payload["symbols"][0]["symbol"] == "BTCUSDT"
+
+
+def test_reporting_shadow_run_summary_route_filters_by_timeframe() -> None:
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    db = sessionmaker(bind=engine)()
+    now = datetime.now(timezone.utc)
+
+    seed_trade_plan(db, symbol="BTCUSDT", status="paper_executed", side="long", created_at=now - timedelta(days=8))
+    seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", side="long", created_at=now - timedelta(days=7, hours=12))
+    paper_1h = seed_trade_plan(db, symbol="BTCUSDT", status="paper_executed", side="long", created_at=now - timedelta(days=6))
+    testnet_1h = seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", side="long", created_at=now - timedelta(days=5, hours=12))
+    paper_1h.timeframe = "1h"
+    testnet_1h.timeframe = "1h"
+    db.add_all([paper_1h, testnet_1h])
+    db.commit()
+
+    client = make_client(db)
+    response = client.get("/reporting/shadow-run-summary?window_days=30&timeframe=1h")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["timeframe"] == "1h"
+    assert payload["paper_executed_trade_plans"] == 1
+    assert payload["testnet_executed_trade_plans"] == 1
+    assert payload["compared_pairs"] == 1
+
+
+def test_reporting_shadow_run_summary_route_rejects_empty_timeframe() -> None:
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    db = sessionmaker(bind=engine)()
+
+    client = make_client(db)
+    response = client.get("/reporting/shadow-run-summary?window_days=30&timeframe=")
+
+    assert response.status_code == 422

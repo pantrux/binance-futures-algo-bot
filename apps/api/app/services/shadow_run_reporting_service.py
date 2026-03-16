@@ -96,19 +96,21 @@ class ShadowRunReportingService:
             paired,
         )
 
-    def build_summary(self, *, window_days: int = 30) -> ShadowRunSummary:
+    def build_summary(self, *, window_days: int = 30, timeframe: str | None = None) -> ShadowRunSummary:
         now = datetime.now(timezone.utc)
         cutoff = now - timedelta(days=window_days)
         risk_cutoff_7d = now - timedelta(days=7)
         risk_cutoff_30d = now - timedelta(days=30)
 
-        plans = (
+        plans_query = (
             self.db.query(TradePlan)
             .filter(TradePlan.status.in_(["paper_executed", "testnet_executed"]))
             .filter(TradePlan.created_at >= cutoff)
-            .order_by(TradePlan.symbol.asc(), TradePlan.created_at.asc())
-            .all()
         )
+        if timeframe is not None:
+            plans_query = plans_query.filter(TradePlan.timeframe == timeframe)
+
+        plans = plans_query.order_by(TradePlan.symbol.asc(), TradePlan.created_at.asc()).all()
 
         plans_by_symbol: dict[str, list[TradePlan]] = defaultdict(list)
         for plan in plans:
@@ -168,6 +170,7 @@ class ShadowRunReportingService:
         return ShadowRunSummary(
             evaluated_at=now,
             window_days=window_days,
+            timeframe=timeframe,
             shadow_run_start_at=shadow_run_start_at,
             shadow_run_end_at=shadow_run_end_at,
             shadow_run_duration_days=shadow_run_duration_days,

@@ -17,6 +17,7 @@ class ShadowRunSymbolSummary(BaseModel):
 
 class ShadowRunSummary(BaseModel):
     evaluated_at: datetime
+    timeframe: str | None = None
     window_days: int
     shadow_run_start_at: datetime | None = None
     shadow_run_end_at: datetime | None = None

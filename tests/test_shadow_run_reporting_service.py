@@ -217,3 +217,39 @@ def test_shadow_run_summary_returns_zeroed_metrics_when_no_data() -> None:
     assert summary.avg_testnet_slippage_bps is None
     assert summary.shadow_run_start_at is None
     assert summary.symbols == []
+
+
+def test_shadow_run_summary_filters_by_timeframe_when_requested() -> None:
+    db = build_db()
+    now = datetime.now(timezone.utc)
+    seed_trade_plan(db, symbol="BTCUSDT", side="long", status="paper_executed", entry_price=50000, created_at=now - timedelta(days=10))
+    seed_trade_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=50100, created_at=now - timedelta(days=9, hours=12))
+    paper_1h = seed_trade_plan(db, symbol="BTCUSDT", side="long", status="paper_executed", entry_price=51000, created_at=now - timedelta(days=8))
+    testnet_1h = seed_trade_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=51100, created_at=now - timedelta(days=7, hours=12))
+    paper_1h.timeframe = "1h"
+    testnet_1h.timeframe = "1h"
+    db.add_all([paper_1h, testnet_1h])
+    db.commit()
+
+    summary = ShadowRunReportingService(db).build_summary(window_days=30, timeframe="1h")
+
+    assert summary.timeframe == "1h"
+    assert summary.paper_executed_trade_plans == 1
+    assert summary.testnet_executed_trade_plans == 1
+    assert summary.compared_pairs == 1
+    assert len(summary.symbols) == 1
+    assert summary.symbols[0].symbol == "BTCUSDT"
+
+
+def test_shadow_run_summary_returns_empty_filtered_summary_when_timeframe_has_no_matches() -> None:
+    db = build_db()
+    now = datetime.now(timezone.utc)
+    seed_trade_plan(db, symbol="ETHUSDT", side="long", status="paper_executed", entry_price=3000, created_at=now - timedelta(days=2))
+
+    summary = ShadowRunReportingService(db).build_summary(window_days=30, timeframe="4h")
+
+    assert summary.timeframe == "4h"
+    assert summary.paper_executed_trade_plans == 0
+    assert summary.testnet_executed_trade_plans == 0
+    assert summary.compared_pairs == 0
+    assert summary.symbols == []
