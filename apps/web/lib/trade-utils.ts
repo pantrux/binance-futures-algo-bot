@@ -5,6 +5,12 @@ export type ActualEntryOperation = {
   latest_order_executed_quantity: number | null;
 };
 
+export type LivePriceEntry = {
+  markPrice: number | null;
+  unrealizedPnl: number | null;
+  positionAmt: number | null;
+};
+
 export const EXECUTED_ORDER_STATUSES = new Set([
   "filled",
   "partially_filled",

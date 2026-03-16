@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext } from "../lib/formatters";
-import { getActualEntryPrice, type ActualEntryOperation } from "../lib/trade-utils";
+import { getActualEntryPrice, type ActualEntryOperation, type LivePriceEntry } from "../lib/trade-utils";
 
 type RiskContext = Record<string, string | number | boolean | null> | null | undefined;
 
@@ -76,15 +76,10 @@ type OperationSnapshot = {
   timeline_history?: TimelineHistoryItem[];
 };
 
-type LivePrice = {
-  markPrice: number;
-  unrealizedPnl: number;
-};
-
 type OperationDrillDownProps = {
   operation: OperationSnapshot;
   index: number;
-  livePrice?: LivePrice;
+  livePrice?: LivePriceEntry;
 };
 
 export function OperationDrillDown({ operation, index, livePrice }: OperationDrillDownProps) {

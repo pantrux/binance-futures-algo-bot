@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
-import { getActualEntryPrice } from "../lib/trade-utils";
+import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
 
 import { OrderBlotter } from "./OrderBlotter";
@@ -14,7 +14,7 @@ function buildLivePricingUrl() {
 
 export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: any) {
   const data = initialData;
-  const [livePrices, setLivePrices] = useState<Record<string, any>>({});
+  const [livePrices, setLivePrices] = useState<Record<string, LivePriceEntry>>({});
   const [isPolling, setIsPolling] = useState(true);
   const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
