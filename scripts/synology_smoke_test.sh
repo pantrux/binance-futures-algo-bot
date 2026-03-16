@@ -173,11 +173,18 @@ else:
         'risk_event_history',
         'timeline_history',
         'reconciliation_recommended_actions',
+        'latest_risk_context',
     ]
     missing = [key for key in required if key not in op]
     assert not missing, f'faltan campos en operation_snapshot: {missing}'
     assert isinstance(op['timeline_history'], list), 'timeline_history no es lista'
     assert len(op['timeline_history']) <= 20, 'timeline_history excede límite esperado de 20'
+    assert isinstance(op['latest_risk_context'], dict), 'latest_risk_context no es dict'
+recent = payload.get('recent_risk_events')
+assert isinstance(recent, list), 'recent_risk_events no es lista'
+if recent:
+    assert 'context' in recent[0], 'recent_risk_events[0] no expone context'
+    assert isinstance(recent[0]['context'], dict), 'recent_risk_events[0].context no es dict'
 print('OK')
 PY
 
@@ -230,5 +237,7 @@ check_body_contains "WEB command center" "${web_home_body}" "Historial de órden
 check_body_contains "WEB command center" "${web_home_body}" "Historial de posiciones"
 check_body_contains "WEB command center" "${web_home_body}" "Historial de riesgo"
 check_body_contains "WEB command center" "${web_home_body}" "Reconcile actual"
+check_body_contains "WEB command center" "${web_home_body}" "context-list"
+check_body_contains "WEB command center" "${web_home_body}" "context-chip"
 
 echo "✅ Smoke tests Synology completados"

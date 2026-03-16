@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-64` ya quedó mergeado en `main`, sincronizado en Outline y desplegado en Synology; la UI del command center ya muestra chips/contexto en historial de riesgo y feed global, con `external_order_id` renderizado sin separadores de miles.
-- **PR activo:** `PR-65` — resumen contextual del último riesgo por operación.
-- **Siguiente carril sugerido:** cerrar `PR-65` para que el resumen principal de cada operación también exponga contexto útil del último evento de riesgo, sin obligar al operador a abrir el historial detallado.
+- **Estado global actual:** `PR-65` ya quedó mergeado en `main`, sincronizado en Outline y desplegado en Synology; el resumen principal del command center ya expone `latest_risk_context` y mantiene `external_order_id` sin separadores de miles.
+- **PR activo:** `PR-66` — endurecer el smoke Synology para validar contexto de riesgo en API/UI.
+- **Siguiente carril sugerido:** cerrar `PR-66` para que las mejoras de observabilidad de `PR-64`/`PR-65` queden cubiertas por smoke automatizado y no regresen silenciosamente.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -38,7 +38,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
-| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 50% | PR-63..PR-65 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center y resumen contextual del último riesgo |
+| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 65% | PR-63..PR-66 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo y smoke automatizado de estos marcadores |
 
 
 ---
@@ -224,10 +224,17 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - validar con `next build` y deploy posterior en Synology
 - mergeado en `f14db14` y validado en Synology con `context-list`/`context-chip` visibles y `external_order_id` sin separadores de miles
 
-### PR-65 — Resumen contextual del último riesgo por operación 🟡
+### PR-65 — Resumen contextual del último riesgo por operación ✅
 - agregar `latest_risk_context` al payload de `operation_snapshots`
 - renderizar chips/contexto también en la celda resumen de riesgo del radar principal
 - mantener consistencia visual entre resumen y drill-down
+- mergeado en `9b1bb33` y validado en Synology con contexto visible en la celda resumen del radar principal
+
+### PR-66 — Smoke Synology para contexto de riesgo 🟡
+- endurecer `scripts/synology_smoke_test.sh` para exigir `latest_risk_context` en API
+- validar `context` en `recent_risk_events`
+- exigir marcadores `context-list` / `context-chip` en la home del dashboard
+- alinear runbook con el nuevo criterio mínimo de aprobación
 
 
 ---

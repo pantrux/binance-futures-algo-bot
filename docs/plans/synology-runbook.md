@@ -250,8 +250,8 @@ METRICS_API_KEY="<opcional>" \
 ### Criterio mínimo de aprobación
 1. Todos los checks del script en verde.
 2. `docker compose ps` sin servicios `unhealthy`.
-3. Dashboard responde sin errores 5xx y la home renderiza el command center enriquecido (`Detalle por trade plan`, `Historial de órdenes`, `Historial de posiciones`, `Historial de riesgo`, `Reconcile actual`).
-4. `GET /dashboard/command-center` responde 200 y expone payload enriquecido por operación (`order_history`, `position_history`, `risk_event_history`, `timeline_history`, `reconciliation_recommended_actions`).
+3. Dashboard responde sin errores 5xx y la home renderiza el command center enriquecido (`Detalle por trade plan`, `Historial de órdenes`, `Historial de posiciones`, `Historial de riesgo`, `Reconcile actual`) junto con chips de contexto (`context-list`, `context-chip`) para riesgo reciente.
+4. `GET /dashboard/command-center` responde 200 y expone payload enriquecido por operación (`order_history`, `position_history`, `risk_event_history`, `timeline_history`, `reconciliation_recommended_actions`, `latest_risk_context`) y `context` en `recent_risk_events`.
 5. API responde `testnet/ping` correctamente.
 6. Gate C de shadow run puede evaluarse con artifact auditable (`synology-shadow-run-gate`).
 7. No activar live trading; mantener `PAPER_TRADING=true`.
