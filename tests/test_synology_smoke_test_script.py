@@ -75,16 +75,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
 
-def _free_port() -> int:
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-        sock.bind(("127.0.0.1", 0))
-        sock.listen(1)
-        return int(sock.getsockname()[1])
-
-
 def run_fixture_server(payload: dict[str, Any], html: str):
-    port = _free_port()
-    server = FixtureServer(("127.0.0.1", port), payload=payload, html=html)
+    server = FixtureServer(("127.0.0.1", 0), payload=payload, html=html)
+    port = int(server.server_address[1])
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     return server, thread, f"http://127.0.0.1:{port}"
