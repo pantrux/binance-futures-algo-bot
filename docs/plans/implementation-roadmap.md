@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-73` ya quedó mergeado en `main`, sincronizado en Outline y cubrió fallos HTTP base de `/dashboard/summary` y `/trade-plans` dentro del shell smoke.
-- **PR activo:** `PR-74` — endurecer `/metrics` con auth y limpiar helpers del fixture shell.
-- **Siguiente carril sugerido:** cubrir con fixture local el camino de `/metrics` autenticado y reducir duplicación en helpers del harness para seguir endureciendo Fase 15.
+- **Estado global actual:** `PR-80` ya quedó mergeado en `main`, cerrando formalmente la Fase 15 del hardening del harness operacional y sincronizando Outline.
+- **PR activo:** ninguno; el carril de harness quedó formalmente cerrado.
+- **Siguiente carril sugerido:** retomar frentes de producto/trading usando el harness endurecido como red de seguridad, y mantener nuevos follow-ups de smoke solo ante failure modes realmente nuevos.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
