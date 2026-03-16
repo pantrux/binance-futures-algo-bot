@@ -149,9 +149,7 @@ def test_synology_smoke_script_passes_with_non_empty_context_and_markers() -> No
     try:
         result = run_smoke(base_url)
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=2)
+        stop_fixture_server(server, thread)
 
     assert result.returncode == 0, result.stderr + result.stdout
     assert "HAS_NON_EMPTY_CONTEXT=1" in result.stdout
