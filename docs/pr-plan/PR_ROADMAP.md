@@ -84,7 +84,9 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-59 | Bloquear ejecución testnet desde señales demo | ✅ Mergeado | impedir que `source=demo` dispare órdenes reales en Binance Testnet |
 | PR-60 | Auto-ingestar mercado antes de caer a demo | ✅ Mergeado | si faltan candles/snapshot, el worker intenta `POST /market/ingest/{symbol}` y reintenta el setup market-driven |
 | PR-61 | Normalizar cantidad testnet para Binance | ✅ Mergeado | serialización limpia de quantity para evitar `400 Bad Request` por artefactos float |
-| PR-62 | Hardening fino del serializer de quantity | 🟡 En progreso | rechazar `NaN` y usar `pytest.raises` en cobertura del cliente Binance |
+| PR-62 | Hardening fino del serializer de quantity | ✅ Mergeado | rechazar `NaN` / infinitos y completar la cobertura del serializer de quantity |
+| PR-63 | Metadata estructurada para `risk_events` | 🔵 Propuesto | agregar contexto JSON auditable a errores/eventos críticos para acelerar debugging operativo |
+
 
 ## Secuencia de PRs actualizada
 
@@ -930,15 +932,28 @@ Eliminar rechazos `400 Bad Request` por serialización sucia de cantidades (`0.8
 - mergeado en `535c108`
 
 ### PR-62 — Hardening fino del serializer de quantity
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
-Cerrar deuda técnica menor del serializer de `quantity`: rechazar explícitamente `NaN` y dejar la cobertura de errores usando `pytest.raises`.
+Cerrar deuda técnica menor del serializer de `quantity`: rechazar explícitamente `NaN` / infinitos y dejar la cobertura de errores usando `pytest.raises`.
 
 **Entregables**
 - `_serialize_quantity()` rechaza `NaN` / infinitos además de `<= 0`
 - tests usan `pytest.raises`
-- cobertura adicional para `math.nan`
+- cobertura adicional para `math.nan` y `math.inf`
+- mergeado en `526f240`
+
+### PR-63 — Metadata estructurada para `risk_events`
+**Estado:** 🔵 Propuesto
+
+**Objetivo**
+Agregar contexto estructurado a `risk_events` (por ejemplo símbolo, source, códigos de error y payload operativo mínimo) para acelerar debugging y postmortems sin depender de parsear `message` libre.
+
+**Entregables**
+- columna JSON estructurada en `risk_events`
+- helpers para persistir contexto en eventos críticos de ejecución/reconcile
+- command center y/o reportes exponen metadata útil cuando exista
+
 
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:

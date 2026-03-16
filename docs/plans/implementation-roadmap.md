@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-59` y `PR-60` ya quedaron desplegados/mergeados, con dos efectos reales en Synology: (1) señales `demo` ya no disparan órdenes reales en Testnet y (2) el worker puede auto-ingestar mercado cuando la DB viene vacía, evitando `snapshot_incompleto`. El foco inmediato pasa a cerrar los `400 Bad Request` residuales de Binance por serialización sucia de cantidades.
-- **PR activo:** `PR-62` — hardening fino del serializer de quantity.
-- **Siguiente carril sugerido:** cerrar `PR-62` como cleanup fino del serializer y luego reevaluar si queda algún hardening residual en el carril testnet.
+- **Estado global actual:** `PR-57` y `PR-62` ya quedaron mergeados en `main`; el carril correctivo del command center/testnet quedó consolidado con evidencia operacional alineada, fills reales persistidos, bloqueo de setups demo, auto-ingesta de mercado y hardening final del serializer de quantity.
+- **PR activo:** por definir tras el despliegue/sanity final de `main` en Synology y la selección del siguiente frente operativo.
+- **Siguiente carril sugerido:** abrir `PR-63` para agregar metadata estructurada a `risk_events` y acelerar el debugging operativo de errores reales sin depender solo de texto libre.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -37,7 +37,9 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 10 — Ensayos operativos de cutover | ✅ Completada | 100% | PR-36..PR-39 | drills sintéticos, evidencia estandarizada, templates operativos y navegación documental usable en Outline |
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
-| Fase 13 — Profundización del command center | 🟡 En progreso | 99% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
+| Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
+| Fase 14 — Observabilidad operativa post-corrección | 🔵 Propuesta | 0% | PR-63.. | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology |
+
 
 ---
 
@@ -203,10 +205,17 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - validar en Synology que ETH/SOL dejen de fallar con `400 Bad Request`
 - mergeado en `535c108`
 
-### PR-62 — Hardening fino del serializer de quantity 🟡
+### PR-62 — Hardening fino del serializer de quantity ✅
 - rechazar `NaN` / infinitos en `_serialize_quantity()`
 - usar `pytest.raises` para las validaciones de error
 - cerrar observaciones menores post-merge del cliente Binance
+- mergeado en `526f240`
+
+### PR-63 — Metadata estructurada para `risk_events` 🔵
+- agregar columna JSON estructurada para contexto operativo de eventos críticos
+- persistir detalles útiles de ejecución/reconcile en errores reales
+- exponer esa metadata en command center y/o reportes para debugging más rápido
+
 
 ---
 
