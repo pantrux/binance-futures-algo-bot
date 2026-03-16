@@ -78,8 +78,13 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa M — Hardening del harness operacional
 - PR-70 en adelante.
-- Estado actual: completada; `PR-70` a `PR-79` dejaron el harness shell con teardown determinista, helpers más claros y cobertura reproducible de payload inválido, fallos HTTP base, auth opcional, strictness configurable de dependencias externas y ausencia de marcadores críticos de `WEB /`; `PR-80` formaliza ese cierre y devuelve el foco del roadmap a lógica de producto/trading.
+- Estado actual: completada; `PR-70` a `PR-79` dejaron el harness shell con teardown determinista, helpers más claros y cobertura reproducible de payload inválido, fallos HTTP base, auth opcional, strictness configurable de dependencias externas y ausencia de marcadores críticos de `WEB /`; `PR-80` formalizó ese cierre y `PR-81` dejó el roadmap ejecutivo consistente.
 - Entrega lograda: harness operacional limpio, tipado y predecible, suficientemente endurecido para que el siguiente frente vuelva a lógica de producto/trading y no a fricción de tests.
+
+### Etapa N — Refinamiento de paridad paper vs testnet
+- PR-82 en adelante.
+- Estado actual: en progreso; `PR-82` apunta a endurecer el emparejamiento del shadow run para no cruzar trade plans de distinta `timeframe` dentro del mismo símbolo/lado.
+- Entrega esperada: métricas de paridad/shadow run más confiables cuando existan múltiples temporalidades o estrategias concurrentes por símbolo.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.

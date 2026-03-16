@@ -25,7 +25,7 @@ Introducir `ExecutionParityService` con reporte por símbolo:
 - base para umbrales de alerta y smoke tests automáticos.
 
 ### Negativas
-- emparejamiento por lado/orden temporal puede requerir refinamiento futuro para estrategias complejas multi-entrada.
+- incluso con `timeframe`, el emparejamiento por lado/orden temporal puede requerir refinamiento adicional para estrategias complejas multi-entrada dentro de una misma temporalidad.
 
 ### Neutrales
 - no altera la ejecución; solo agrega observabilidad comparativa.

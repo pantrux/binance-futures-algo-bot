@@ -41,6 +41,8 @@ class ShadowRunReportingService:
             for idx, candidate in enumerate(testnet_queue):
                 if candidate.side != paper.side:
                     continue
+                if candidate.timeframe != paper.timeframe:
+                    continue
                 delta_seconds = abs((candidate.created_at - paper.created_at).total_seconds())
                 if delta_seconds > MAX_PAIRING_DELTA_SECONDS:
                     continue

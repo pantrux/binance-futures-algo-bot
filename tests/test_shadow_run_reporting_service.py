@@ -130,6 +130,81 @@ def test_shadow_run_summary_does_not_pair_plans_beyond_max_temporal_delta() -> N
 
 
 
+def test_shadow_run_summary_prefers_matching_timeframe_over_closer_cross_timeframe_candidate() -> None:
+    db = build_db()
+    now = datetime.now(timezone.utc)
+    paper = seed_trade_plan(
+        db,
+        symbol="BTCUSDT",
+        side="long",
+        status="paper_executed",
+        entry_price=50000,
+        created_at=now - timedelta(hours=4),
+    )
+    wrong_timeframe = seed_trade_plan(
+        db,
+        symbol="BTCUSDT",
+        side="long",
+        status="testnet_executed",
+        entry_price=50020,
+        created_at=now - timedelta(hours=3, minutes=55),
+    )
+    wrong_timeframe.timeframe = "1h"
+    db.add(wrong_timeframe)
+    matching_timeframe = seed_trade_plan(
+        db,
+        symbol="BTCUSDT",
+        side="long",
+        status="testnet_executed",
+        entry_price=50040,
+        created_at=now - timedelta(hours=3, minutes=40),
+    )
+    matching_timeframe.timeframe = paper.timeframe
+    db.add(matching_timeframe)
+    db.commit()
+
+    summary = ShadowRunReportingService(db).build_summary(window_days=30)
+
+    assert summary.compared_pairs == 1
+    assert summary.unmatched_paper == 0
+    assert summary.unmatched_testnet == 1
+    assert summary.avg_entry_price_diff_pct == 0.08
+
+
+
+def test_shadow_run_summary_does_not_pair_same_symbol_side_when_timeframe_differs() -> None:
+    db = build_db()
+    now = datetime.now(timezone.utc)
+    paper = seed_trade_plan(
+        db,
+        symbol="ETHUSDT",
+        side="short",
+        status="paper_executed",
+        entry_price=3000,
+        created_at=now - timedelta(hours=6),
+    )
+    testnet = seed_trade_plan(
+        db,
+        symbol="ETHUSDT",
+        side="short",
+        status="testnet_executed",
+        entry_price=3010,
+        created_at=now - timedelta(hours=5, minutes=58),
+    )
+    paper.timeframe = "15m"
+    testnet.timeframe = "4h"
+    db.add_all([paper, testnet])
+    db.commit()
+
+    summary = ShadowRunReportingService(db).build_summary(window_days=30)
+
+    assert summary.compared_pairs == 0
+    assert summary.unmatched_paper == 1
+    assert summary.unmatched_testnet == 1
+    assert summary.avg_entry_price_diff_pct is None
+
+
+
 def test_shadow_run_summary_returns_zeroed_metrics_when_no_data() -> None:
     db = build_db()
 
