@@ -188,8 +188,8 @@ else:
 recent = payload.get('recent_risk_events')
 assert isinstance(recent, list), 'recent_risk_events no es lista'
 if recent:
-    assert 'context' in recent[0], 'recent_risk_events[0] no expone context'
     for item in recent:
+        assert 'context' in item, 'recent_risk_events[*] no expone context'
         assert item.get('context') is None or isinstance(item.get('context'), dict), 'recent_risk_events[*].context debe ser dict o None'
         has_non_empty_context = has_non_empty_context or bool(item.get('context'))
 print('OK')
