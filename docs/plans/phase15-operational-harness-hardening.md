@@ -61,12 +61,18 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - cubrir el caso donde la home responde `200` pero falta el marcador base `bot`
 - cubrir el caso donde la home responde `200` pero falta un marcador central del command center
 - mantener el harness reproducible y el diagnóstico claro para fallos de `check_body_contains()`
-- mergeado en `eae04f3`
+- mergeado en `533d884`
 
-### PR-78 — Marcadores adicionales de `WEB /` en el shell smoke 🟡
+### PR-78 — Marcadores adicionales de `WEB /` en el shell smoke ✅
 - cubrir el caso donde la home responde `200` pero falta `Detalle por trade plan`
 - cubrir el caso donde la home responde `200` pero falta `Reconcile actual`
 - mantener el harness reproducible y el diagnóstico claro para fallos adicionales de `check_body_contains()`
+- mergeado en `26eaacc`
+
+### PR-79 — Marcadores restantes de órdenes y posiciones en el shell smoke 🟡
+- cubrir el caso donde la home responde `200` pero falta `Historial de órdenes`
+- cubrir el caso donde la home responde `200` pero falta `Historial de posiciones`
+- cerrar la cobertura explícita pendiente de `check_body_contains()` sobre los marcadores base del command center
 
 ## Criterio de cierre
 - no deben quedar hilos/threads fixture vivos silenciosamente tras los tests
