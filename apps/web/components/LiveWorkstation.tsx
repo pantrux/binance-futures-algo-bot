@@ -164,6 +164,58 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           : livePricingUrl
             ? "esperando primer tick live"
             : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
+  const liveCoveredPositions = positions.filter((position: any) => livePrices[position.symbol]).length;
+  const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => livePrices[operation.symbol]).length;
+
+  function getSymbolLiveState(symbol: string) {
+    const hasSymbolLivePrice = Boolean(livePrices[symbol]);
+
+    if (!hasSymbolLivePrice) {
+      return {
+        label: "snapshot",
+        tone: livePricingUrl ? "neutral" : "warn",
+        hint: livePricingUrl ? "sin cobertura live para este símbolo" : "live pricing deshabilitado",
+      };
+    }
+
+    if (isLivePaused) {
+      return {
+        label: "live pausado",
+        tone: "warn",
+        hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "polling pausado",
+      };
+    }
+
+    if (livePollingError) {
+      return {
+        label: isLiveStaleDanger ? "live crítico" : "live degradado",
+        tone: isLiveStaleDanger ? "danger" : "warn",
+        hint: hasLivePrices ? "error activo con último tick cacheado" : "polling con error",
+      };
+    }
+
+    if (isLiveStaleDanger) {
+      return {
+        label: "live vencido",
+        tone: "danger",
+        hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
+      };
+    }
+
+    if (isLiveStaleWarn) {
+      return {
+        label: "live envejeciendo",
+        tone: "warn",
+        hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
+      };
+    }
+
+    return {
+      label: "live fresco",
+      tone: "ok",
+      hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "live pricing activo",
+    };
+  }
 
   const summaryCards = [
     { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
@@ -171,7 +223,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     { title: "Fill rate testnet", value: `${formatNumber(shadowRun.testnet_fill_rate_pct, 1)}%`, hint: "órdenes ejecutadas / enviadas", tone: (shadowRun.testnet_fill_rate_pct ?? 0) >= 80 ? "ok" : "warn" },
     { title: "Pairs parity", value: String(shadowRun.compared_pairs), hint: "paper ↔ testnet comparados", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
     { title: "Risk 7d", value: `${shadowRun.critical_risk_events_7d}/${shadowRun.warning_risk_events_7d}`, hint: "critical / warning", tone: shadowRun.critical_risk_events_7d > 0 ? "danger" : shadowRun.warning_risk_events_7d > 0 ? "warn" : "ok" },
-    { title: "Live freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
+    { title: "Live freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || !!livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
+    { title: "Live coverage", value: `${liveCoveredPositions}/${summary.open_positions}`, hint: `${liveCoveredOperations}/${data.operation_snapshots.length} operaciones con mark live`, tone: liveCoveredPositions === summary.open_positions && summary.open_positions > 0 ? "ok" : liveCoveredPositions > 0 ? "warn" : "neutral" },
     { title: "Trade plans", value: String(summary.trade_plans_total), hint: "universo persistido", tone: "neutral" },
   ];
 
@@ -464,7 +517,13 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           {data.operation_snapshots.length === 0 ? (
             <p className="empty-state">Sin operaciones para drill-down.</p>
           ) : data.operation_snapshots.slice(0, 8).map((operation: any, index: number) => (
-            <OperationDrillDown key={operation.trade_plan_id} operation={operation} index={index} livePrice={livePrices[operation.symbol]} />
+            <OperationDrillDown
+              key={operation.trade_plan_id}
+              operation={operation}
+              index={index}
+              livePrice={livePrices[operation.symbol]}
+              liveState={getSymbolLiveState(operation.symbol)}
+            />
           ))}
         </div>
       </section>
