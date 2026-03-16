@@ -127,7 +127,13 @@ def test_dashboard_command_center_route_returns_payload():
     position.opened_at = now - timedelta(minutes=45)
     db.add(position)
 
-    event = RiskEvent(trade_plan_id=plan.id, event_type="shadow_run_check", severity="warning", message="warning")
+    event = RiskEvent(
+        trade_plan_id=plan.id,
+        event_type="shadow_run_check",
+        severity="warning",
+        message="warning",
+        context_json={"source": "shadow_run", "window_days": 30},
+    )
     event.created_at = now - timedelta(minutes=30)
     db.add(event)
     db.commit()
@@ -152,6 +158,7 @@ def test_dashboard_command_center_route_returns_payload():
     assert payload["operation_snapshots"][0]["order_history"][0]["status"] == "filled"
     assert len(payload["operation_snapshots"][0]["position_history"]) == 2
     assert len(payload["operation_snapshots"][0]["risk_event_history"]) == 1
+    assert payload["operation_snapshots"][0]["risk_event_history"][0]["context"]["source"] == "shadow_run"
     assert len(payload["operation_snapshots"][0]["timeline_history"]) >= 4
     assert payload["timeline"][0]["trade_plan_id"] == plan.id
     assert len(payload["timeline"]) >= 5

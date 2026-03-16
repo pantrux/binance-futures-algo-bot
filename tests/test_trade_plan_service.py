@@ -60,6 +60,9 @@ def test_trade_plan_service_persists_and_returns_outline_url():
     events = db.query(RiskEvent).filter(RiskEvent.trade_plan_id == result.id).all()
     assert len(events) >= 1
     assert any(event.event_type in {'portfolio_risk_approved', 'correlation_pressure', 'final_gate_pass'} for event in events)
+    approved_event = next(event for event in events if event.event_type == 'portfolio_risk_approved')
+    assert approved_event.context_json['market_regime'] == result.market_regime
+    assert 'portfolio_risk_after' in approved_event.context_json
 
     persisted = db.query(TradePlan).filter(TradePlan.id == result.id).one()
     assert persisted.final_gate_passed is True

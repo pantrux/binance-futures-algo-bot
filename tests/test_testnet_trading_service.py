@@ -345,6 +345,13 @@ def test_testnet_trading_executes_approved_trade_plan_when_enabled():
 
     position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
     assert position.leverage == 10
+    info_event = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_execution_submitted")
+        .one()
+    )
+    assert info_event.context_json["symbol"] == plan.symbol
+    assert info_event.context_json["external_order_id"] == result["external_order_id"]
 
 
 def test_testnet_trading_blocks_when_disabled():
@@ -650,6 +657,8 @@ def test_testnet_trading_logs_warning_when_order_refresh_fails_and_falls_back_to
     assert position.entry_price == plan.entry_price
     assert warning.severity == "warning"
     assert "timeout_refresh" in warning.message
+    assert warning.context_json["symbol"] == plan.symbol
+    assert warning.context_json["exception_type"] == "RuntimeError"
 
 
 

@@ -106,6 +106,7 @@ class DashboardCommandCenterService:
             event_type=event.event_type,
             severity=event.severity,
             message=event.message,
+            context=event.context_json or {},
             created_at=event.created_at,
         )
 
