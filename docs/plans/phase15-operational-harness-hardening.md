@@ -13,12 +13,18 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - runbooks/roadmaps reflejando el cierre del bloque de observabilidad anterior
 
 ## PR inicial de la fase
-### PR-70 — Cierre formal de Fase 14 + hardening final del fixture shell
+### PR-70 — Cierre formal de Fase 14 + hardening final del fixture shell ✅
 - tipar explícitamente `run_fixture_server`
 - centralizar apagado del servidor fixture
 - verificar que el thread realmente termina tras `join`
 - actualizar roadmap/master-plan/PR roadmap para marcar Fase 14 como cerrada y Fase 15 como activa
 - documentar cierre formal en `phase14-observability-closure.md`
+- mergeado en `6f5a580`
+
+### PR-71 — Cobertura shell para payload inválido del command center 🟡
+- agregar caso end-to-end donde `/dashboard/command-center` devuelve payload inválido
+- validar que `synology_smoke_test.sh` falle propagando el error del helper de contexto
+- actualizar roadmap/master-plan/PR roadmap con el nuevo frente activo
 
 ## Criterio de cierre
 - no deben quedar hilos/threads fixture vivos silenciosamente tras los tests
