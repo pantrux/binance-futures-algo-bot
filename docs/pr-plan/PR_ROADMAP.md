@@ -90,7 +90,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-65 | Resumen contextual del último riesgo por operación | ✅ Mergeado | exponer y renderizar `latest_risk_context` en la vista resumida del command center |
 | PR-66 | Smoke Synology para contexto de riesgo | ✅ Mergeado | validar por smoke automatizado los nuevos marcadores/contextos del command center en API y UI, con gating condicional para payloads limpios |
 | PR-67 | Cobertura testeable del smoke para contexto | ✅ Mergeado | extraer la validación del smoke a helper testeable y cubrir payload limpio vs payload con contexto |
-| PR-68 | Manejo limpio de errores CLI del helper de smoke | 🟡 En progreso | capturar errores del entrypoint con mensajes claros en stderr y tests reproducibles de fallo |
+| PR-68 | Manejo limpio de errores CLI del helper de smoke | ✅ Mergeado | capturar errores del entrypoint con mensajes claros en stderr y tests reproducibles de fallo |
+| PR-69 | Fixtures locales para el shell smoke | 🟡 En progreso | cubrir `synology_smoke_test.sh` end-to-end con servidor fixture local y gating HTML reproducible |
 
 
 ## Secuencia de PRs actualizada
@@ -1015,7 +1016,7 @@ Cubrir con tests reproducibles la lógica condicional introducida en `PR-66`, se
 - mergeado en `bca67a6`
 
 ### PR-68 — Manejo limpio de errores CLI del helper de smoke
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Hacer que el helper del smoke falle con mensajes claros en `stderr` y códigos de salida predecibles cuando el archivo no exista, el JSON sea inválido o el payload no cumpla el contrato esperado.
@@ -1025,6 +1026,19 @@ Hacer que el helper del smoke falle con mensajes claros en `stderr` y códigos d
 - mensajes de error amigables en `stderr`
 - tests del entrypoint para archivo ausente, JSON inválido y payload inválido
 - validación local + smoke real contra Synology
+- mergeado en `c5396d7`
+
+### PR-69 — Fixtures locales para el shell smoke
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Cubrir el contrato completo de `scripts/synology_smoke_test.sh` con un fixture local reproducible, de modo que el gating HTML condicional quede validado en CI sin depender del NAS real.
+
+**Entregables**
+- test end-to-end con servidor HTTP local para el shell smoke
+- caso con contexto real + `context-list` / `context-chip` presentes
+- caso limpio sin markers HTML, esperado como PASS
+- caso de fallo cuando el payload exige markers pero la home no los trae
 
 
 ## Criterio de avance

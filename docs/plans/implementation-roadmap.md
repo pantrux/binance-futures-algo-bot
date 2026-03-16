@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-67` ya quedó mergeado en `main`, sincronizado en Outline y validado contra Synology; el smoke del command center ahora tiene helper testeable, cobertura reproducible para payload limpio vs payload con contexto y ejecución robusta fuera de la raíz del repo.
-- **PR activo:** `PR-68` — manejo limpio de errores CLI para el helper del smoke.
-- **Siguiente carril sugerido:** cerrar `PR-68` para que el helper del smoke falle con mensajes claros en `stderr` (archivo ausente, JSON inválido, payload inválido) y la depuración en NAS/CI sea más rápida.
+- **Estado global actual:** `PR-68` ya quedó mergeado en `main`, sincronizado en Outline y validado contra Synology; el helper del smoke ya falla con mensajes CLI limpios y sin tracebacks ruidosos para archivo ausente, JSON inválido o payload inválido.
+- **PR activo:** `PR-69` — fixtures locales para cubrir el contrato completo de `synology_smoke_test.sh`.
+- **Siguiente carril sugerido:** cerrar `PR-69` para que el shell smoke también quede cubierto en CI con servidor fixture local, incluyendo el gating HTML `context-list` / `context-chip`.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -38,7 +38,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
-| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 88% | PR-63..PR-68 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores, cobertura testeable de sus ramas condicionales y mejor DX de fallos del helper CLI |
+| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 94% | PR-63..PR-69 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores, cobertura testeable de sus ramas condicionales, mejor DX de fallos del helper CLI y cobertura local del contrato shell end-to-end |
 
 
 ---
@@ -244,11 +244,18 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - mantener `scripts/synology_smoke_test.sh` como orquestador del smoke real sobre NAS
 - mergeado en `bca67a6` y validado en Synology incluso ejecutando el smoke desde fuera de la raíz del repo
 
-### PR-68 — Manejo limpio de errores CLI en el helper del smoke 🟡
+### PR-68 — Manejo limpio de errores CLI en el helper del smoke ✅
 - agregar manejo explícito de `FileNotFoundError`, `JSONDecodeError` y `ValueError` en `main()`
 - emitir mensajes claros a `stderr` sin tracebacks ruidosos
 - cubrir los caminos de error del entrypoint con tests reproducibles
 - mantener el contrato del shell smoke (`exit != 0` cuando el helper falla)
+- mergeado en `c5396d7` y validado en Synology con `Greptile 5/5`
+
+### PR-69 — Fixtures locales para el shell smoke 🟡
+- cubrir `scripts/synology_smoke_test.sh` end-to-end con un servidor fixture local
+- probar payload con contexto + markers HTML presentes
+- probar payload limpio sin markers HTML
+- probar fallo cuando hay contexto pero faltan `context-list` / `context-chip`
 
 
 ---
