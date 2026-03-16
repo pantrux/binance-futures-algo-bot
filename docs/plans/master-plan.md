@@ -88,9 +88,9 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa O — Trading workstation UX del command center
 - PR-91 en adelante.
-- Estado actual: baseline UX ya aterrizada con `PR-91` (shell modular), `PR-92` (drill-down por tabs), `PR-93` (live data backend + polling UI), `PR-94` (polish visual + order blotter interactivo) y `PR-96` (scope fino del blotter + sync documental). El carril inmediato pasa por `PR-97`, follow-up de hardening para limpiar deuda residual detectada al auditar `PR-91..PR-93` ya mergeados.
+- Estado actual: baseline UX ya aterrizada con `PR-91` (shell modular), `PR-92` (drill-down por tabs), `PR-93` (live data backend + polling UI), `PR-94` (polish visual + order blotter interactivo), `PR-96` (scope fino del blotter + sync documental) y `PR-97` (hardening residual post-auditoría).
 - Entrega lograda: command center más navegable, moderno y orientado a operación real, con navegación explícita, polling vivo y una capa de inspección de órdenes más usable.
-- Hardening pendiente inmediato (`PR-97`): quitar dependencias a IPs LAN hardcodeadas, restaurar degradación elegante cuando la API/live pricing no responden, corregir señales engañosas de `entry real` / `Δ vs plan`, y blindar estados vacíos del drill-down.
+- Carril inmediato (`PR-98`): reliability UX del live polling — exponer antigüedad del último tick, degradar visualmente el feed cuando envejece y dejar el operador con señales explícitas de frescura antes de dar el salto a realtime más fino.
 - Siguiente expansión natural: profundizar la workstation con realtime más fino (SSE/WebSocket o polling selectivo), acciones operativas y mayor densidad contextual por operación.
 
 ## Reglas inmutables del plan
