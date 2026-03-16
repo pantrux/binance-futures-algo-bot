@@ -133,3 +133,89 @@ def test_execution_parity_pairs_by_nearest_timestamp_for_same_side():
     assert report.pairs[0].testnet_trade_plan_id == near.id
     assert report.unmatched_testnet == 1
     assert far.id != report.pairs[0].testnet_trade_plan_id
+
+
+def test_execution_parity_prefers_matching_timeframe_over_closer_cross_timeframe_candidate():
+    db = build_db()
+    base = datetime(2026, 3, 13, 0, 0, tzinfo=timezone.utc)
+
+    paper = seed_plan(
+        db,
+        symbol="BTCUSDT",
+        side="long",
+        status="paper_executed",
+        entry_price=50000,
+        risk_pct=1.0,
+        notional=200,
+        created_at=base,
+    )
+    cross = seed_plan(
+        db,
+        symbol="BTCUSDT",
+        side="long",
+        status="testnet_executed",
+        entry_price=50010,
+        risk_pct=1.0,
+        notional=200,
+        created_at=base + timedelta(seconds=30),
+    )
+    cross.timeframe = "1h"
+    db.add(cross)
+    matching = seed_plan(
+        db,
+        symbol="BTCUSDT",
+        side="long",
+        status="testnet_executed",
+        entry_price=50020,
+        risk_pct=1.0,
+        notional=200,
+        created_at=base + timedelta(minutes=2),
+    )
+    matching.timeframe = paper.timeframe
+    db.add(matching)
+    db.commit()
+
+    report = ExecutionParityService(db).build_report(symbol="BTCUSDT", limit=50)
+
+    assert report.compared_pairs == 1
+    assert report.pairs[0].paper_trade_plan_id == paper.id
+    assert report.pairs[0].testnet_trade_plan_id == matching.id
+    assert report.unmatched_testnet == 1
+    assert cross.id != report.pairs[0].testnet_trade_plan_id
+
+
+def test_execution_parity_does_not_pair_same_symbol_side_when_timeframe_differs():
+    db = build_db()
+    base = datetime(2026, 3, 13, 0, 0, tzinfo=timezone.utc)
+
+    paper = seed_plan(
+        db,
+        symbol="ETHUSDT",
+        side="short",
+        status="paper_executed",
+        entry_price=3000,
+        risk_pct=1.0,
+        notional=150,
+        created_at=base,
+    )
+    testnet = seed_plan(
+        db,
+        symbol="ETHUSDT",
+        side="short",
+        status="testnet_executed",
+        entry_price=3010,
+        risk_pct=1.0,
+        notional=150,
+        created_at=base + timedelta(seconds=20),
+    )
+    paper.timeframe = "15m"
+    testnet.timeframe = "4h"
+    db.add_all([paper, testnet])
+    db.commit()
+
+    report = ExecutionParityService(db).build_report(symbol="ETHUSDT", limit=50)
+
+    assert report.compared_pairs == 0
+    assert report.unmatched_paper == 1
+    assert report.unmatched_testnet == 1
+    assert report.avg_entry_price_diff_pct is None

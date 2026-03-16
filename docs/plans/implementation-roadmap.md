@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-81` ya quedó mergeado en `main`, dejando el roadmap alineado con el cierre formal de Fase 15 y sin PRs abiertos del carril de harness.
-- **PR activo:** `PR-82` — emparejamiento shadow run sensible a `timeframe`.
-- **Siguiente carril sugerido:** retomar frentes de producto/trading pequeños y reviewables; el primero es endurecer la paridad paper/testnet para no cruzar ejecuciones de distinta temporalidad dentro del mismo símbolo/lado.
+- **Estado global actual:** `PR-82` ya quedó mergeado en `main`, endureciendo el emparejamiento del shadow run para no cruzar temporalidades.
+- **PR activo:** `PR-83` — paridad paper/testnet sensible a `timeframe`.
+- **Siguiente carril sugerido:** alinear `ExecutionParityService` con la misma semántica del shadow run para evitar desvíos entre reportes agregados y puntuales.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
