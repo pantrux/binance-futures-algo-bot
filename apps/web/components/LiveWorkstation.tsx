@@ -130,7 +130,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const liveBadgeClassName = isLivePaused
     ? hasLivePrices ? "badge warn" : "badge neutral"
     : livePollingError
-      ? hasLivePrices ? "badge warn" : "badge danger"
+      ? isLiveStaleDanger ? "badge danger" : hasLivePrices ? "badge warn" : "badge danger"
       : isLiveStaleDanger
         ? "badge danger"
         : isLiveStaleWarn
@@ -139,7 +139,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const liveBadgeLabel = isLivePaused
     ? "live pausado"
     : livePollingError
-      ? "live degradado"
+      ? isLiveStaleDanger ? "live crítico" : "live degradado"
       : isLiveStaleDanger
         ? "live vencido"
         : isLiveStaleWarn
