@@ -331,4 +331,3 @@ Un sistema de trading **auditable, operable y seguro**, con:
 - `PAPER_TRADING=true` obligatorio hasta cumplir criterios de transición definidos en Fase 9 y aprobar los ensayos operativos de Fase 10.
 - No habilitar live trading por defecto en ninguna fase intermedia.
 - Cada PR debe cerrar con: checks verdes + comentarios/reviews resueltos + roadmap/docs/memoria actualizados.
-moria actualizados.
