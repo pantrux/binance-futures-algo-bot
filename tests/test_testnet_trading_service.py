@@ -351,6 +351,8 @@ def test_testnet_trading_executes_approved_trade_plan_when_enabled():
         .one()
     )
     assert info_event.context_json["symbol"] == plan.symbol
+    assert info_event.context_json["side"] == plan.side
+    assert info_event.context_json["binance_side"] == "BUY"
     assert info_event.context_json["external_order_id"] == result["external_order_id"]
 
 

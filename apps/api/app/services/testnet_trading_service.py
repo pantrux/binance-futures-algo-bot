@@ -461,6 +461,7 @@ class BinanceTestnetTradingService:
                 "executed_quantity": executed_qty,
                 "external_order_id": external_order_id,
                 "order_status": order_status,
+                "binance_side": side,
             },
         )
 
