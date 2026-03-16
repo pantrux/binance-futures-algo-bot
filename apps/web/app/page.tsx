@@ -293,9 +293,10 @@ function contextLabel(key: string) {
   }
 }
 
-function formatContextValue(value: string | number | boolean | null) {
+function formatContextValue(key: string, value: string | number | boolean | null) {
   if (value == null) return "—";
   if (typeof value === "number") {
+    if (key.endsWith("_id")) return String(value);
     if (Number.isInteger(value)) return formatNumber(value, 0);
     return formatNumber(value, Math.abs(value) >= 100 ? 2 : 4);
   }
@@ -311,7 +312,7 @@ function renderRiskContext(context: Record<string, string | number | boolean | n
     <div className="context-list">
       {entries.map(([key, value]) => (
         <span key={`${key}-${String(value)}`} className="context-chip">
-          <strong>{contextLabel(key)}:</strong> {formatContextValue(value)}
+          <strong>{contextLabel(key)}:</strong> {formatContextValue(key, value)}
         </span>
       ))}
     </div>
