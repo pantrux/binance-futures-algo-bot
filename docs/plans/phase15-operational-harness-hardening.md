@@ -45,10 +45,16 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - mantener el smoke shell totalmente reproducible sin dependencia del NAS real también en el camino autenticado de métricas
 - mergeado en `ba68d86`
 
-### PR-75 — Cobertura shell para strictness de `testnet/ping` 🟡
+### PR-75 — Cobertura shell para strictness de `testnet/ping` ✅
 - cubrir el branch `STRICT_EXTERNAL_CHECKS=false` cuando `/integrations/binance/testnet/ping` falla
 - cubrir el branch `STRICT_EXTERNAL_CHECKS=true` para asegurar fallo explícito
 - mantener el harness reproducible sin depender de Binance real
+- mergeado en `6e4bbd7`
+
+### PR-76 — Failure modes de `WEB /` en el shell smoke 🟡
+- cubrir el caso donde la home web responde `non-200`
+- cubrir el caso donde la home web responde `200` pero con body vacío
+- mantener el harness reproducible y el diagnóstico claro para fallos de `fetch_body()`/marcadores web
 
 ## Criterio de cierre
 - no deben quedar hilos/threads fixture vivos silenciosamente tras los tests

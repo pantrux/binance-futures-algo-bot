@@ -291,10 +291,16 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - reducir duplicación menor en helpers del fixture shell donde aporte claridad sin tocar lógica productiva
 - mergeado en `ba68d86` con checks verdes y reviews resueltos
 
-### PR-75 — Cobertura shell para strictness de `testnet/ping` 🟡
+### PR-75 — Cobertura shell para strictness de `testnet/ping` ✅
 - cubrir el branch `STRICT_EXTERNAL_CHECKS=false` cuando `/integrations/binance/testnet/ping` falla
 - cubrir el branch `STRICT_EXTERNAL_CHECKS=true` para asegurar fallo explícito
 - mantener el harness reproducible sin depender de Binance real
+- mergeado en `6e4bbd7` con checks verdes y review resuelta
+
+### PR-76 — Failure modes de `WEB /` en el shell smoke 🟡
+- cubrir el caso donde la home web responde `non-200`
+- cubrir el caso donde la home web responde `200` pero con body vacío
+- mantener el harness reproducible y el diagnóstico claro para fallos de `fetch_body()`/marcadores web
 
 
 ---

@@ -325,6 +325,44 @@ def test_synology_smoke_script_fails_when_trade_plans_returns_unexpected_status(
     assert "API /trade-plans no cumple" in result.stderr
 
 
+def test_synology_smoke_script_fails_when_web_root_returns_unexpected_status() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    overrides = {
+        "/": (503, "web down", "text/html"),
+    }
+
+    server, thread, base_url = run_fixture_server(payload, build_html(include_context_markers=True), overrides=overrides)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "WEB / respondió HTTP 503 (esperado 200)" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_web_root_body_is_empty() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    overrides = {
+        "/": (200, "", "text/html"),
+    }
+
+    server, thread, base_url = run_fixture_server(payload, build_html(include_context_markers=True), overrides=overrides)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "WEB / sin respuesta desde" in result.stderr
+
+
 def test_synology_smoke_script_passes_when_metrics_returns_200_with_expected_auth() -> None:
     payload = build_payload(
         latest_risk_context={"symbol": "BTCUSDT"},
