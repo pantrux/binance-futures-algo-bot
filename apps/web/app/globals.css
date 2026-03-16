@@ -670,3 +670,36 @@ th {
   .ticker-strip,
   .operation-rail { grid-template-columns: 1fr; }
 }
+
+/* Drilldown Tabs */
+.drawer-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 22px 16px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.drawer-tabs button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 160ms ease;
+  white-space: nowrap;
+}
+
+.drawer-tabs button:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.drawer-tabs button.active {
+  background: rgba(75, 163, 255, 0.12);
+  color: var(--accent-2);
+  border-color: rgba(75, 163, 255, 0.24);
+}
