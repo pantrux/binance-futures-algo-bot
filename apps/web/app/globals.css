@@ -705,18 +705,18 @@ th {
 }
 
 /* Polish PR-94 Additions */
-.table-shell table {
+.table-shell--scrollable table {
   /* Keep separate so sticky headers keep rendering reliably inside the scroll shell. */
   border-collapse: separate;
   border-spacing: 0;
 }
 
 /* Non-motion hover affordances (background, border, shadow) remain enabled even with reduced motion; only animated transitions/transforms are gated below. */
-.table-shell tbody tr:hover {
+.table-shell--scrollable tbody tr:hover {
   background-color: rgba(255, 255, 255, 0.02);
 }
 
-.table-shell th {
+.table-shell--scrollable th {
   position: sticky;
   top: 0;
   background-color: var(--panel-strong);
@@ -736,7 +736,7 @@ th {
   background-color: rgba(255, 255, 255, 0.03);
 }
 
-.table-shell td.empty-state {
+.table-shell--scrollable td.empty-state {
   font-style: italic;
   opacity: 0.8;
   padding: 2rem;
@@ -744,7 +744,7 @@ th {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .table-shell tbody tr {
+  .table-shell--scrollable tbody tr {
     transition: background-color 0.2s ease;
   }
 

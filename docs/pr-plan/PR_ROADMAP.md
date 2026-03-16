@@ -113,7 +113,11 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-88 | Breakdown por timeframe en shadow-run symbols | ✅ Mergeado | evitar que `symbols` agregue bajo una sola fila reportes de un mismo símbolo que pertenecen a temporalidades distintas |
 | PR-89 | Cierre formal de baseline de Etapa N | ✅ Mergeado | consolidar documentalmente la baseline inicial de parity/shadow run sensible a `timeframe` y devolver el foco a producto/trading |
 | PR-90 | Sincronizar docs tras merge de PR-89 | ✅ Mergeado | cerrar el desfase documental residual y dejar el roadmap en estado post-Etapa N sin PRs activos |
-| PR-91 | Shell modular del command center | 🟡 En progreso | transformar el homepage monolítico en una trading workstation modular con navegación clara y drill-down por operación |
+| PR-91 | Shell modular del command center | ✅ Mergeado | shell modular de la trading workstation para salir del homepage monolítico |
+| PR-92 | Drill-down por operación con tabs en el cockpit | ✅ Mergeado | navegación por secciones operativas dentro del detalle de cada operación |
+| PR-93 | Live Data Backend y Polling UI | ✅ Mergeado | backend/live polling para refrescar la workstation sin recarga manual |
+| PR-94 | Polish visual y Order Blotter interactivo (Workstation) | ✅ Mergeado | filtros por estado, sticky headers, motion accesible y tabla de órdenes extraída a componente dedicado |
+| PR-95 | Acotar scroll/sticky del order blotter + sync roadmap | 🟡 En progreso | encapsular estilos scrollables del blotter y dejar el estado documental alineado post-merge |
 
 
 ## Secuencia de PRs actualizada
