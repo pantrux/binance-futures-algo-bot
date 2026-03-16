@@ -87,7 +87,8 @@ def stop_fixture_server(server: FixtureServer, thread: threading.Thread) -> None
     server.shutdown()
     server.server_close()
     thread.join(timeout=2)
-    assert not thread.is_alive(), "fixture thread sigue vivo tras shutdown()"
+    if thread.is_alive():
+        raise RuntimeError("fixture thread sigue vivo tras shutdown()")
 
 
 def build_payload(*, latest_risk_context: dict[str, Any] | None, recent_risk_events: list[dict[str, Any]]) -> dict[str, Any]:
