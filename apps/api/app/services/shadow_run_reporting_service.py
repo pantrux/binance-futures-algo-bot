@@ -127,15 +127,18 @@ class ShadowRunReportingService:
             all_risk_diffs.extend(paired["risk_diffs"])
             all_notional_diffs.extend(paired["notional_diffs"])
 
-        testnet_orders = (
+        testnet_orders_query = (
             self.db.query(Order, TradePlan.entry_price)
             .join(TradePlan, TradePlan.id == Order.trade_plan_id)
             .filter(Order.is_testnet.is_(True))
             .filter(Order.venue == "binance_futures_testnet")
             .filter(TradePlan.status == "testnet_executed")
             .filter(Order.created_at >= cutoff)
-            .all()
         )
+        if timeframe is not None:
+            testnet_orders_query = testnet_orders_query.filter(TradePlan.timeframe == timeframe)
+
+        testnet_orders = testnet_orders_query.all()
         testnet_orders_total = len(testnet_orders)
         testnet_orders_filled = sum(1 for order, _ in testnet_orders if order.status == "filled")
         testnet_fill_rate_pct = (

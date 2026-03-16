@@ -140,3 +140,60 @@ def test_reporting_shadow_run_summary_route_rejects_empty_timeframe() -> None:
     response = client.get("/reporting/shadow-run-summary?window_days=30&timeframe=")
 
     assert response.status_code == 422
+
+
+
+def test_reporting_shadow_run_summary_route_filters_order_aggregates_by_timeframe() -> None:
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    db = sessionmaker(bind=engine)()
+    now = datetime.now(timezone.utc)
+
+    seed_trade_plan(db, symbol="BTCUSDT", status="paper_executed", side="long", created_at=now - timedelta(days=8))
+    testnet_15m = seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", side="long", created_at=now - timedelta(days=7, hours=12))
+    paper_1h = seed_trade_plan(db, symbol="BTCUSDT", status="paper_executed", side="long", created_at=now - timedelta(days=6))
+    testnet_1h = seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", side="long", created_at=now - timedelta(days=5, hours=12))
+    paper_1h.timeframe = "1h"
+    testnet_1h.timeframe = "1h"
+    db.add_all([paper_1h, testnet_1h])
+
+    order_15m = Order(
+        trade_plan_id=testnet_15m.id,
+        venue="binance_futures_testnet",
+        external_order_id="ord-15m",
+        symbol="BTCUSDT",
+        side="long",
+        order_type="market",
+        status="filled",
+        price=50010,
+        quantity=0.1,
+        executed_quantity=0.1,
+        is_testnet=True,
+    )
+    order_15m.created_at = now - timedelta(hours=3)
+    order_1h = Order(
+        trade_plan_id=testnet_1h.id,
+        venue="binance_futures_testnet",
+        external_order_id="ord-1h",
+        symbol="BTCUSDT",
+        side="long",
+        order_type="market",
+        status="filled",
+        price=50020,
+        quantity=0.1,
+        executed_quantity=0.1,
+        is_testnet=True,
+    )
+    order_1h.created_at = now - timedelta(hours=2)
+    db.add_all([order_15m, order_1h])
+    db.commit()
+
+    client = make_client(db)
+    response = client.get("/reporting/shadow-run-summary?window_days=30&timeframe=1h")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["timeframe"] == "1h"
+    assert payload["testnet_orders_total"] == 1
+    assert payload["testnet_orders_filled"] == 1
+    assert payload["testnet_fill_rate_pct"] == 100.0
