@@ -5,8 +5,8 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-83` ya quedó mergeado en `main`, alineando shadow run y execution parity bajo la misma regla de `timeframe`.
-- **PR activo:** ninguno; Etapa N ya tiene su baseline inicial consolidada.
+- **Estado global actual:** `PR-84` ya quedó mergeado en `main`, dejando el roadmap alineado tras la baseline inicial de Etapa N.
+- **PR activo:** ninguno tras el merge de `PR-85`; no quedan PRs planificados en el repo.
 - **Siguiente carril sugerido:** pausar follow-ups de parity salvo que aparezcan desviaciones reales en operación y devolver el foco a iniciativas de producto/trading con impacto directo.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?

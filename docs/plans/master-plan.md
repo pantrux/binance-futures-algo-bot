@@ -83,7 +83,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa N — Refinamiento de paridad paper vs testnet
 - PR-82 en adelante.
-- Estado actual: baseline inicial completada; `PR-82` endureció el emparejamiento del shadow run para no cruzar trade plans de distinta `timeframe` dentro del mismo símbolo/lado y `PR-83` alineó con esa misma regla el `ExecutionParityService`.
+- Estado actual: baseline inicial completada; `PR-82` endureció el emparejamiento del shadow run para no cruzar trade plans de distinta `timeframe` dentro del mismo símbolo/lado, `PR-83` alineó con esa misma regla el `ExecutionParityService` y `PR-84` dejó el roadmap de Etapa N consistente tras esos merges.
 - Entrega lograda: métricas de paridad/shadow run más confiables y consistentes entre reportes agregados y puntuales cuando existan múltiples temporalidades o estrategias concurrentes por símbolo.
 
 ## Reglas inmutables del plan
