@@ -216,7 +216,7 @@ async function getCommandCenter(): Promise<CommandCenterResponse> {
 }
 
 function formatNumber(value: number | null | undefined, digits = 0) {
-  if (value == null) return "—";
+  if (value == null || Number.isNaN(value)) return "—";
   return new Intl.NumberFormat("es-CL", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
@@ -237,10 +237,9 @@ function formatPercent(value: number | null | undefined, digits = 2) {
   return `${prefix}${formatNumber(value, digits)}%`;
 }
 
-
 function statusTone(status: string) {
   const normalized = status.toLowerCase();
-  if (["filled", "testnet_executed", "paper_executed", "approved", "open"].includes(normalized)) return "ok";
+  if (["filled", "testnet_executed", "paper_executed", "approved", "open", "healthy"].includes(normalized)) return "ok";
   if (["warning", "partially_filled", "blocked", "draft", "new"].includes(normalized)) return "warn";
   if (["critical", "rejected", "cancelled", "canceled", "expired"].includes(normalized)) return "danger";
   return "neutral";
@@ -251,10 +250,21 @@ function toneClassName(tone: string) {
   return "neutral";
 }
 
+function reconcileTone(healthy: boolean, severity: string | null) {
+  if (healthy) return "ok";
+  if (severity === "critical") return "danger";
+  if (severity === "warning") return "warn";
+  return "neutral";
+}
+
 function timelineEntityLabel(entityKind: string) {
   switch (entityKind) {
     case "trade_plan":
       return "trade plan";
+    case "order":
+      return "orden";
+    case "position":
+      return "posición";
     case "risk_event":
       return "risk";
     case "reconciliation":
@@ -262,13 +272,6 @@ function timelineEntityLabel(entityKind: string) {
     default:
       return entityKind;
   }
-}
-
-function reconcileTone(healthy: boolean, severity: string | null) {
-  if (healthy) return "ok";
-  if (severity === "critical") return "danger";
-  if (severity === "warning") return "warn";
-  return "neutral";
 }
 
 function contextLabel(key: string) {
@@ -306,7 +309,7 @@ function formatContextValue(key: string, value: string | number | boolean | null
 }
 
 function renderRiskContext(context: Record<string, string | number | boolean | null> | null | undefined) {
-  const entries = Object.entries(context ?? {}).filter(([, value]) => value !== null && value !== "").slice(0, 6);
+  const entries = Object.entries(context ?? {}).filter(([, value]) => value !== null && value !== "").slice(0, 8);
   if (entries.length === 0) return null;
 
   return (
@@ -320,489 +323,523 @@ function renderRiskContext(context: Record<string, string | number | boolean | n
   );
 }
 
+type TapeItem = {
+  key: string;
+  symbol: string;
+  timeframe: string;
+  side: string;
+  status: string;
+  price: number | null;
+  pnl: number | null;
+  regime: string | null;
+};
+
+function buildTape(commandCenter: CommandCenterResponse): TapeItem[] {
+  const map = new Map<string, TapeItem>();
+
+  for (const operation of commandCenter.operation_snapshots) {
+    const key = `${operation.symbol}-${operation.timeframe}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        key,
+        symbol: operation.symbol,
+        timeframe: operation.timeframe,
+        side: operation.side,
+        status: operation.status,
+        price: operation.latest_position_mark_price ?? operation.latest_order_price ?? operation.entry_price,
+        pnl: operation.latest_position_unrealized_pnl,
+        regime: operation.market_regime,
+      });
+    }
+  }
+
+  for (const position of commandCenter.open_positions) {
+    const key = `${position.symbol}-live`;
+    if (!map.has(key)) {
+      map.set(key, {
+        key,
+        symbol: position.symbol,
+        timeframe: "live",
+        side: position.side,
+        status: position.status,
+        price: position.mark_price,
+        pnl: position.unrealized_pnl,
+        regime: null,
+      });
+    }
+  }
+
+  return Array.from(map.values()).slice(0, 10);
+}
+
 export default async function HomePage() {
   const commandCenter = await getCommandCenter();
-  const { summary, shadow_run: shadowRun } = commandCenter;
+  const summary = commandCenter.summary;
+  const shadowRun = commandCenter.shadow_run;
+  const tape = buildTape(commandCenter);
+  const totalOpenPnl = commandCenter.open_positions.reduce((acc, position) => acc + position.unrealized_pnl, 0);
+  const criticalRisks = commandCenter.recent_risk_events.filter((event) => event.severity === "critical").length;
 
-  const cards = [
-    { title: "Trade plans", value: String(summary.trade_plans_total), hint: "Planes persistidos" },
-    { title: "Aprobados", value: String(summary.approved_trade_plans), hint: "Listos para ejecución" },
-    { title: "Paper ejecutados", value: String(summary.paper_executed_trade_plans), hint: "Simulación operativa" },
-    { title: "Testnet ejecutados", value: String(summary.testnet_executed_trade_plans), hint: "Órdenes reales en testnet" },
-    { title: "Posiciones abiertas", value: String(summary.open_positions), hint: "Inventario operativo vivo" },
-    { title: "Fill rate testnet", value: `${formatNumber(shadowRun.testnet_fill_rate_pct, 1)}%`, hint: "Órdenes llenadas / órdenes testnet" },
+  const summaryCards = [
+    { title: "PnL abierto", value: formatNumber(totalOpenPnl, 2), hint: "mark-to-market actual", tone: totalOpenPnl >= 0 ? "ok" : "danger" },
+    { title: "Open positions", value: String(summary.open_positions), hint: "inventario vivo", tone: summary.open_positions > 0 ? "ok" : "neutral" },
+    { title: "Fill rate testnet", value: `${formatNumber(shadowRun.testnet_fill_rate_pct, 1)}%`, hint: "órdenes ejecutadas / enviadas", tone: (shadowRun.testnet_fill_rate_pct ?? 0) >= 80 ? "ok" : "warn" },
+    { title: "Pairs parity", value: String(shadowRun.compared_pairs), hint: "paper ↔ testnet comparados", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
+    { title: "Risk 7d", value: `${shadowRun.critical_risk_events_7d}/${shadowRun.warning_risk_events_7d}`, hint: "critical / warning", tone: shadowRun.critical_risk_events_7d > 0 ? "danger" : shadowRun.warning_risk_events_7d > 0 ? "warn" : "ok" },
+    { title: "Trade plans", value: String(summary.trade_plans_total), hint: "universo persistido", tone: "neutral" },
   ];
 
   return (
-    <main className="page">
-      <section className="hero">
-        <div>
-          <p className="eyebrow">Binance USDⓈ-M Futures</p>
-          <h1>Centro de mando del bot algorítmico</h1>
-          <p className="lead">
-            Visibilidad operativa unificada de planes, órdenes, posiciones, riesgo y shadow run testnet desde una sola pantalla.
-          </p>
-        </div>
-        <div className="status-box">
-          <span className="badge">Shadow run activo</span>
-          <p>
-            Generado: <strong>{formatDate(commandCenter.generated_at)}</strong>
-          </p>
-          <div className="status-metrics">
-            <div>
-              <span className="metric-label">Días observados</span>
-              <strong>{formatNumber(shadowRun.shadow_run_duration_days, 2)}</strong>
-            </div>
-            <div>
-              <span className="metric-label">Pares comparados</span>
-              <strong>{shadowRun.compared_pairs}</strong>
-            </div>
-            <div>
-              <span className="metric-label">Risk 7d</span>
-              <strong>{shadowRun.critical_risk_events_7d}/{shadowRun.warning_risk_events_7d}</strong>
-            </div>
+    <main className="terminal-shell">
+      <aside className="workspace-sidebar">
+        <div className="workspace-brand">
+          <span className="brand-mark">S</span>
+          <div>
+            <p className="eyebrow">Skynet Desk</p>
+            <h2>Command Center</h2>
           </div>
         </div>
-      </section>
 
-      <section className="grid grid-six">
-        {cards.map((card) => (
-          <article key={card.title} className="card">
-            <p className="card-title">{card.title}</p>
-            <h2>{card.value}</h2>
-            <p className="card-hint">{card.hint}</p>
+        <nav className="workspace-nav">
+          <a href="#overview">Overview</a>
+          <a href="#desk">Desk</a>
+          <a href="#operations">Operations</a>
+          <a href="#book">Book</a>
+          <a href="#risk">Risk</a>
+          <a href="#drilldown">Drill-down</a>
+        </nav>
+
+        <div className="sidebar-stack">
+          <article className="sidebar-card">
+            <span className="badge ok">shadow run</span>
+            <strong>{formatNumber(shadowRun.shadow_run_duration_days, 2)} días</strong>
+            <p>Comparados: {shadowRun.compared_pairs} · Unmatched: {shadowRun.unmatched_paper}/{shadowRun.unmatched_testnet}</p>
           </article>
-        ))}
-      </section>
+          <article className="sidebar-card">
+            <span className={`badge ${criticalRisks > 0 ? "danger" : "ok"}`}>risk feed</span>
+            <strong>{summary.risk_events_total} eventos</strong>
+            <p>Critical recientes: {criticalRisks}</p>
+          </article>
+          <article className="sidebar-card subtle-card">
+            <span className="badge neutral">snapshot</span>
+            <strong>{formatDate(commandCenter.generated_at)}</strong>
+            <p>Refresh server-side no-store. Realtime duro queda para el siguiente PR.</p>
+          </article>
+        </div>
+      </aside>
 
-      <section className="panel panel-highlight">
-        <div className="panel-header stacked">
+      <div className="workspace-main">
+        <header className="workspace-header" id="overview">
           <div>
-            <h3>Shadow run / readiness</h3>
-            <p className="panel-copy">Snapshot operativo para seguir el avance real hacia el gate testnet.</p>
+            <p className="eyebrow">Binance USDⓈ-M Futures · Testnet Desk</p>
+            <h1>Trading workstation del bot</h1>
+            <p className="lead">
+              Vista modular para operar el command center como una mesa real: overview corto arriba, paneles especializados al medio y cockpit profundo por operación abajo.
+            </p>
           </div>
-          <div className="chip-row">
-            <span className="badge subtle">Paper: {shadowRun.paper_executed_trade_plans}</span>
-            <span className="badge subtle">Testnet: {shadowRun.testnet_executed_trade_plans}</span>
-            <span className="badge subtle">Unmatched: {shadowRun.unmatched_paper}/{shadowRun.unmatched_testnet}</span>
+          <div className="header-status-panel">
+            <span className="badge ok pulse">desk online</span>
+            <strong>{formatDate(commandCenter.generated_at)}</strong>
+            <p>Paper/testnet/risk/reconcile unificados en una sola shell operativa.</p>
           </div>
-        </div>
-        <div className="stats-grid">
-          <article className="mini-stat"><span>Órdenes testnet</span><strong>{shadowRun.testnet_orders_total}</strong></article>
-          <article className="mini-stat"><span>Órdenes filled</span><strong>{shadowRun.testnet_orders_filled}</strong></article>
-          <article className="mini-stat"><span>Slippage promedio</span><strong>{formatNumber(shadowRun.avg_testnet_slippage_bps, 2)} bps</strong></article>
-          <article className="mini-stat"><span>Risk events total</span><strong>{summary.risk_events_total}</strong></article>
-        </div>
-      </section>
+        </header>
 
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <h3>Radar de operaciones</h3>
-            <p className="panel-copy">Cada fila consolida plan, orden, posición, riesgo y reconciliación para seguimiento operativo real.</p>
-          </div>
-          <span className="badge subtle">últimas 12 ejecuciones / setups</span>
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Plan</th>
-                <th>Setup</th>
-                <th>Orden</th>
-                <th>Posición</th>
-                <th>Reconcile</th>
-                <th>Riesgo</th>
-                <th>Creado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {commandCenter.operation_snapshots.length === 0 ? (
-                <tr><td colSpan={7} className="empty">Sin operaciones consolidadas.</td></tr>
-              ) : commandCenter.operation_snapshots.map((operation) => (
-                <tr key={operation.trade_plan_id}>
-                  <td>
-                    <a className="drill-link" href={`#trade-plan-${operation.trade_plan_id}`}>
-                      <strong>#{operation.trade_plan_id}</strong>
-                    </a><br />
-                    {operation.symbol} · {operation.side}<br />
-                    <span className={`status-pill ${statusTone(operation.status)}`}>{operation.status}</span>
-                  </td>
-                  <td>
-                    Regime: {operation.market_regime}<br />
-                    Entry/SL/TP: {formatNumber(operation.entry_price, 2)} / {formatNumber(operation.stop_loss, 2)} / {formatNumber(operation.take_profit, 2)}<br />
-                    Score: {formatNumber(operation.aggregate_score, 2)} · Risk: {formatNumber(operation.applied_risk_pct, 3)}% · Max: {formatNumber(operation.max_position_notional, 2)}
-                  </td>
-                  <td>
-                    {operation.latest_order_id ? (
-                      <>
-                        #{operation.latest_order_id} · {operation.latest_order_venue}<br />
-                        <span className={`status-pill ${statusTone(operation.latest_order_status ?? "neutral")}`}>{operation.latest_order_status ?? "—"}</span><br />
-                        Px/Exec: {formatNumber(operation.latest_order_price, 2)} / {formatNumber(operation.latest_order_executed_quantity, 3)}
-                      </>
-                    ) : "Sin orden"}
-                  </td>
-                  <td>
-                    {operation.latest_position_id ? (
-                      <>
-                        #{operation.latest_position_id} · <span className={`status-pill ${statusTone(operation.latest_position_status ?? "neutral")}`}>{operation.latest_position_status ?? "—"}</span><br />
-                        Qty: {formatNumber(operation.latest_position_quantity, 3)}<br />
-                        Entry/Mark: {formatNumber(operation.latest_position_entry_price, 2)} / {formatNumber(operation.latest_position_mark_price, 2)}<br />
-                        <span className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? "positive" : "negative"}>PnL: {formatNumber(operation.latest_position_unrealized_pnl, 2)}</span>
-                      </>
-                    ) : "Sin posición"}
-                  </td>
-                  <td>
-                    <span className={`status-pill ${reconcileTone(operation.reconciliation_healthy, operation.reconciliation_primary_severity)}`}>
-                      {operation.reconciliation_healthy ? "healthy" : operation.reconciliation_primary_event ?? "drift"}
-                    </span><br />
-                    {operation.reconciliation_primary_message ?? "Sin drift detectado"}
-                  </td>
-                  <td>
-                    {operation.latest_risk_event_type ? (
-                      <>
-                        <span className={`status-pill ${statusTone(operation.latest_risk_severity ?? "neutral")}`}>{operation.latest_risk_severity ?? "info"}</span><br />
-                        {operation.latest_risk_event_type}<br />
-                        <small>{operation.latest_risk_message}</small><br />
-                        {renderRiskContext(operation.latest_risk_context)}
-                        Count: {operation.risk_event_count}
-                      </>
-                    ) : `Sin eventos · Count: ${operation.risk_event_count}`}
-                  </td>
-                  <td>{formatDate(operation.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+        <section className="ticker-strip" aria-label="market tape">
+          {tape.length === 0 ? (
+            <div className="ticker-empty">Sin símbolos activos en el snapshot actual.</div>
+          ) : tape.map((item) => (
+            <article key={item.key} className="ticker-card">
+              <div className="ticker-topline">
+                <strong>{item.symbol}</strong>
+                <span className={`status-pill ${statusTone(item.status)}`}>{item.status}</span>
+              </div>
+              <div className="ticker-midline">
+                <span>{item.timeframe}</span>
+                <span>{item.side}</span>
+                <span>{item.regime ?? "desk"}</span>
+              </div>
+              <div className="ticker-bottomline">
+                <strong>{formatNumber(item.price, 2)}</strong>
+                <span className={item.pnl == null ? "muted" : item.pnl >= 0 ? "positive" : "negative"}>
+                  {item.pnl == null ? "—" : formatNumber(item.pnl, 2)}
+                </span>
+              </div>
+            </article>
+          ))}
+        </section>
 
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <h3>Detalle por trade plan</h3>
-            <p className="panel-copy">Ficha operativa completa para las últimas operaciones visibles en el radar.</p>
-          </div>
-          <span className="badge subtle">drill-down operativo</span>
-        </div>
-        <div className="detail-grid">
-          {commandCenter.operation_snapshots.length === 0 ? (
-            <p className="empty">Sin detalles de operaciones recientes.</p>
-          ) : commandCenter.operation_snapshots.slice(0, 6).map((operation) => {
-            const relatedTimeline = operation.timeline_history.slice(0, 8);
-            const actualEntry = operation.latest_position_entry_price ?? operation.latest_order_price ?? null;
-            const entryDiffPct = actualEntry != null && operation.entry_price > 0
-              ? ((actualEntry - operation.entry_price) / operation.entry_price) * 100
-              : null;
-            return (
-              <article key={operation.trade_plan_id} id={`trade-plan-${operation.trade_plan_id}`} className="detail-card">
-                <div className="detail-card-header">
-                  <div>
-                    <h4>Trade plan #{operation.trade_plan_id} · {operation.symbol}</h4>
-                    <p>{operation.side} · {operation.market_regime} · creado {formatDate(operation.created_at)}</p>
+        <section className="metric-grid">
+          {summaryCards.map((card) => (
+            <article key={card.title} className="metric-card">
+              <p>{card.title}</p>
+              <h3 className={card.tone === "danger" ? "negative" : card.tone === "ok" ? "positive" : undefined}>{card.value}</h3>
+              <small>{card.hint}</small>
+            </article>
+          ))}
+        </section>
+
+        <section id="desk" className="workspace-section workspace-two-up">
+          <article className="panel workstation-panel">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Desk pulse</p>
+                <h3>Overview ejecutivo</h3>
+              </div>
+              <span className="badge subtle">modular shell</span>
+            </div>
+            <div className="desk-hero-grid">
+              <div className="desk-hero-block accent-block">
+                <span>Testnet orders</span>
+                <strong>{shadowRun.testnet_orders_total}</strong>
+                <small>filled {shadowRun.testnet_orders_filled} · slippage {formatNumber(shadowRun.avg_testnet_slippage_bps, 2)} bps</small>
+              </div>
+              <div className="desk-hero-block">
+                <span>Approved queue</span>
+                <strong>{summary.approved_trade_plans}</strong>
+                <small>planes listos para ejecución / vigilancia</small>
+              </div>
+              <div className="desk-hero-block">
+                <span>Paper / Testnet</span>
+                <strong>{summary.paper_executed_trade_plans} / {summary.testnet_executed_trade_plans}</strong>
+                <small>baseline parity del snapshot</small>
+              </div>
+            </div>
+          </article>
+
+          <article className="panel workstation-panel">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Watchlist</p>
+                <h3>Queue operativa</h3>
+              </div>
+              <span className="badge subtle">últimos setups</span>
+            </div>
+            <div className="watchlist-grid">
+              {commandCenter.recent_trade_plans.length === 0 ? (
+                <p className="empty-state">Sin trade plans recientes.</p>
+              ) : commandCenter.recent_trade_plans.slice(0, 6).map((plan) => (
+                <article key={plan.id} className="watchlist-card">
+                  <div className="watchlist-head">
+                    <strong>{plan.symbol}</strong>
+                    <span className={`status-pill ${statusTone(plan.status)}`}>{plan.status}</span>
                   </div>
-                  <div className="chip-row">
+                  <p>{plan.side} · {plan.market_regime}</p>
+                  <small>score {formatNumber(plan.aggregate_score, 2)} · risk {formatNumber(plan.applied_risk_pct, 3)}%</small>
+                  <a className="action-link" href={`#operation-${plan.id}`}>abrir cockpit</a>
+                </article>
+              ))}
+            </div>
+          </article>
+        </section>
+
+        <section id="operations" className="workspace-section">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Operations rail</p>
+              <h3>Radar modular por operación</h3>
+            </div>
+            <span className="badge subtle">sin texto estático innecesario</span>
+          </div>
+          <div className="operation-rail">
+            {commandCenter.operation_snapshots.length === 0 ? (
+              <p className="empty-state">Sin operaciones consolidadas.</p>
+            ) : commandCenter.operation_snapshots.slice(0, 8).map((operation) => {
+              const actualEntry = operation.latest_position_entry_price ?? operation.latest_order_price ?? operation.entry_price;
+              const entryDiffPct = operation.entry_price > 0 ? ((actualEntry - operation.entry_price) / operation.entry_price) * 100 : null;
+              return (
+                <article key={operation.trade_plan_id} className="operation-card" id={`operation-${operation.trade_plan_id}`}>
+                  <div className="operation-head">
+                    <div>
+                      <p className="operation-symbol">{operation.symbol}</p>
+                      <small>{operation.timeframe} · {operation.side} · {operation.market_regime}</small>
+                    </div>
                     <span className={`status-pill ${statusTone(operation.status)}`}>{operation.status}</span>
+                  </div>
+                  <div className="operation-strip">
+                    <div>
+                      <span>entry</span>
+                      <strong>{formatNumber(actualEntry, 2)}</strong>
+                    </div>
+                    <div>
+                      <span>Δ plan</span>
+                      <strong className={entryDiffPct == null ? "muted" : entryDiffPct >= 0 ? "positive" : "negative"}>{formatPercent(entryDiffPct, 3)}</strong>
+                    </div>
+                    <div>
+                      <span>PnL</span>
+                      <strong className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? "positive" : "negative"}>{formatNumber(operation.latest_position_unrealized_pnl, 2)}</strong>
+                    </div>
+                  </div>
+                  <div className="operation-tags">
                     <span className={`status-pill ${reconcileTone(operation.reconciliation_healthy, operation.reconciliation_primary_severity)}`}>
                       {operation.reconciliation_healthy ? "healthy" : operation.reconciliation_primary_event ?? "drift"}
                     </span>
-                    <span className="status-pill neutral">risk count: {operation.risk_event_count}</span>
+                    <span className={`status-pill ${statusTone(operation.latest_risk_severity ?? "neutral")}`}>
+                      {operation.latest_risk_event_type ?? `risk ${operation.risk_event_count}`}
+                    </span>
                   </div>
-                </div>
-                <div className="detail-columns">
-                  <section className="detail-box">
-                    <h5>Setup</h5>
-                    <ul className="detail-list">
-                      <li><span>Score</span><strong>{formatNumber(operation.aggregate_score, 2)}</strong></li>
-                      <li><span>Risk</span><strong>{formatNumber(operation.applied_risk_pct, 3)}%</strong></li>
-                      <li><span>Max notional</span><strong>{formatNumber(operation.max_position_notional, 2)}</strong></li>
-                      <li><span>Entry</span><strong>{formatNumber(operation.entry_price, 2)}</strong></li>
-                      <li><span>Stop loss</span><strong>{formatNumber(operation.stop_loss, 2)}</strong></li>
-                      <li><span>Take profit</span><strong>{formatNumber(operation.take_profit, 2)}</strong></li>
-                    </ul>
-                  </section>
-                  <section className="detail-box">
-                    <h5>Ejecución</h5>
-                    <ul className="detail-list">
-                      <li><span>Orden</span><strong>{operation.latest_order_id ? `#${operation.latest_order_id}` : '—'}</strong></li>
-                      <li><span>Venue</span><strong>{operation.latest_order_venue ?? '—'}</strong></li>
-                      <li><span>Estado orden</span><strong>{operation.latest_order_status ?? '—'}</strong></li>
-                      <li><span>Px orden</span><strong>{formatNumber(operation.latest_order_price, 2)}</strong></li>
-                      <li><span>Exec qty</span><strong>{formatNumber(operation.latest_order_executed_quantity, 3)}</strong></li>
-                      <li><span>Posición</span><strong>{operation.latest_position_id ? `#${operation.latest_position_id}` : '—'}</strong></li>
-                      <li><span>Estado posición</span><strong>{operation.latest_position_status ?? '—'}</strong></li>
-                      <li><span>Qty posición</span><strong>{formatNumber(operation.latest_position_quantity, 3)}</strong></li>
-                      <li><span>Entry real</span><strong>{formatNumber(actualEntry, 2)}</strong></li>
-                      <li><span>Δ vs plan</span><strong className={entryDiffPct == null ? 'muted' : entryDiffPct >= 0 ? 'positive' : 'negative'}>{formatPercent(entryDiffPct, 3)}</strong></li>
-                      <li><span>Mark</span><strong>{formatNumber(operation.latest_position_mark_price, 2)}</strong></li>
-                      <li><span>PnL</span><strong className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? 'positive' : 'negative'}>{formatNumber(operation.latest_position_unrealized_pnl, 2)}</strong></li>
-                    </ul>
-                  </section>
-                  <section className="detail-box">
-                    <h5>Justificación técnica</h5>
-                    <ul className="detail-list">
-                      <li><span>Technical</span><strong>{formatNumber(operation.technical_score, 2)}</strong></li>
-                      <li><span>Fundamental</span><strong>{formatNumber(operation.fundamental_score, 2)}</strong></li>
-                      <li><span>Sentiment</span><strong>{formatNumber(operation.sentiment_score, 2)}</strong></li>
-                      <li><span>Confidence</span><strong>{formatNumber(operation.confidence_score, 2)}</strong></li>
-                    </ul>
-                    <div className="thesis-box">
-                      <strong>Tesis persistida</strong>
-                      <p>{operation.thesis || 'Sin tesis persistida'}</p>
-                    </div>
-                  </section>
-                </div>
-                <section className="history-grid">
-                  <article className="detail-box history-box">
-                    <div className="history-box-header">
-                      <h5>Historial de órdenes</h5>
-                      <span className="badge subtle">{operation.order_history.length}</span>
-                    </div>
-                    <div className="history-list">
-                      {operation.order_history.length === 0 ? (
-                        <p className="empty">Sin órdenes asociadas.</p>
-                      ) : operation.order_history.map((order) => (
-                        <article key={order.id} className="history-item">
-                          <div className="risk-item-top">
-                            <span className={`status-pill ${statusTone(order.status)}`}>{order.status}</span>
-                            <span className="risk-meta">#{order.id} · {formatDate(order.created_at)}</span>
-                          </div>
-                          <p>{order.venue} · {order.symbol} · {order.side}</p>
-                          <small>Px {formatNumber(order.price, 2)} · Qty {formatNumber(order.quantity, 3)} · Exec {formatNumber(order.executed_quantity, 3)}</small>
-                        </article>
-                      ))}
-                    </div>
-                  </article>
-                  <article className="detail-box history-box">
-                    <div className="history-box-header">
-                      <h5>Historial de posiciones</h5>
-                      <span className="badge subtle">{operation.position_history.length}</span>
-                    </div>
-                    <div className="history-list">
-                      {operation.position_history.length === 0 ? (
-                        <p className="empty">Sin posiciones asociadas.</p>
-                      ) : operation.position_history.map((position) => (
-                        <article key={position.id} className="history-item">
-                          <div className="risk-item-top">
-                            <span className={`status-pill ${statusTone(position.status)}`}>{position.status}</span>
-                            <span className="risk-meta">#{position.id} · {formatDate(position.opened_at)}</span>
-                          </div>
-                          <p>{position.symbol} · {position.side} · {formatNumber(position.quantity, 3)}</p>
-                          <small>Entry {formatNumber(position.entry_price, 2)} · Mark {formatNumber(position.mark_price, 2)} · Lev {position.leverage}x · PnL {formatNumber(position.unrealized_pnl, 2)}</small>
-                        </article>
-                      ))}
-                    </div>
-                  </article>
-                  <article className="detail-box history-box">
-                    <div className="history-box-header">
-                      <h5>Historial de riesgo</h5>
-                      <span className="badge subtle">{operation.risk_event_count}</span>
-                    </div>
-                    <div className="history-list">
-                      {operation.risk_event_history.length === 0 ? (
-                        <p className="empty">Sin eventos de riesgo asociados.</p>
-                      ) : operation.risk_event_history.map((event) => (
-                        <article key={event.id} className="history-item">
-                          <div className="risk-item-top">
-                            <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
-                            <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
-                          </div>
-                          <p>{event.message}</p>
-                          {renderRiskContext(event.context)}
-                        </article>
-                      ))}
-                    </div>
-                  </article>
-                  <article className="detail-box history-box">
-                    <div className="history-box-header">
-                      <h5>Reconcile actual</h5>
-                      <span className={`status-pill ${reconcileTone(operation.reconciliation_healthy, operation.reconciliation_primary_severity)}`}>
-                        {operation.reconciliation_healthy ? "healthy" : operation.reconciliation_primary_event ?? "drift"}
-                      </span>
-                    </div>
-                    <ul className="detail-list compact">
-                      <li><span>Orders</span><strong>{operation.reconciliation_order_count}</strong></li>
-                      <li><span>Filled</span><strong>{operation.reconciliation_filled_order_count}</strong></li>
-                      <li><span>Open positions</span><strong>{operation.reconciliation_open_position_count}</strong></li>
-                      <li><span>Drifts</span><strong>{operation.reconciliation_drift_events.length}</strong></li>
-                    </ul>
-                    <div className="history-list compact-list">
-                      {operation.reconciliation_drift_events.length === 0 ? (
-                        <p className="empty">Sin drift detectado.</p>
-                      ) : operation.reconciliation_drift_events.map((drift, index) => (
-                        <article key={`${operation.trade_plan_id}-drift-${index}`} className="history-item">
-                          <div className="risk-item-top">
-                            <span className={`status-pill ${statusTone(drift.severity)}`}>{drift.severity}</span>
-                            <span className="risk-meta">{drift.event_type}</span>
-                          </div>
-                          <p>{drift.message}</p>
-                        </article>
-                      ))}
-                      {operation.reconciliation_recommended_actions.length > 0 ? (
-                        <div className="history-actions">
-                          <strong>Acciones sugeridas</strong>
-                          <ul>
-                            {operation.reconciliation_recommended_actions.map((action, index) => (
-                              <li key={`${operation.trade_plan_id}-${index}-${action}`}>{action}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                    </div>
-                  </article>
-                </section>
-                <section className="detail-box detail-box-timeline">
-                  <h5>Timeline asociada</h5>
-                  <div className="detail-timeline">
-                    {relatedTimeline.length === 0 ? (
-                      <p className="empty">Sin eventos asociados en timeline.</p>
-                    ) : relatedTimeline.map((item, index) => (
-                      <div key={`${operation.trade_plan_id}-${item.entity_kind}-${index}`} className="detail-timeline-item">
-                        <span className={`status-pill ${toneClassName(item.tone)}`}>{timelineEntityLabel(item.entity_kind)}</span>
-                        <div>
-                          <strong>{item.title}</strong>
-                          <p>{item.detail}</p>
-                          <small>{item.event_kind} · {formatDate(item.occurred_at)}</small>
-                        </div>
-                      </div>
-                    ))}
+                  {renderRiskContext(operation.latest_risk_context)}
+                  <div className="operation-actions">
+                    <a className="action-link primary" href={`#drawer-${operation.trade_plan_id}`}>abrir drill-down</a>
+                    <a className="action-link" href="#book">ver book</a>
                   </div>
-                </section>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="two-column">
-        <section className="panel">
-          <div className="panel-header">
-            <h3>Línea de tiempo operativa</h3>
-            <span className="badge subtle">últimos 20 eventos</span>
-          </div>
-          <div className="risk-feed timeline-feed">
-            {commandCenter.timeline.length === 0 ? (
-              <p className="empty">Sin eventos en timeline.</p>
-            ) : commandCenter.timeline.map((item, index) => (
-              <article key={`${item.entity_kind}-${item.trade_plan_id ?? 'na'}-${item.event_kind}-${index}`} className="risk-item timeline-item">
-                <div className="risk-item-top">
-                  <span className={`status-pill ${toneClassName(item.tone)}`}>{timelineEntityLabel(item.entity_kind)}</span>
-                  <span className="risk-meta">{item.event_kind} · {formatDate(item.occurred_at)}</span>
-                </div>
-                <p>{item.title}</p>
-                <small>{item.detail}</small>
-                <small className="timeline-meta">
-                  {item.trade_plan_id ? (
-                    <a className="drill-link" href={`#trade-plan-${item.trade_plan_id}`}>
-                      plan #{item.trade_plan_id} · {item.symbol ?? '—'}
-                    </a>
-                  ) : (
-                    `plan #— · ${item.symbol ?? '—'}`
-                  )}
-                </small>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         </section>
 
-        <section className="panel">
-          <div className="panel-header">
-            <h3>Órdenes recientes</h3>
-            <span className="badge subtle">exchange execution</span>
-          </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Plan</th>
-                  <th>Símbolo</th>
-                  <th>Venue</th>
-                  <th>Qty / Exec</th>
-                  <th>Estado</th>
-                  <th>Hora</th>
-                </tr>
-              </thead>
-              <tbody>
-                {commandCenter.recent_orders.length === 0 ? (
-                  <tr><td colSpan={7} className="empty">Sin órdenes recientes.</td></tr>
-                ) : commandCenter.recent_orders.map((order) => (
-                  <tr key={order.id}>
-                    <td>#{order.id}</td>
-                    <td>#{order.trade_plan_id}</td>
-                    <td>{order.symbol}</td>
-                    <td>{order.venue}</td>
-                    <td>{formatNumber(order.quantity, 3)} / {formatNumber(order.executed_quantity, 3)}</td>
-                    <td><span className={`status-pill ${statusTone(order.status)}`}>{order.status}</span></td>
-                    <td>{formatDate(order.created_at)}</td>
+        <section id="book" className="workspace-section workspace-two-up">
+          <article className="panel workstation-panel">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Positions board</p>
+                <h3>Posiciones abiertas</h3>
+              </div>
+              <span className="badge subtle">inventory</span>
+            </div>
+            <div className="table-shell">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Símbolo</th>
+                    <th>Lado</th>
+                    <th>Qty</th>
+                    <th>Entry / Mark</th>
+                    <th>PnL</th>
+                    <th>Lev</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </section>
+                </thead>
+                <tbody>
+                  {commandCenter.open_positions.length === 0 ? (
+                    <tr><td colSpan={7} className="empty-state">Sin posiciones abiertas.</td></tr>
+                  ) : commandCenter.open_positions.map((position) => (
+                    <tr key={position.id}>
+                      <td>#{position.id}</td>
+                      <td>{position.symbol}</td>
+                      <td>{position.side}</td>
+                      <td>{formatNumber(position.quantity, 3)}</td>
+                      <td>{formatNumber(position.entry_price, 2)} / {formatNumber(position.mark_price, 2)}</td>
+                      <td className={position.unrealized_pnl >= 0 ? "positive" : "negative"}>{formatNumber(position.unrealized_pnl, 2)}</td>
+                      <td>{position.leverage}x</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </article>
 
-      <section className="two-column">
-        <section className="panel">
-          <div className="panel-header">
-            <h3>Posiciones abiertas</h3>
-            <span className="badge subtle">inventory</span>
-          </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Posición</th>
-                  <th>Símbolo</th>
-                  <th>Lado</th>
-                  <th>Qty</th>
-                  <th>Entry / Mark</th>
-                  <th>PnL</th>
-                  <th>Lev</th>
-                </tr>
-              </thead>
-              <tbody>
-                {commandCenter.open_positions.length === 0 ? (
-                  <tr><td colSpan={7} className="empty">Sin posiciones abiertas.</td></tr>
-                ) : commandCenter.open_positions.map((position) => (
-                  <tr key={position.id}>
-                    <td>#{position.id}</td>
-                    <td>{position.symbol}</td>
-                    <td>{position.side}</td>
-                    <td>{formatNumber(position.quantity, 3)}</td>
-                    <td>{formatNumber(position.entry_price, 2)} / {formatNumber(position.mark_price, 2)}</td>
-                    <td className={position.unrealized_pnl >= 0 ? "positive" : "negative"}>{formatNumber(position.unrealized_pnl, 2)}</td>
-                    <td>{position.leverage}x</td>
+          <article className="panel workstation-panel">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Order blotter</p>
+                <h3>Órdenes recientes</h3>
+              </div>
+              <span className="badge subtle">execution feed</span>
+            </div>
+            <div className="table-shell">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Plan</th>
+                    <th>Símbolo</th>
+                    <th>Venue</th>
+                    <th>Qty / Exec</th>
+                    <th>Estado</th>
+                    <th>Hora</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {commandCenter.recent_orders.length === 0 ? (
+                    <tr><td colSpan={7} className="empty-state">Sin órdenes recientes.</td></tr>
+                  ) : commandCenter.recent_orders.map((order) => (
+                    <tr key={order.id}>
+                      <td>#{order.id}</td>
+                      <td>#{order.trade_plan_id}</td>
+                      <td>{order.symbol}</td>
+                      <td>{order.venue}</td>
+                      <td>{formatNumber(order.quantity, 3)} / {formatNumber(order.executed_quantity, 3)}</td>
+                      <td><span className={`status-pill ${statusTone(order.status)}`}>{order.status}</span></td>
+                      <td>{formatDate(order.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </article>
         </section>
 
-        <section className="panel">
-          <div className="panel-header">
-            <h3>Eventos de riesgo</h3>
-            <span className="badge subtle">últimos 12</span>
+        <section id="risk" className="workspace-section workspace-two-up">
+          <article className="panel workstation-panel">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Risk feed</p>
+                <h3>Eventos recientes</h3>
+              </div>
+              <span className="badge subtle">últimos 12</span>
+            </div>
+            <div className="feed-list">
+              {commandCenter.recent_risk_events.length === 0 ? (
+                <p className="empty-state">Sin eventos recientes.</p>
+              ) : commandCenter.recent_risk_events.map((event) => (
+                <article key={event.id} className="feed-card">
+                  <div className="feed-head">
+                    <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
+                    <small>{event.event_type} · {formatDate(event.created_at)}</small>
+                  </div>
+                  <p>{event.message}</p>
+                  {renderRiskContext(event.context)}
+                </article>
+              ))}
+            </div>
+          </article>
+
+          <article className="panel workstation-panel">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Timeline</p>
+                <h3>Eventos operativos</h3>
+              </div>
+              <span className="badge subtle">últimos 20</span>
+            </div>
+            <div className="feed-list">
+              {commandCenter.timeline.length === 0 ? (
+                <p className="empty-state">Sin eventos en timeline.</p>
+              ) : commandCenter.timeline.map((item, index) => (
+                <article key={`${item.entity_kind}-${item.trade_plan_id ?? "na"}-${index}`} className="feed-card">
+                  <div className="feed-head">
+                    <span className={`status-pill ${toneClassName(item.tone)}`}>{timelineEntityLabel(item.entity_kind)}</span>
+                    <small>{item.event_kind} · {formatDate(item.occurred_at)}</small>
+                  </div>
+                  <p>{item.title}</p>
+                  <small className="muted">{item.detail}</small>
+                </article>
+              ))}
+            </div>
+          </article>
+        </section>
+
+        <section id="drilldown" className="workspace-section">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Cockpit</p>
+              <h3>Drill-down por operación</h3>
+            </div>
+            <span className="badge subtle">plegable / operativo</span>
           </div>
-          <div className="risk-feed">
-            {commandCenter.recent_risk_events.length === 0 ? (
-              <p className="empty">Sin eventos recientes.</p>
-            ) : commandCenter.recent_risk_events.map((event) => (
-              <article key={event.id} className="risk-item">
-                <div className="risk-item-top">
-                  <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
-                  <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
-                </div>
-                <p>{event.message}</p>
-                {renderRiskContext(event.context)}
-                <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
-              </article>
-            ))}
+          <div className="drawer-stack">
+            {commandCenter.operation_snapshots.length === 0 ? (
+              <p className="empty-state">Sin operaciones para drill-down.</p>
+            ) : commandCenter.operation_snapshots.slice(0, 8).map((operation, index) => {
+              const actualEntry = operation.latest_position_entry_price ?? operation.latest_order_price ?? operation.entry_price;
+              const entryDiffPct = operation.entry_price > 0 ? ((actualEntry - operation.entry_price) / operation.entry_price) * 100 : null;
+              return (
+                <details key={operation.trade_plan_id} className="operation-drawer" id={`drawer-${operation.trade_plan_id}`} open={index === 0}>
+                  <summary>
+                    <div className="drawer-summary-main">
+                      <strong>#{operation.trade_plan_id} · {operation.symbol}</strong>
+                      <small>{operation.timeframe} · {operation.side} · {operation.market_regime}</small>
+                    </div>
+                    <div className="drawer-summary-stats">
+                      <span>{formatNumber(actualEntry, 2)}</span>
+                      <span className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? "positive" : "negative"}>{formatNumber(operation.latest_position_unrealized_pnl, 2)}</span>
+                      <span className={`status-pill ${statusTone(operation.status)}`}>{operation.status}</span>
+                    </div>
+                  </summary>
+                  <div className="drawer-body">
+                    <div className="drawer-grid">
+                      <section className="drawer-panel">
+                        <h4>Setup</h4>
+                        <ul className="metric-list">
+                          <li><span>Score</span><strong>{formatNumber(operation.aggregate_score, 2)}</strong></li>
+                          <li><span>Risk</span><strong>{formatNumber(operation.applied_risk_pct, 3)}%</strong></li>
+                          <li><span>Max</span><strong>{formatNumber(operation.max_position_notional, 2)}</strong></li>
+                          <li><span>Entry / SL / TP</span><strong>{formatNumber(operation.entry_price, 2)} / {formatNumber(operation.stop_loss, 2)} / {formatNumber(operation.take_profit, 2)}</strong></li>
+                          <li><span>Confidence</span><strong>{formatNumber(operation.confidence_score, 2)}</strong></li>
+                        </ul>
+                        <p className="drawer-copy">{operation.thesis || "Sin tesis persistida"}</p>
+                      </section>
+
+                      <section className="drawer-panel">
+                        <h4>Ejecución</h4>
+                        <ul className="metric-list">
+                          <li><span>Orden</span><strong>{operation.latest_order_id ? `#${operation.latest_order_id}` : "—"}</strong></li>
+                          <li><span>Venue</span><strong>{operation.latest_order_venue ?? "—"}</strong></li>
+                          <li><span>Estado orden</span><strong>{operation.latest_order_status ?? "—"}</strong></li>
+                          <li><span>Exec qty</span><strong>{formatNumber(operation.latest_order_executed_quantity, 3)}</strong></li>
+                          <li><span>Posición</span><strong>{operation.latest_position_id ? `#${operation.latest_position_id}` : "—"}</strong></li>
+                          <li><span>Entry real</span><strong>{formatNumber(actualEntry, 2)}</strong></li>
+                          <li><span>Δ vs plan</span><strong className={entryDiffPct == null ? "muted" : entryDiffPct >= 0 ? "positive" : "negative"}>{formatPercent(entryDiffPct, 3)}</strong></li>
+                        </ul>
+                      </section>
+
+                      <section className="drawer-panel">
+                        <h4>Riesgo & reconcile</h4>
+                        <ul className="metric-list">
+                          <li><span>Risk count</span><strong>{operation.risk_event_count}</strong></li>
+                          <li><span>Último risk</span><strong>{operation.latest_risk_event_type ?? "—"}</strong></li>
+                          <li><span>Healthy</span><strong>{operation.reconciliation_healthy ? "sí" : "no"}</strong></li>
+                          <li><span>Drifts</span><strong>{operation.reconciliation_drift_events.length}</strong></li>
+                        </ul>
+                        {renderRiskContext(operation.latest_risk_context)}
+                      </section>
+                    </div>
+
+                    <div className="drawer-history-grid">
+                      <section className="drawer-panel compact-panel">
+                        <h4>Orders</h4>
+                        <div className="compact-list">
+                          {operation.order_history.length === 0 ? <p className="empty-state">Sin órdenes.</p> : operation.order_history.map((order) => (
+                            <article key={order.id} className="compact-item">
+                              <div className="feed-head">
+                                <span className={`status-pill ${statusTone(order.status)}`}>{order.status}</span>
+                                <small>#{order.id} · {formatDate(order.created_at)}</small>
+                              </div>
+                              <p>{order.venue} · {formatNumber(order.price, 2)} · {formatNumber(order.executed_quantity, 3)}</p>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="drawer-panel compact-panel">
+                        <h4>Positions</h4>
+                        <div className="compact-list">
+                          {operation.position_history.length === 0 ? <p className="empty-state">Sin posiciones.</p> : operation.position_history.map((position) => (
+                            <article key={position.id} className="compact-item">
+                              <div className="feed-head">
+                                <span className={`status-pill ${statusTone(position.status)}`}>{position.status}</span>
+                                <small>#{position.id} · {formatDate(position.opened_at)}</small>
+                              </div>
+                              <p>{formatNumber(position.entry_price, 2)} / {formatNumber(position.mark_price, 2)} · PnL {formatNumber(position.unrealized_pnl, 2)}</p>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="drawer-panel compact-panel">
+                        <h4>Timeline</h4>
+                        <div className="compact-list">
+                          {operation.timeline_history.length === 0 ? <p className="empty-state">Sin timeline.</p> : operation.timeline_history.slice(0, 6).map((item, itemIndex) => (
+                            <article key={`${operation.trade_plan_id}-${itemIndex}`} className="compact-item">
+                              <div className="feed-head">
+                                <span className={`status-pill ${toneClassName(item.tone)}`}>{timelineEntityLabel(item.entity_kind)}</span>
+                                <small>{formatDate(item.occurred_at)}</small>
+                              </div>
+                              <p>{item.title}</p>
+                              <small className="muted">{item.detail}</small>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+                  </div>
+                </details>
+              );
+            })}
           </div>
         </section>
-      </section>
+      </div>
     </main>
   );
 }
