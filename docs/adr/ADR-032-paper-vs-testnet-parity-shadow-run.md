@@ -7,7 +7,7 @@ Aceptado
 Con PR-29 (router testnet) y PR-30 (reconciliación) necesitamos una capa de comparación sistemática entre ejecuciones paper y testnet para detectar desvíos operativos sin esperar incidentes en producción.
 
 ## Decisión
-Introducir `ExecutionParityService` con reporte por símbolo:
+Introducir servicios de parity/shadow run con reporte por símbolo y filtro opcional por `timeframe` para consumo operativo más fino:
 
 - empareja trade plans `paper_executed` vs `testnet_executed` por lado (`long/short`),
 - calcula diferencias porcentuales de:

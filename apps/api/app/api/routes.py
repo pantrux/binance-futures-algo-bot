@@ -256,7 +256,8 @@ def alerts_evaluate(_: None = Depends(require_metrics_auth), db: Session = Depen
 @router.get("/reporting/shadow-run-summary", response_model=ShadowRunSummary)
 def reporting_shadow_run_summary(
     window_days: int = Query(default=30, ge=1, le=365),
+    timeframe: str | None = Query(default=None, min_length=1),
     _: None = Depends(require_metrics_auth),
     db: Session = Depends(get_db),
 ) -> ShadowRunSummary:
-    return ShadowRunReportingService(db).build_summary(window_days=window_days)
+    return ShadowRunReportingService(db).build_summary(window_days=window_days, timeframe=timeframe)

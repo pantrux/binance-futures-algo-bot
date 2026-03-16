@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-85` ya quedó mergeado en `main`, cerrando el último desfase documental residual tras la baseline inicial de Etapa N.
-- **PR activo:** `PR-86` — filtro por `timeframe` en execution parity.
-- **Siguiente carril sugerido:** seguir con mejoras pequeñas de producto/trading que hagan más utilizable la observabilidad ya endurecida, empezando por filtros explícitos en los reportes de parity.
+- **Estado global actual:** `PR-86` ya quedó mergeado en `main`, agregando filtro por `timeframe` al reporte puntual de execution parity.
+- **PR activo:** `PR-87` — filtro por `timeframe` en shadow run summary.
+- **Siguiente carril sugerido:** seguir con mejoras pequeñas de producto/trading que hagan más utilizable la observabilidad ya endurecida, manteniendo consistencia entre reportes puntuales y agregados.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

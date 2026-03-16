@@ -108,7 +108,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-83 | Execution parity sensible a timeframe | ✅ Mergeado | alinear el reporte puntual de parity con la misma regla de `timeframe` usada en shadow run |
 | PR-84 | Sincronizar roadmap tras baseline de Etapa N | ✅ Mergeado | dejar consistente el estado documental tras el merge de PR-83 y pausar follow-ups de parity no urgentes |
 | PR-85 | Sincronizar docs tras merge de PR-84 | ✅ Mergeado | cerrar el último desfase documental residual tras el merge de PR-84 |
-| PR-86 | Filtro por timeframe en execution parity | 🟡 En progreso | permitir consultar `/execution/parity/{symbol}` por temporalidad sin mezclar múltiples timeframes en un mismo reporte |
+| PR-86 | Filtro por timeframe en execution parity | ✅ Mergeado | permitir consultar `/execution/parity/{symbol}` por temporalidad sin mezclar múltiples timeframes en un mismo reporte |
+| PR-87 | Filtro por timeframe en shadow-run-summary | 🟡 En progreso | permitir consultar el resumen agregado de shadow run por temporalidad sin mezclar múltiples timeframes en un mismo snapshot |
 
 
 ## Secuencia de PRs actualizada
