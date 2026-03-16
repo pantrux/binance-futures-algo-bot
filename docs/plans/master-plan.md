@@ -73,7 +73,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa L — Observabilidad operativa post-corrección
 - PR-63 en adelante.
-- Estado actual: en progreso; `PR-63` ataca la principal fricción de diagnóstico restante, agregando metadata estructurada a `risk_events` para debugging y postmortems más rápidos sobre la operación real en Synology.
+- Estado actual: en progreso; `PR-63` ya dejó `risk_events.context_json` operativo en Synology y `PR-64` avanza sobre la siguiente capa útil: volver esa metadata visible/consumible en la UI del command center.
 - Entrega esperada: errores/eventos críticos con contexto JSON útil, visible y consultable sin parsear solo texto libre.
 
 ## Reglas inmutables del plan
