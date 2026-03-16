@@ -752,9 +752,10 @@ th {
   background-color: rgba(255, 255, 255, 0.03);
 }
 
-.empty-state {
+.empty-state,
+.table-shell td.empty-state {
   font-style: italic;
   opacity: 0.8;
-  padding: 2rem !important;
+  padding: 2rem;
   text-align: center;
 }
