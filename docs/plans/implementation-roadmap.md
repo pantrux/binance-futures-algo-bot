@@ -5,8 +5,8 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-88` ya quedó mergeado en `main`, completando la baseline inicial de Etapa N para reporting de parity/shadow run sensible a `timeframe`.
-- **PR activo:** `PR-89` — cierre formal de baseline de Etapa N.
+- **Estado global actual:** `PR-89` ya quedó mergeado en `main`, cerrando formalmente la baseline inicial de Etapa N y sincronizando Outline.
+- **PR activo:** ninguno tras el merge de `PR-90`; no quedan PRs abiertos ni follow-ups inmediatos planificados en el repo.
 - **Siguiente carril sugerido:** volver a iniciativas de producto/trading con impacto directo y reabrir el carril de parity solo ante nuevas necesidades operativas reales.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
