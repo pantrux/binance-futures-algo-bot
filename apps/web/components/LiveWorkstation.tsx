@@ -82,7 +82,6 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
       return;
     }
 
-    setLiveClockMs(Date.now());
     const interval = setInterval(() => {
       setLiveClockMs(Date.now());
     }, 1_000);
