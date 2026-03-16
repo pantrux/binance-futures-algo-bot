@@ -1,5 +1,6 @@
 import math
 import time
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -142,6 +143,12 @@ class BinanceTestnetTradingService:
                     event_type="testnet_order_refresh_failed",
                     severity="warning",
                     message=f"No fue posible refrescar la orden testnet: {exc}",
+                    context={
+                        "symbol": symbol,
+                        "order_id": order_id,
+                        "client_order_id": client_order_id,
+                        "exception_type": type(exc).__name__,
+                    },
                 )
             return exchange_order
         if not isinstance(refreshed, dict) or not refreshed:
@@ -170,13 +177,22 @@ class BinanceTestnetTradingService:
         precision = max(0, min(12, int(round(-math.log10(step_size)))))
         return round(rounded, precision)
 
-    def _log_risk_event(self, *, trade_plan_id: int, event_type: str, severity: str, message: str) -> None:
+    def _log_risk_event(
+        self,
+        *,
+        trade_plan_id: int,
+        event_type: str,
+        severity: str,
+        message: str,
+        context: dict[str, Any] | None = None,
+    ) -> None:
         self.db.add(
             RiskEvent(
                 trade_plan_id=trade_plan_id,
                 event_type=event_type,
                 severity=severity,
                 message=message,
+                context_json=context or {},
             )
         )
 
@@ -191,6 +207,7 @@ class BinanceTestnetTradingService:
                 event_type="testnet_execution_disabled",
                 severity="warning",
                 message="Ejecución testnet deshabilitada por configuración",
+                context={"symbol": trade_plan.symbol, "status": trade_plan.status},
             )
             self.db.commit()
             return {"executed": False, "reason": "testnet_execution_disabled"}
@@ -201,6 +218,7 @@ class BinanceTestnetTradingService:
                 event_type="testnet_execution_blocked_not_approved",
                 severity="warning",
                 message=f"Intento de ejecución testnet bloqueado para trade plan con estado {trade_plan.status}",
+                context={"symbol": trade_plan.symbol, "status": trade_plan.status},
             )
             self.db.commit()
             return {"executed": False, "reason": "trade_plan_not_approved"}
@@ -216,6 +234,7 @@ class BinanceTestnetTradingService:
                 event_type="testnet_execution_step_size_unavailable",
                 severity="critical",
                 message=f"No fue posible obtener stepSize para {trade_plan.symbol}: {exc}",
+                context={"symbol": trade_plan.symbol, "exception_type": type(exc).__name__},
             )
             self.db.commit()
             return {"executed": False, "reason": "symbol_step_size_unavailable"}
@@ -230,6 +249,12 @@ class BinanceTestnetTradingService:
                     "Cantidad inválida calculada para ejecución testnet "
                     f"(raw={raw_quantity:.12f}, step_size={step_size})"
                 ),
+                context={
+                    "symbol": trade_plan.symbol,
+                    "raw_quantity": round(raw_quantity, 12),
+                    "step_size": step_size,
+                    "rounded_quantity": quantity,
+                },
             )
             self.db.commit()
             return {"executed": False, "reason": "invalid_quantity"}
@@ -240,6 +265,7 @@ class BinanceTestnetTradingService:
                 event_type="testnet_execution_invalid_side",
                 severity="critical",
                 message=f"Valor de side inválido: {trade_plan.side!r}",
+                context={"symbol": trade_plan.symbol, "side": trade_plan.side},
             )
             self.db.commit()
             return {"executed": False, "reason": "invalid_side"}
@@ -261,6 +287,7 @@ class BinanceTestnetTradingService:
                     event_type="testnet_execution_missing_credentials",
                     severity="critical",
                     message="Credenciales Binance faltantes para ejecución testnet",
+                    context={"symbol": trade_plan.symbol, "side": side},
                 )
                 self.db.commit()
                 return {"executed": False, "reason": "testnet_credentials_missing"}
@@ -270,6 +297,13 @@ class BinanceTestnetTradingService:
                 event_type="testnet_execution_runtime_error",
                 severity="critical",
                 message=f"Error runtime en envío testnet: {exc}",
+                context={
+                    "symbol": trade_plan.symbol,
+                    "side": side,
+                    "quantity": quantity,
+                    "client_order_id": client_order_id,
+                    "exception_type": type(exc).__name__,
+                },
             )
             self.db.commit()
             return {"executed": False, "reason": "testnet_api_error"}
@@ -279,6 +313,13 @@ class BinanceTestnetTradingService:
                 event_type="testnet_execution_error",
                 severity="critical",
                 message=f"Error en envío testnet: {exc}",
+                context={
+                    "symbol": trade_plan.symbol,
+                    "side": side,
+                    "quantity": quantity,
+                    "client_order_id": client_order_id,
+                    "exception_type": type(exc).__name__,
+                },
             )
             self.db.commit()
             return {"executed": False, "reason": "testnet_api_error"}
@@ -297,6 +338,11 @@ class BinanceTestnetTradingService:
                 event_type="testnet_order_refresh_unexpected_error",
                 severity="warning",
                 message=f"Error inesperado en confirmación post-orden; se persiste payload original: {exc}",
+                context={
+                    "symbol": trade_plan.symbol,
+                    "client_order_id": client_order_id,
+                    "exception_type": type(exc).__name__,
+                },
             )
 
         order_id = exchange_order.get("orderId")
@@ -311,6 +357,12 @@ class BinanceTestnetTradingService:
                     event_type="testnet_order_trades_lookup_failed",
                     severity="warning",
                     message=f"No fue posible obtener fills reales de userTrades: {exc}",
+                    context={
+                        "symbol": trade_plan.symbol,
+                        "order_id": order_id,
+                        "client_order_id": client_order_id,
+                        "exception_type": type(exc).__name__,
+                    },
                 )
 
         exchange_price = self._extract_fill_price_from_trades(
@@ -344,6 +396,11 @@ class BinanceTestnetTradingService:
                     event_type="testnet_position_risk_lookup_failed",
                     severity="warning",
                     message=f"No fue posible obtener positionRisk real; fallback local ({exc})",
+                    context={
+                        "symbol": trade_plan.symbol,
+                        "external_order_id": external_order_id,
+                        "exception_type": type(exc).__name__,
+                    },
                 )
             else:
                 if isinstance(position_risk, dict):
@@ -362,6 +419,7 @@ class BinanceTestnetTradingService:
                     event_type="testnet_execution_leverage_fallback",
                     severity="warning",
                     message=f"No fue posible obtener leverage real; fallback a 1x ({exc})",
+                    context={"symbol": trade_plan.symbol, "exception_type": type(exc).__name__},
                 )
 
         order = Order(
@@ -396,6 +454,15 @@ class BinanceTestnetTradingService:
             event_type="testnet_execution_submitted",
             severity="info",
             message=f"Orden testnet enviada: external_order_id={external_order_id}",
+            context={
+                "symbol": trade_plan.symbol,
+                "side": trade_plan.side,
+                "quantity": quantity,
+                "executed_quantity": executed_qty,
+                "external_order_id": external_order_id,
+                "order_status": order_status,
+                "binance_side": side,
+            },
         )
 
         self.db.add_all([order, position, trade_plan])

@@ -114,7 +114,13 @@ def test_dashboard_command_center_builds_operational_snapshot():
     position.opened_at = now - timedelta(hours=1)
     db.add(position)
 
-    old_event = RiskEvent(trade_plan_id=testnet.id, event_type="preflight_note", severity="info", message="all good")
+    old_event = RiskEvent(
+        trade_plan_id=testnet.id,
+        event_type="preflight_note",
+        severity="info",
+        message="all good",
+        context_json={"source": "runbook", "checkpoint": "preflight"},
+    )
     old_event.created_at = now - timedelta(minutes=80)
     db.add(old_event)
 
@@ -150,6 +156,7 @@ def test_dashboard_command_center_builds_operational_snapshot():
     assert payload.operation_snapshots[1].position_history[0].status == "open"
     assert len(payload.operation_snapshots[1].risk_event_history) == 1
     assert payload.operation_snapshots[1].risk_event_history[0].event_type == "preflight_note"
+    assert payload.operation_snapshots[1].risk_event_history[0].context["checkpoint"] == "preflight"
     assert len(payload.operation_snapshots[1].timeline_history) >= 4
     assert payload.operation_snapshots[0].latest_risk_event_type == "shadow_run_check"
     assert payload.timeline[0].trade_plan_id in {approved.id, testnet.id}

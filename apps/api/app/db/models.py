@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
-from sqlalchemy import BigInteger, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from typing import Any
+
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from apps.api.app.db.base import Base
@@ -79,6 +81,7 @@ class RiskEvent(Base):
     event_type: Mapped[str] = mapped_column(String(48), index=True)
     severity: Mapped[str] = mapped_column(String(16), index=True)
     message: Mapped[str] = mapped_column(Text)
+    context_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True)
 
 

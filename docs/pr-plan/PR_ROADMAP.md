@@ -85,7 +85,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-60 | Auto-ingestar mercado antes de caer a demo | ✅ Mergeado | si faltan candles/snapshot, el worker intenta `POST /market/ingest/{symbol}` y reintenta el setup market-driven |
 | PR-61 | Normalizar cantidad testnet para Binance | ✅ Mergeado | serialización limpia de quantity para evitar `400 Bad Request` por artefactos float |
 | PR-62 | Hardening fino del serializer de quantity | ✅ Mergeado | rechazar `NaN` / infinitos y completar la cobertura del serializer de quantity |
-| PR-63 | Metadata estructurada para `risk_events` | 🔵 Propuesto | agregar contexto JSON auditable a errores/eventos críticos para acelerar debugging operativo |
+| PR-63 | Metadata estructurada para `risk_events` | 🟡 En progreso | agregar contexto JSON auditable a errores/eventos críticos para acelerar debugging operativo |
 
 
 ## Secuencia de PRs actualizada
@@ -944,15 +944,17 @@ Cerrar deuda técnica menor del serializer de `quantity`: rechazar explícitamen
 - mergeado en `526f240`
 
 ### PR-63 — Metadata estructurada para `risk_events`
-**Estado:** 🔵 Propuesto
+**Estado:** 🟡 En progreso
 
 **Objetivo**
 Agregar contexto estructurado a `risk_events` (por ejemplo símbolo, source, códigos de error y payload operativo mínimo) para acelerar debugging y postmortems sin depender de parsear `message` libre.
 
 **Entregables**
 - columna JSON estructurada en `risk_events`
+- persistencia de `context` desde `TradePlanService` sin aplanarlo solo dentro de `message`
 - helpers para persistir contexto en eventos críticos de ejecución/reconcile
-- command center y/o reportes exponen metadata útil cuando exista
+- command center expone metadata útil cuando exista
+- migración Alembic + cobertura de tests del flujo persistencia/serialización
 
 
 ## Criterio de avance

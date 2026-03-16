@@ -92,19 +92,21 @@ class TradePlanService:
             self.db.flush()
 
             for event in decision.risk_events:
-                context_payload = ", ".join(f"{key}={value}" for key, value in sorted(event.context.items()))
+                event_context = dict(event.context)
+                event_context["market_regime"] = decision.market_regime
+                event_context["regime_confidence"] = decision.regime_confidence
+
+                context_payload = ", ".join(f"{key}={value}" for key, value in sorted(event_context.items()))
                 composed_message = event.message
                 if context_payload:
                     composed_message = f"{composed_message} | {context_payload}"
-                composed_message = (
-                    f"{composed_message} | market_regime={decision.market_regime}, regime_confidence={decision.regime_confidence}"
-                )
 
                 risk_event = RiskEvent(
                     trade_plan_id=trade_plan.id,
                     event_type=event.event_type,
                     severity=event.severity,
                     message=composed_message,
+                    context_json=event_context,
                 )
                 self.db.add(risk_event)
 
