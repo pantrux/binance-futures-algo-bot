@@ -105,8 +105,15 @@ def run_fixture_server(
     payload: dict[str, Any],
     html: str,
     overrides: dict[str, tuple[int, Any, str]] | None = None,
+    metrics_api_key: str | None = None,
 ) -> tuple[FixtureServer, threading.Thread, str]:
-    server = FixtureServer(("127.0.0.1", 0), payload=payload, html=html, overrides=overrides)
+    server = FixtureServer(
+        ("127.0.0.1", 0),
+        payload=payload,
+        html=html,
+        overrides=overrides,
+        metrics_api_key=metrics_api_key,
+    )
     port = int(server.server_address[1])
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -152,7 +159,7 @@ def build_html(*, include_context_markers: bool) -> str:
     )
 
 
-def run_smoke(base_url: str) -> subprocess.CompletedProcess[str]:
+def run_smoke(base_url: str, *, metrics_api_key: str | None = None) -> subprocess.CompletedProcess[str]:
     python_dir = str(Path(sys.executable).resolve().parent)
     env = {
         "PATH": os.pathsep.join([python_dir, os.environ.get("PATH", "/usr/bin:/bin")]),
@@ -160,6 +167,8 @@ def run_smoke(base_url: str) -> subprocess.CompletedProcess[str]:
         "WEB_BASE_URL": base_url,
         "STRICT_EXTERNAL_CHECKS": "false",
     }
+    if metrics_api_key is not None:
+        env["METRICS_API_KEY"] = metrics_api_key
     return subprocess.run(
         ["bash", str(SMOKE_SCRIPT)],
         cwd="/tmp",
@@ -309,3 +318,43 @@ def test_synology_smoke_script_fails_when_trade_plans_returns_unexpected_status(
 
     assert result.returncode != 0
     assert "API /trade-plans no cumple" in result.stderr
+
+
+def test_synology_smoke_script_passes_when_metrics_returns_200_with_expected_auth() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+
+    server, thread, base_url = run_fixture_server(
+        payload,
+        build_html(include_context_markers=True),
+        metrics_api_key="secret-metrics-key",
+    )
+    try:
+        result = run_smoke(base_url, metrics_api_key="secret-metrics-key")
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode == 0, result.stderr + result.stdout
+    assert "API /metrics (auth) (200)" in result.stdout
+
+
+def test_synology_smoke_script_fails_when_metrics_auth_is_incorrect() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+
+    server, thread, base_url = run_fixture_server(
+        payload,
+        build_html(include_context_markers=True),
+        metrics_api_key="secret-metrics-key",
+    )
+    try:
+        result = run_smoke(base_url, metrics_api_key="wrong-key")
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "API /metrics (auth) no cumple (esperado 200)" in result.stderr
