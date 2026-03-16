@@ -118,7 +118,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const isLivePaused = !isPolling;
   const liveAgeMs = lastLiveUpdateAt ? Math.max(0, liveClockMs - Date.parse(lastLiveUpdateAt)) : null;
   const isLiveStaleDanger = liveAgeMs != null && liveAgeMs >= LIVE_STALE_DANGER_MS;
-  const isLiveStaleWarn = liveAgeMs != null && liveAgeMs >= LIVE_STALE_WARN_MS;
+  const isLiveStaleWarn = liveAgeMs != null && liveAgeMs >= LIVE_STALE_WARN_MS && !isLiveStaleDanger;
   const liveFreshnessValue = liveAgeMs == null ? "—" : formatElapsedMs(liveAgeMs);
   const liveFreshnessHint = isLivePaused
     ? "polling pausado"
