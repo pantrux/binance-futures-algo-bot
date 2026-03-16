@@ -110,7 +110,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-85 | Sincronizar docs tras merge de PR-84 | ✅ Mergeado | cerrar el último desfase documental residual tras el merge de PR-84 |
 | PR-86 | Filtro por timeframe en execution parity | ✅ Mergeado | permitir consultar `/execution/parity/{symbol}` por temporalidad sin mezclar múltiples timeframes en un mismo reporte |
 | PR-87 | Filtro por timeframe en shadow-run-summary | ✅ Mergeado | permitir consultar el resumen agregado de shadow run por temporalidad sin mezclar múltiples timeframes en un mismo snapshot |
-| PR-88 | Breakdown por timeframe en shadow-run symbols | 🟡 En progreso | evitar que `symbols` agregue bajo una sola fila reportes de un mismo símbolo que pertenecen a temporalidades distintas |
+| PR-88 | Breakdown por timeframe en shadow-run symbols | ✅ Mergeado | evitar que `symbols` agregue bajo una sola fila reportes de un mismo símbolo que pertenecen a temporalidades distintas |
+| PR-89 | Cierre formal de baseline de Etapa N | 🟡 En progreso | consolidar documentalmente la baseline inicial de parity/shadow run sensible a `timeframe` y devolver el foco a producto/trading |
 
 
 ## Secuencia de PRs actualizada
