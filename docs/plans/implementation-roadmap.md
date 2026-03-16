@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-94` ya quedó mergeado en `main`, dejando la baseline UX de la trading workstation operativa con shell modular, drill-down por tabs, live polling y un order blotter interactivo.
-- **PR activo:** `PR-96` — acotar el scroll/sticky del order blotter al contexto correcto y sincronizar el roadmap post-merge.
-- **Siguiente carril sugerido:** cerrar este follow-up corto de hardening visual y luego pasar a la siguiente expansión funcional de la workstation (realtime más fino, acciones operativas o mayor densidad contextual por operación).
+- **Estado global actual:** `PR-96` ya quedó mergeado en `main`, dejando la baseline UX de la trading workstation estabilizada visualmente y el roadmap nuevamente alineado.
+- **PR activo:** `PR-97` — hardening residual de workstation heredado de `PR-91..PR-93`.
+- **Siguiente carril sugerido:** cerrar esta deuda técnica transversal (URLs hardcodeadas, fallback/resiliencia, precisión de `entry real`, estado del polling live y vacíos del drill-down) antes de volver a expandir capacidades nuevas de la workstation.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

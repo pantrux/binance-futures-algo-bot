@@ -2,39 +2,60 @@
 
 import { useEffect, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
+import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
 
 import { OrderBlotter } from "./OrderBlotter";
 
+function buildLivePricingUrl() {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
+  return apiBaseUrl ? `${apiBaseUrl}/dashboard/live-pricing` : null;
+}
+
 export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: any) {
-  const [data, setData] = useState(initialData);
-  const [livePrices, setLivePrices] = useState<Record<string, any>>({});
+  const data = initialData;
+  const [livePrices, setLivePrices] = useState<Record<string, LivePriceEntry>>({});
   const [isPolling, setIsPolling] = useState(true);
+  const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
+  const [livePollingError, setLivePollingError] = useState<string | null>(null);
+  const livePricingUrl = buildLivePricingUrl();
 
   useEffect(() => {
-    if (!isPolling) return;
-    const interval = setInterval(async () => {
+    if (!isPolling || !livePricingUrl) return;
+
+    const pollLivePricing = async () => {
       try {
-        const url = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.0.8:8010';
-        const res = await fetch(`${url}/dashboard/live-pricing`);
-        if (res.ok) {
-          const result = await res.json();
-          const pricesMap: Record<string, any> = {};
-          result.positions.forEach((p: any) => {
-            pricesMap[p.symbol] = {
-              markPrice: p.mark_price,
-              unrealizedPnl: p.unrealized_pnl,
-              positionAmt: p.position_amt,
-            };
-          });
-          setLivePrices(pricesMap);
+        const res = await fetch(livePricingUrl, { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error(`Live pricing poll failed (${res.status})`);
         }
+
+        const result = await res.json();
+        const pricesMap: Record<string, LivePriceEntry> = {};
+        (result.positions ?? []).forEach((position: any) => {
+          pricesMap[position.symbol] = {
+            markPrice: position.mark_price,
+            unrealizedPnl: position.unrealized_pnl,
+            positionAmt: position.position_amt,
+          };
+        });
+
+        setLivePrices(pricesMap);
+        setLastLiveUpdateAt(new Date().toISOString());
+        setLivePollingError(null);
       } catch (err) {
+        setLivePollingError(err instanceof Error ? err.message : "Live pricing poll failed");
         console.error("Live pricing poll failed:", err);
       }
+    };
+
+    void pollLivePricing();
+    const interval = setInterval(() => {
+      void pollLivePricing();
     }, 4000);
+
     return () => clearInterval(interval);
-  }, [isPolling]);
+  }, [isPolling, livePricingUrl]);
 
   // Compute live open PnL
   let liveOpenPnl = 0;
@@ -61,7 +82,31 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
 
   const summary = data.summary;
   const shadowRun = data.shadow_run;
-  const criticalRisks = data.recent_risk_events.filter((e: any) => e.severity === "critical").length;
+  const hasLivePrices = Object.keys(livePrices).length > 0;
+  const isLivePaused = !isPolling;
+  const liveBadgeClassName = isLivePaused
+    ? hasLivePrices ? "badge warn" : "badge neutral"
+    : livePollingError
+      ? hasLivePrices ? "badge warn" : "badge danger"
+      : hasLivePrices ? "badge ok pulse" : livePricingUrl ? "badge warn" : "badge neutral";
+  const liveBadgeLabel = isLivePaused
+    ? "live pausado"
+    : livePollingError
+      ? "live degradado"
+      : hasLivePrices ? "live pricing" : livePricingUrl ? "snapshot data" : "snapshot only";
+  const liveStatusCopy = isLivePaused
+    ? lastLiveUpdateAt
+      ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)}`
+      : "polling pausado"
+    : livePollingError
+      ? lastLiveUpdateAt
+        ? `${livePollingError} · último tick ${formatDate(lastLiveUpdateAt)}`
+        : livePollingError
+      : lastLiveUpdateAt
+        ? `último live ${formatDate(lastLiveUpdateAt)}`
+        : livePricingUrl
+          ? "esperando primer tick live"
+          : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
 
   const summaryCards = [
     { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
@@ -83,11 +128,12 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           </p>
         </div>
         <div className="header-status-panel">
-          <span className={`badge ${Object.keys(livePrices).length > 0 ? 'ok pulse' : 'warn'} pulse`}>
-            {Object.keys(livePrices).length > 0 ? 'live pricing' : 'snapshot data'}
-          </span>
+          <span className={liveBadgeClassName}>{liveBadgeLabel}</span>
           <strong>{formatDate(data.generated_at)}</strong>
-          <p>Paper/testnet/risk/reconcile unificados en una sola shell operativa.</p>
+          <p>{liveStatusCopy}</p>
+          <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
+            {isPolling ? "pausar live" : "reanudar live"}
+          </button>
         </div>
       </header>
 
@@ -193,14 +239,15 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           ) : data.operation_snapshots.slice(0, 8).map((operation: any) => {
             const live = livePrices[operation.symbol];
             let latestPnl = operation.latest_position_unrealized_pnl;
-            let actualEntry = operation.latest_position_entry_price ?? operation.latest_order_price ?? operation.entry_price;
-            
+            const actualEntry = getActualEntryPrice(operation);
+
             if (live && ["open", "testnet_executed", "partially_filled"].includes(operation.status.toLowerCase())) {
-                latestPnl = live.unrealizedPnl;
-                if (!operation.latest_position_entry_price) actualEntry = live.markPrice;
+              latestPnl = live.unrealizedPnl;
             }
-            
-            const entryDiffPct = operation.entry_price > 0 ? ((actualEntry - operation.entry_price) / operation.entry_price) * 100 : null;
+
+            const entryDiffPct = actualEntry != null && operation.entry_price > 0
+              ? ((actualEntry - operation.entry_price) / operation.entry_price) * 100
+              : null;
             return (
               <article key={operation.trade_plan_id} className="operation-card" id={`operation-${operation.trade_plan_id}`}>
                 <div className="operation-head">
@@ -212,7 +259,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
                 </div>
                 <div className="operation-strip">
                   <div>
-                    <span>entry / mark</span>
+                    <span>entry real</span>
                     <strong>{formatNumber(actualEntry, 2)}</strong>
                   </div>
                   <div>

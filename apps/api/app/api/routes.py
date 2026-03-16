@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import time
+import traceback
 from threading import Lock
 
 from apps.api.app.schemas.live_pricing import DashboardLivePricingResponse
@@ -267,11 +268,9 @@ def reporting_shadow_run_summary(
 
 @router.get("/dashboard/live-pricing", response_model=DashboardLivePricingResponse)
 async def dashboard_live_pricing() -> DashboardLivePricingResponse:
-    from fastapi import HTTPException
     try:
         service = LivePricingService()
         return await service.get_live_pricing()
-    except Exception as e:
-        import traceback
+    except Exception as exc:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Failed to fetch live pricing")
+        raise HTTPException(status_code=500, detail="Failed to fetch live pricing") from exc

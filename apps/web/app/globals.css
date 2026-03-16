@@ -87,7 +87,7 @@ small, .muted { color: var(--muted); }
   display: grid;
   place-items: center;
   font-size: 1.4rem;
-  font-weight: 800;
+  font-weight: 700;
   background: linear-gradient(135deg, rgba(54, 230, 181, 0.22), rgba(75, 163, 255, 0.18));
   color: var(--text);
   border: 1px solid rgba(54, 230, 181, 0.18);
@@ -99,7 +99,7 @@ small, .muted { color: var(--muted); }
   letter-spacing: 0.16em;
   font-size: 0.76rem;
   color: var(--accent);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .workspace-nav {
@@ -207,7 +207,7 @@ small, .muted { color: var(--muted); }
   padding: 7px 12px;
   border-radius: 999px;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   border: 1px solid transparent;
@@ -295,7 +295,7 @@ small, .muted { color: var(--muted); }
 .ticker-topline strong,
 .operation-symbol {
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 700;
   margin: 0;
 }
 
