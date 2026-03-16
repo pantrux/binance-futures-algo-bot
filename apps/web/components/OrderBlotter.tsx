@@ -44,7 +44,7 @@ export function OrderBlotter({ orders }: { orders?: any[] | null }) {
         ))}
       </div>
 
-      <div className="table-shell" style={{ maxHeight: "350px", overflowY: "auto" }}>
+      <div className="table-shell table-shell--scrollable" style={{ maxHeight: "350px", overflowY: "auto" }}>
         <table>
           <thead>
             <tr>
