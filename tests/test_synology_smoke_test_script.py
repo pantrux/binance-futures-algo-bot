@@ -363,6 +363,40 @@ def test_synology_smoke_script_fails_when_web_root_body_is_empty() -> None:
     assert "WEB / sin respuesta desde" in result.stderr
 
 
+def test_synology_smoke_script_fails_when_web_root_is_missing_bot_marker() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    html = build_html(include_context_markers=True).replace("bot ", "")
+
+    server, thread, base_url = run_fixture_server(payload, html)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "WEB / no contiene 'bot'" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_web_root_is_missing_command_center_marker() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    html = build_html(include_context_markers=True).replace("Historial de riesgo ", "")
+
+    server, thread, base_url = run_fixture_server(payload, html)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "WEB command center no contiene 'Historial de riesgo'" in result.stderr
+
+
 def test_synology_smoke_script_passes_when_metrics_returns_200_with_expected_auth() -> None:
     payload = build_payload(
         latest_risk_context={"symbol": "BTCUSDT"},

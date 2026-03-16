@@ -51,10 +51,16 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - mantener el harness reproducible sin depender de Binance real
 - mergeado en `6e4bbd7`
 
-### PR-76 — Failure modes de `WEB /` en el shell smoke 🟡
+### PR-76 — Failure modes de `WEB /` en el shell smoke ✅
 - cubrir el caso donde la home web responde `non-200`
 - cubrir el caso donde la home web responde `200` pero con body vacío
 - mantener el harness reproducible y el diagnóstico claro para fallos de `fetch_body()`/marcadores web
+- mergeado en `72dba40`
+
+### PR-77 — Marcadores faltantes de `WEB /` en el shell smoke 🟡
+- cubrir el caso donde la home responde `200` pero falta el marcador base `bot`
+- cubrir el caso donde la home responde `200` pero falta un marcador central del command center
+- mantener el harness reproducible y el diagnóstico claro para fallos de `check_body_contains()`
 
 ## Criterio de cierre
 - no deben quedar hilos/threads fixture vivos silenciosamente tras los tests

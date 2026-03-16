@@ -39,7 +39,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
 | Fase 14 — Observabilidad operativa post-corrección | ✅ Completada | 100% | PR-63..PR-69 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores, cobertura testeable de sus ramas condicionales, mejor DX de fallos del helper CLI y cobertura local del contrato shell end-to-end |
-| Fase 15 — Hardening del harness operacional | 🟡 En progreso | 80% | PR-70..PR-75 | teardown determinista, tipado explícito y cobertura de fallos de contrato/HTTP del shell smoke, incluyendo rutas base, autenticadas y la strictness configurable de dependencias externas, para minimizar flakes y ambigüedad operativa en CI |
+| Fase 15 — Hardening del harness operacional | 🟡 En progreso | 90% | PR-70..PR-77 | teardown determinista, tipado explícito y cobertura de fallos de contrato/HTTP del shell smoke, incluyendo rutas base, autenticadas, dependencias externas configurables y failure modes explícitos de la home web, para minimizar flakes y ambigüedad operativa en CI |
 
 
 ---
@@ -313,6 +313,13 @@ Un sistema de trading **auditable, operable y seguro**, con:
 3. evidencia automática de cada release/gate,
 4. criterio formal y medible para eventual transición fuera de paper,
 5. documentación sincronizada y ordenada de extremo a extremo (repo + Outline).
+
+## Guardrails permanentes
+
+- `PAPER_TRADING=true` obligatorio hasta cumplir criterios de transición definidos en Fase 9 y aprobar los ensayos operativos de Fase 10.
+- No habilitar live trading por defecto en ninguna fase intermedia.
+- Cada PR debe cerrar con: checks verdes + comentarios/reviews resueltos + roadmap/docs/memoria actualizados.
+mo a extremo (repo + Outline).
 
 ## Guardrails permanentes
 
