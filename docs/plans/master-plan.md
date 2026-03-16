@@ -78,8 +78,8 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa M — Hardening del harness operacional
 - PR-70 en adelante.
-- Estado actual: en progreso; `PR-70` dejó teardown determinista y tipado explícito, `PR-71` cubrió payload inválido del command center, `PR-72` agregó fallos HTTP base (`/health`, `/metrics`), `PR-73` extendió esa cobertura a `/dashboard/summary` y `/trade-plans`, `PR-74` cerró el camino autenticado de `/metrics`, `PR-75` endureció la strictness configurable de `/integrations/binance/testnet/ping`, `PR-76` cubrió failure modes explícitos de `WEB /` (non-200 y body vacío), `PR-77` cubrió dos marcadores faltantes en respuestas `200` de la home y `PR-78` añadió dos marcadores centrales adicionales; `PR-79` apunta ahora a cerrar los marcadores restantes de órdenes y posiciones con fixture local reproducible.
-- Entrega esperada: harness operacional limpio, tipado y predecible para que el siguiente frente vuelva a lógica de producto/trading y no a fricción de tests.
+- Estado actual: completada; `PR-70` a `PR-79` dejaron el harness shell con teardown determinista, helpers más claros y cobertura reproducible de payload inválido, fallos HTTP base, auth opcional, strictness configurable de dependencias externas y ausencia de marcadores críticos de `WEB /`; `PR-80` formaliza ese cierre y devuelve el foco del roadmap a lógica de producto/trading.
+- Entrega lograda: harness operacional limpio, tipado y predecible, suficientemente endurecido para que el siguiente frente vuelva a lógica de producto/trading y no a fricción de tests.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.
