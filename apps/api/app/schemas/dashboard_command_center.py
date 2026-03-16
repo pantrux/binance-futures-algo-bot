@@ -140,6 +140,7 @@ class DashboardCommandCenterOperationSnapshot(BaseModel):
     latest_risk_severity: str | None = None
     latest_risk_event_type: str | None = None
     latest_risk_message: str | None = None
+    latest_risk_context: dict[str, Any] = Field(default_factory=dict)
     order_history: list[DashboardCommandCenterOrder] = Field(default_factory=list)
     position_history: list[DashboardCommandCenterPosition] = Field(default_factory=list)
     risk_event_history: list[DashboardCommandCenterRiskEvent] = Field(default_factory=list)

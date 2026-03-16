@@ -159,6 +159,7 @@ def test_dashboard_command_center_route_returns_payload():
     assert len(payload["operation_snapshots"][0]["position_history"]) == 2
     assert len(payload["operation_snapshots"][0]["risk_event_history"]) == 1
     assert payload["operation_snapshots"][0]["risk_event_history"][0]["context"]["source"] == "shadow_run"
+    assert payload["operation_snapshots"][0]["latest_risk_context"]["source"] == "shadow_run"
     assert len(payload["operation_snapshots"][0]["timeline_history"]) >= 4
     assert payload["timeline"][0]["trade_plan_id"] == plan.id
     assert len(payload["timeline"]) >= 5

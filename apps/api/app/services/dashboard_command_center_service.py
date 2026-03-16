@@ -352,6 +352,7 @@ class DashboardCommandCenterService:
                     latest_risk_severity=latest_risk.severity if latest_risk else None,
                     latest_risk_event_type=latest_risk.event_type if latest_risk else None,
                     latest_risk_message=latest_risk.message if latest_risk else None,
+                    latest_risk_context=latest_risk.context_json if latest_risk and latest_risk.context_json else {},
                     order_history=[self._serialize_order(order) for order in plan_orders],
                     position_history=[self._serialize_position(position) for position in plan_positions],
                     risk_event_history=[self._serialize_risk_event(event) for event in plan_risk_events],

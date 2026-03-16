@@ -86,7 +86,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-61 | Normalizar cantidad testnet para Binance | ✅ Mergeado | serialización limpia de quantity para evitar `400 Bad Request` por artefactos float |
 | PR-62 | Hardening fino del serializer de quantity | ✅ Mergeado | rechazar `NaN` / infinitos y completar la cobertura del serializer de quantity |
 | PR-63 | Metadata estructurada para `risk_events` | ✅ Mergeado | agregar contexto JSON auditable a errores/eventos críticos para acelerar debugging operativo |
-| PR-64 | Hacer visible `risk_events.context_json` en el command center | 🟡 En progreso | renderizar la metadata estructurada de eventos en la UI para debugging y postmortems más rápidos |
+| PR-64 | Hacer visible `risk_events.context_json` en el command center | ✅ Mergeado | renderizar la metadata estructurada de eventos en la UI para debugging y postmortems más rápidos |
+| PR-65 | Resumen contextual del último riesgo por operación | 🟡 En progreso | exponer y renderizar `latest_risk_context` en la vista resumida del command center |
 
 
 ## Secuencia de PRs actualizada
@@ -959,7 +960,7 @@ Agregar contexto estructurado a `risk_events` (por ejemplo símbolo, source, có
 - mergeado en `00ad36b`
 
 ### PR-64 — Hacer visible `risk_events.context_json` en el command center
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Consumir visualmente la metadata estructurada recién agregada a `risk_events` para que el debugging operativo no dependa solo del endpoint JSON o consultas SQL.
@@ -969,6 +970,19 @@ Consumir visualmente la metadata estructurada recién agregada a `risk_events` p
 - chips/labels visuales con claves relevantes del contexto (`symbol`, `side`, `binance_side`, `quantity`, `external_order_id`, etc.)
 - visualización usable en drill-down y feed global de eventos de riesgo
 - validación con `next build` y deploy posterior en Synology
+- mergeado en `f14db14`
+
+### PR-65 — Resumen contextual del último riesgo por operación
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Llevar el contexto del último evento de riesgo al resumen principal de cada operación para acelerar lectura operativa sin depender del historial detallado.
+
+**Entregables**
+- nuevo campo `latest_risk_context` en `operation_snapshots`
+- serialización backend desde el último `RiskEvent`
+- renderizado de chips/contexto también en la celda resumen de riesgo
+- cobertura en tests de servicio/route + validación `next build`
 
 
 ## Criterio de avance

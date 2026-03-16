@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-63` ya quedó mergeado en `main` y desplegado en Synology; `risk_events.context_json` existe en Postgres, el worker generó nuevos eventos reales con metadata estructurada y el endpoint `GET /dashboard/command-center` ya entrega `context` poblado.
-- **PR activo:** `PR-64` — hacer visible `risk_events.context_json` en la UI del command center.
-- **Siguiente carril sugerido:** cerrar `PR-64` para convertir la metadata estructurada en debugging visual útil dentro del dashboard, no solo en DB/API.
+- **Estado global actual:** `PR-64` ya quedó mergeado en `main`, sincronizado en Outline y desplegado en Synology; la UI del command center ya muestra chips/contexto en historial de riesgo y feed global, con `external_order_id` renderizado sin separadores de miles.
+- **PR activo:** `PR-65` — resumen contextual del último riesgo por operación.
+- **Siguiente carril sugerido:** cerrar `PR-65` para que el resumen principal de cada operación también exponga contexto útil del último evento de riesgo, sin obligar al operador a abrir el historial detallado.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -38,7 +38,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
-| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 35% | PR-63..PR-64 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center |
+| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 50% | PR-63..PR-65 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center y resumen contextual del último riesgo |
 
 
 ---
@@ -218,10 +218,16 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - exponer esa metadata en command center para debugging más rápido
 - mergeado en `00ad36b` y validado en Synology con eventos reales para BTC/ETH/SOL
 
-### PR-64 — Hacer visible `risk_events.context_json` en la UI 🟡
+### PR-64 — Hacer visible `risk_events.context_json` en la UI ✅
 - tipar `context` en el frontend del command center
 - renderizar chips/labels con metadata útil en historial de riesgo y feed global
 - validar con `next build` y deploy posterior en Synology
+- mergeado en `f14db14` y validado en Synology con `context-list`/`context-chip` visibles y `external_order_id` sin separadores de miles
+
+### PR-65 — Resumen contextual del último riesgo por operación 🟡
+- agregar `latest_risk_context` al payload de `operation_snapshots`
+- renderizar chips/contexto también en la celda resumen de riesgo del radar principal
+- mantener consistencia visual entre resumen y drill-down
 
 
 ---
