@@ -2,21 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
+import { getActualEntryPrice } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
 
 import { OrderBlotter } from "./OrderBlotter";
 
-const EXECUTED_ORDER_STATUSES = new Set(["filled", "partially_filled", "testnet_executed", "paper_executed"]);
-
 function buildLivePricingUrl() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
   return apiBaseUrl ? `${apiBaseUrl}/dashboard/live-pricing` : null;
-}
-
-function getActualEntryPrice(operation: any) {
-  const normalizedOrderStatus = String(operation.latest_order_status ?? "").toLowerCase();
-  const hasExecutedOrder = (operation.latest_order_executed_quantity ?? 0) > 0 || EXECUTED_ORDER_STATUSES.has(normalizedOrderStatus);
-  return operation.latest_position_entry_price ?? (hasExecutedOrder ? operation.latest_order_price : null);
 }
 
 export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: any) {
@@ -39,7 +32,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
 
         const result = await res.json();
         const pricesMap: Record<string, any> = {};
-        result.positions.forEach((position: any) => {
+        (result.positions ?? []).forEach((position: any) => {
           pricesMap[position.symbol] = {
             markPrice: position.mark_price,
             unrealizedPnl: position.unrealized_pnl,

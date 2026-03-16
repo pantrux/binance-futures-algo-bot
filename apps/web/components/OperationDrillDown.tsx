@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext } from "../lib/formatters";
+import { getActualEntryPrice, type ActualEntryOperation } from "../lib/trade-utils";
 
 type RiskContext = Record<string, string | number | boolean | null> | null | undefined;
 
@@ -85,14 +86,6 @@ type OperationDrillDownProps = {
   index: number;
   livePrice?: LivePrice;
 };
-
-const EXECUTED_ORDER_STATUSES = new Set(["filled", "partially_filled", "testnet_executed", "paper_executed"]);
-
-function getActualEntryPrice(operation: OperationSnapshot) {
-  const normalizedOrderStatus = String(operation.latest_order_status ?? "").toLowerCase();
-  const hasExecutedOrder = (operation.latest_order_executed_quantity ?? 0) > 0 || EXECUTED_ORDER_STATUSES.has(normalizedOrderStatus);
-  return operation.latest_position_entry_price ?? (hasExecutedOrder ? operation.latest_order_price : null);
-}
 
 export function OperationDrillDown({ operation, index, livePrice }: OperationDrillDownProps) {
   const [activeTab, setActiveTab] = useState("overview");
