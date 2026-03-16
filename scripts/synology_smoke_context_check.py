@@ -22,17 +22,17 @@ def validate_command_center_payload(payload: dict[str, Any]) -> bool:
 
     has_non_empty_context = False
     if not ops:
-        return False
-
-    op = ops[0]
-    missing = [key for key in REQUIRED_OPERATION_FIELDS if key not in op]
-    assert not missing, f"faltan campos en operation_snapshot: {missing}"
-    assert isinstance(op["timeline_history"], list), "timeline_history no es lista"
-    assert len(op["timeline_history"]) <= 20, "timeline_history excede límite esperado de 20"
-    assert op["latest_risk_context"] is None or isinstance(
-        op["latest_risk_context"], dict
-    ), "latest_risk_context debe ser dict o None"
-    has_non_empty_context = bool(op["latest_risk_context"])
+        print("WARN_EMPTY_OPERATION_SNAPSHOTS")
+    else:
+        op = ops[0]
+        missing = [key for key in REQUIRED_OPERATION_FIELDS if key not in op]
+        assert not missing, f"faltan campos en operation_snapshot: {missing}"
+        assert isinstance(op["timeline_history"], list), "timeline_history no es lista"
+        assert len(op["timeline_history"]) <= 20, "timeline_history excede límite esperado de 20"
+        assert op["latest_risk_context"] is None or isinstance(
+            op["latest_risk_context"], dict
+        ), "latest_risk_context debe ser dict o None"
+        has_non_empty_context = bool(op["latest_risk_context"])
 
     recent = payload.get("recent_risk_events")
     assert isinstance(recent, list), "recent_risk_events no es lista"

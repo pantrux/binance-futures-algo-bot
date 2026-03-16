@@ -18,9 +18,11 @@ def smoke_context_module():
     return load_module()
 
 
-def build_payload(*, latest_risk_context=None, recent_risk_events=None):
+def build_payload(*, latest_risk_context=None, recent_risk_events=None, operation_snapshots=None):
     return {
-        "operation_snapshots": [
+        "operation_snapshots": operation_snapshots
+        if operation_snapshots is not None
+        else [
             {
                 "order_history": [],
                 "position_history": [],
@@ -62,7 +64,14 @@ def test_validate_command_center_payload_requires_context_key_in_all_recent_even
         smoke_context_module.validate_command_center_payload(payload)
 
 
-def test_main_returns_expected_flag_for_clean_payload(smoke_context_module, monkeypatch, tmp_path):
+def test_validate_command_center_payload_still_validates_recent_events_when_snapshots_are_empty(smoke_context_module):
+    payload = build_payload(operation_snapshots=[], recent_risk_events=[{"message": "missing"}])
+
+    with pytest.raises(AssertionError, match=r"recent_risk_events\[\*\] no expone context"):
+        smoke_context_module.validate_command_center_payload(payload)
+
+
+def test_main_returns_expected_flag_for_clean_payload(smoke_context_module, monkeypatch, tmp_path, capsys):
     payload_path = tmp_path / "payload.json"
     payload_path.write_text(
         '{"operation_snapshots":[{"order_history":[],"position_history":[],"risk_event_history":[],"timeline_history":[],"reconciliation_recommended_actions":[],"latest_risk_context":{}}],"recent_risk_events":[{"context":{}}]}',
@@ -72,3 +81,19 @@ def test_main_returns_expected_flag_for_clean_payload(smoke_context_module, monk
     monkeypatch.setattr("sys.argv", ["synology_smoke_context_check.py", str(payload_path)])
 
     assert smoke_context_module.main() == 0
+    output = capsys.readouterr().out
+    assert "HAS_NON_EMPTY_CONTEXT=0" in output
+
+
+def test_main_returns_expected_flag_for_non_empty_context(smoke_context_module, monkeypatch, tmp_path, capsys):
+    payload_path = tmp_path / "payload.json"
+    payload_path.write_text(
+        '{"operation_snapshots":[{"order_history":[],"position_history":[],"risk_event_history":[],"timeline_history":[],"reconciliation_recommended_actions":[],"latest_risk_context":{"symbol":"BTCUSDT"}}],"recent_risk_events":[]}',
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr("sys.argv", ["synology_smoke_context_check.py", str(payload_path)])
+
+    assert smoke_context_module.main() == 0
+    output = capsys.readouterr().out
+    assert "HAS_NON_EMPTY_CONTEXT=1" in output

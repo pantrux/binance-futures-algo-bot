@@ -6,6 +6,8 @@ WEB_BASE_URL="${WEB_BASE_URL:-http://127.0.0.1:3012}"
 METRICS_API_KEY="${METRICS_API_KEY:-}"
 STRICT_EXTERNAL_CHECKS="${STRICT_EXTERNAL_CHECKS:-true}"
 COMMAND_CENTER_CONTEXT_PRESENT="false"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SMOKE_CONTEXT_HELPER="${SCRIPT_DIR}/synology_smoke_context_check.py"
 
 CURL_OPTS=(
   -sS
@@ -158,7 +160,7 @@ check_command_center_json() {
 
   local validation_output
 
-  validation_output="$(python3 ./scripts/synology_smoke_context_check.py "${tmpfile}")"
+  validation_output="$(python3 "${SMOKE_CONTEXT_HELPER}" "${tmpfile}")"
 
   echo "${validation_output}"
   if grep -q 'HAS_NON_EMPTY_CONTEXT=1' <<<"${validation_output}"; then
