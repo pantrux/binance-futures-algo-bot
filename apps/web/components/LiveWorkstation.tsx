@@ -78,7 +78,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   }, [isPolling, livePricingUrl]);
 
   useEffect(() => {
-    if (!lastLiveUpdateAt) {
+    if (!lastLiveUpdateAt || !isPolling) {
       return;
     }
 
@@ -87,7 +87,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     }, 1_000);
 
     return () => clearInterval(interval);
-  }, [lastLiveUpdateAt]);
+  }, [lastLiveUpdateAt, isPolling]);
 
   // Compute live open PnL
   let liveOpenPnl = 0;
@@ -120,13 +120,17 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const isLiveStaleDanger = liveAgeMs != null && liveAgeMs >= LIVE_STALE_DANGER_MS;
   const isLiveStaleWarn = liveAgeMs != null && liveAgeMs >= LIVE_STALE_WARN_MS;
   const liveFreshnessValue = liveAgeMs == null ? "—" : formatElapsedMs(liveAgeMs);
-  const liveFreshnessHint = liveAgeMs == null
-    ? "sin tick live todavía"
-    : isLiveStaleDanger
-      ? "feed demasiado viejo"
-      : isLiveStaleWarn
-        ? "feed envejeciendo"
-        : "dentro de ventana fresca";
+  const liveFreshnessHint = isLivePaused
+    ? "polling pausado"
+    : livePollingError
+      ? hasLivePrices ? "error activo con último tick cacheado" : "polling con error"
+      : liveAgeMs == null
+        ? "sin tick live todavía"
+        : isLiveStaleDanger
+          ? "feed demasiado viejo"
+          : isLiveStaleWarn
+            ? "feed envejeciendo"
+            : "dentro de ventana fresca";
   const liveBadgeClassName = isLivePaused
     ? hasLivePrices ? "badge warn" : "badge neutral"
     : livePollingError
