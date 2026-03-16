@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-89` ya quedó mergeado en `main`, cerrando formalmente la baseline inicial de Etapa N y sincronizando Outline.
-- **PR activo:** ninguno tras el merge de `PR-90`; no quedan PRs abiertos ni follow-ups inmediatos planificados en el repo.
-- **Siguiente carril sugerido:** volver a iniciativas de producto/trading con impacto directo y reabrir el carril de parity solo ante nuevas necesidades operativas reales.
+- **Estado global actual:** `PR-90` ya quedó mergeado en `main`, dejando el roadmap sincronizado y sin deuda documental inmediata tras Etapa N.
+- **PR activo:** `PR-91` — shell modular del command center tipo trading workstation.
+- **Siguiente carril sugerido:** transformar el command center desde un homepage monolítico a una shell operativa modular con drill-down real por operación, y dejar el realtime duro para el siguiente corte.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

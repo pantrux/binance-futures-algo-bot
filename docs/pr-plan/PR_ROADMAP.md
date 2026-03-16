@@ -113,6 +113,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-88 | Breakdown por timeframe en shadow-run symbols | ✅ Mergeado | evitar que `symbols` agregue bajo una sola fila reportes de un mismo símbolo que pertenecen a temporalidades distintas |
 | PR-89 | Cierre formal de baseline de Etapa N | ✅ Mergeado | consolidar documentalmente la baseline inicial de parity/shadow run sensible a `timeframe` y devolver el foco a producto/trading |
 | PR-90 | Sincronizar docs tras merge de PR-89 | ✅ Mergeado | cerrar el desfase documental residual y dejar el roadmap en estado post-Etapa N sin PRs activos |
+| PR-91 | Shell modular del command center | 🟡 En progreso | transformar el homepage monolítico en una trading workstation modular con navegación clara y drill-down por operación |
 
 
 ## Secuencia de PRs actualizada
