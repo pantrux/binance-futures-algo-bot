@@ -83,15 +83,30 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const summary = data.summary;
   const shadowRun = data.shadow_run;
   const hasLivePrices = Object.keys(livePrices).length > 0;
-  const liveBadgeClassName = hasLivePrices ? "badge ok pulse" : livePollingError ? "badge danger" : livePricingUrl && isPolling ? "badge warn" : "badge neutral";
-  const liveBadgeLabel = hasLivePrices ? "live pricing" : livePollingError ? "live degraded" : livePricingUrl && isPolling ? "snapshot data" : "snapshot only";
-  const liveStatusCopy = lastLiveUpdateAt
-    ? `último live ${formatDate(lastLiveUpdateAt)}`
+  const isLivePaused = !isPolling;
+  const liveBadgeClassName = isLivePaused
+    ? hasLivePrices ? "badge warn" : "badge neutral"
     : livePollingError
-      ? livePollingError
-      : livePricingUrl
-        ? "esperando primer tick live"
-        : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
+      ? hasLivePrices ? "badge warn" : "badge danger"
+      : hasLivePrices ? "badge ok pulse" : livePricingUrl ? "badge warn" : "badge neutral";
+  const liveBadgeLabel = isLivePaused
+    ? "live pausado"
+    : livePollingError
+      ? "live degradado"
+      : hasLivePrices ? "live pricing" : livePricingUrl ? "snapshot data" : "snapshot only";
+  const liveStatusCopy = isLivePaused
+    ? lastLiveUpdateAt
+      ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)}`
+      : "polling pausado"
+    : livePollingError
+      ? lastLiveUpdateAt
+        ? `${livePollingError} · último tick ${formatDate(lastLiveUpdateAt)}`
+        : livePollingError
+      : lastLiveUpdateAt
+        ? `último live ${formatDate(lastLiveUpdateAt)}`
+        : livePricingUrl
+          ? "esperando primer tick live"
+          : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
 
   const summaryCards = [
     { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
