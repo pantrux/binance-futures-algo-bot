@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-import socket
+import os
 import subprocess
+import sys
 import threading
-from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -115,17 +115,19 @@ def build_html(*, include_context_markers: bool) -> str:
 
 
 def run_smoke(base_url: str) -> subprocess.CompletedProcess[str]:
+    python_dir = str(Path(sys.executable).resolve().parent)
+    env = {
+        "PATH": os.pathsep.join([python_dir, os.environ.get("PATH", "/usr/bin:/bin")]),
+        "API_BASE_URL": base_url,
+        "WEB_BASE_URL": base_url,
+        "STRICT_EXTERNAL_CHECKS": "false",
+    }
     return subprocess.run(
         ["bash", str(SMOKE_SCRIPT)],
         cwd="/tmp",
         text=True,
         capture_output=True,
-        env={
-            "PATH": "/usr/bin:/bin",
-            "API_BASE_URL": base_url,
-            "WEB_BASE_URL": base_url,
-            "STRICT_EXTERNAL_CHECKS": "false",
-        },
+        env=env,
         check=False,
     )
 
