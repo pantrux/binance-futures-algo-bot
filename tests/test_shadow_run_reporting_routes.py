@@ -103,6 +103,7 @@ def test_reporting_shadow_run_summary_route_returns_payload() -> None:
     assert payload["testnet_orders_total"] == 1
     assert payload["warning_risk_events_7d"] == 1
     assert payload["symbols"][0]["symbol"] == "BTCUSDT"
+    assert payload["symbols"][0]["timeframe"] == "15m"
 
 
 def test_reporting_shadow_run_summary_route_filters_by_timeframe() -> None:
@@ -197,3 +198,28 @@ def test_reporting_shadow_run_summary_route_filters_order_aggregates_by_timefram
     assert payload["testnet_orders_total"] == 1
     assert payload["testnet_orders_filled"] == 1
     assert payload["testnet_fill_rate_pct"] == 100.0
+
+
+def test_reporting_shadow_run_summary_route_breaks_down_same_symbol_by_timeframe() -> None:
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    db = sessionmaker(bind=engine)()
+    now = datetime.now(timezone.utc)
+
+    seed_trade_plan(db, symbol="BTCUSDT", status="paper_executed", side="long", created_at=now - timedelta(days=8))
+    seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", side="long", created_at=now - timedelta(days=7, hours=12))
+    paper_1h = seed_trade_plan(db, symbol="BTCUSDT", status="paper_executed", side="long", created_at=now - timedelta(days=6))
+    testnet_1h = seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed", side="long", created_at=now - timedelta(days=5, hours=12))
+    paper_1h.timeframe = "1h"
+    testnet_1h.timeframe = "1h"
+    db.add_all([paper_1h, testnet_1h])
+    db.commit()
+
+    client = make_client(db)
+    response = client.get("/reporting/shadow-run-summary?window_days=30")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["compared_pairs"] == 2
+    assert len(payload["symbols"]) == 2
+    assert [(item["symbol"], item["timeframe"]) for item in payload["symbols"]] == [("BTCUSDT", "15m"), ("BTCUSDT", "1h")]

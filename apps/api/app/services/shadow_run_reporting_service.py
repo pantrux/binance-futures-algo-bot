@@ -73,11 +73,12 @@ class ShadowRunReportingService:
             "notional_diffs": notional_diffs,
         }
 
-    def _build_symbol_summary(self, *, symbol: str, plans: list[TradePlan]) -> tuple[ShadowRunSymbolSummary, dict]:
+    def _build_symbol_summary(self, *, symbol: str, timeframe: str, plans: list[TradePlan]) -> tuple[ShadowRunSymbolSummary, dict]:
         paired = self._pair_plans(plans)
         return (
             ShadowRunSymbolSummary(
                 symbol=symbol,
+                timeframe=timeframe,
                 paper_executed_trade_plans=paired["paper_executed_trade_plans"],
                 testnet_executed_trade_plans=paired["testnet_executed_trade_plans"],
                 compared_pairs=paired["compared_pairs"],
@@ -112,16 +113,16 @@ class ShadowRunReportingService:
 
         plans = plans_query.order_by(TradePlan.symbol.asc(), TradePlan.created_at.asc()).all()
 
-        plans_by_symbol: dict[str, list[TradePlan]] = defaultdict(list)
+        plans_by_symbol_and_timeframe: dict[tuple[str, str], list[TradePlan]] = defaultdict(list)
         for plan in plans:
-            plans_by_symbol[plan.symbol].append(plan)
+            plans_by_symbol_and_timeframe[(plan.symbol, plan.timeframe)].append(plan)
 
         symbol_summaries: list[ShadowRunSymbolSummary] = []
         all_entry_diffs: list[float] = []
         all_risk_diffs: list[float] = []
         all_notional_diffs: list[float] = []
-        for symbol, symbol_plans in sorted(plans_by_symbol.items()):
-            symbol_summary, paired = self._build_symbol_summary(symbol=symbol, plans=symbol_plans)
+        for (symbol, summary_timeframe), symbol_plans in sorted(plans_by_symbol_and_timeframe.items()):
+            symbol_summary, paired = self._build_symbol_summary(symbol=symbol, timeframe=summary_timeframe, plans=symbol_plans)
             symbol_summaries.append(symbol_summary)
             all_entry_diffs.extend(paired["entry_diffs"])
             all_risk_diffs.extend(paired["risk_diffs"])
