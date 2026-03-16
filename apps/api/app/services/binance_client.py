@@ -56,7 +56,7 @@ class BinanceFuturesClient:
                         break
         raise RuntimeError(f"symbol_step_size_not_found:{symbol}")
 
-    async def get_position_risk(self, symbol: str, recv_window: int = 5000) -> dict | None:
+    async def get_position_risk(self, symbol: str | None = None, recv_window: int = 5000) -> list[dict] | dict | None:
         self.ensure_credentials()
 
         params: dict[str, str] = {
@@ -73,6 +73,9 @@ class BinanceFuturesClient:
             )
             response.raise_for_status()
             positions = response.json()
+
+        if symbol is None:
+            return positions
 
         for position in positions:
             if position.get("symbol") == symbol:

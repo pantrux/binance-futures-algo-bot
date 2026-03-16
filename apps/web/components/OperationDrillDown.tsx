@@ -2,10 +2,15 @@
 import { useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 
-export function OperationDrillDown({ operation, index }: { operation: any, index: number }) {
+export function OperationDrillDown({ operation, index, livePrice }: { operation: any, index: number, livePrice?: any }) {
   const [activeTab, setActiveTab] = useState("overview");
 
-  const actualEntry = operation.latest_position_entry_price ?? operation.latest_order_price ?? operation.entry_price;
+  let actualEntry = operation.latest_position_entry_price ?? operation.latest_order_price ?? operation.entry_price;
+  let latestPnl = operation.latest_position_unrealized_pnl;
+  if (livePrice && ["open", "testnet_executed", "partially_filled"].includes(operation.status.toLowerCase())) {
+    latestPnl = livePrice.unrealizedPnl;
+    if (!operation.latest_position_entry_price) actualEntry = livePrice.markPrice;
+  }
   const entryDiffPct = operation.entry_price > 0 ? ((actualEntry - operation.entry_price) / operation.entry_price) * 100 : null;
 
   return (
@@ -17,7 +22,7 @@ export function OperationDrillDown({ operation, index }: { operation: any, index
         </div>
         <div className="drawer-summary-stats">
           <span>{formatNumber(actualEntry, 2)}</span>
-          <span className={(operation.latest_position_unrealized_pnl ?? 0) >= 0 ? "positive" : "negative"}>{formatNumber(operation.latest_position_unrealized_pnl, 2)}</span>
+          <span className={(latestPnl ?? 0) >= 0 ? "positive" : "negative"}>{formatNumber(latestPnl, 2)}</span>
           <span className={`status-pill ${statusTone(operation.status)}`}>{operation.status}</span>
         </div>
       </summary>

@@ -3,6 +3,8 @@ import hmac
 import time
 from threading import Lock
 
+from apps.api.app.schemas.live_pricing import DashboardLivePricingResponse
+from apps.api.app.services.live_pricing_service import LivePricingService
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -261,3 +263,15 @@ def reporting_shadow_run_summary(
     db: Session = Depends(get_db),
 ) -> ShadowRunSummary:
     return ShadowRunReportingService(db).build_summary(window_days=window_days, timeframe=timeframe)
+
+
+@router.get("/dashboard/live-pricing", response_model=DashboardLivePricingResponse)
+async def dashboard_live_pricing() -> DashboardLivePricingResponse:
+    from fastapi import HTTPException
+    try:
+        service = LivePricingService()
+        return await service.get_live_pricing()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Failed to fetch live pricing")
