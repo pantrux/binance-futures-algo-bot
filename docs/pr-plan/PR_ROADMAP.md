@@ -89,7 +89,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-64 | Hacer visible `risk_events.context_json` en el command center | ✅ Mergeado | renderizar la metadata estructurada de eventos en la UI para debugging y postmortems más rápidos |
 | PR-65 | Resumen contextual del último riesgo por operación | ✅ Mergeado | exponer y renderizar `latest_risk_context` en la vista resumida del command center |
 | PR-66 | Smoke Synology para contexto de riesgo | ✅ Mergeado | validar por smoke automatizado los nuevos marcadores/contextos del command center en API y UI, con gating condicional para payloads limpios |
-| PR-67 | Cobertura testeable del smoke para contexto | 🟡 En progreso | extraer la validación del smoke a helper testeable y cubrir payload limpio vs payload con contexto |
+| PR-67 | Cobertura testeable del smoke para contexto | ✅ Mergeado | extraer la validación del smoke a helper testeable y cubrir payload limpio vs payload con contexto |
+| PR-68 | Manejo limpio de errores CLI del helper de smoke | 🟡 En progreso | capturar errores del entrypoint con mensajes claros en stderr y tests reproducibles de fallo |
 
 
 ## Secuencia de PRs actualizada
@@ -1001,7 +1002,7 @@ Hacer que el smoke Synology proteja explícitamente los marcadores de observabil
 - mergeado en `95e1c39`
 
 ### PR-67 — Cobertura testeable del smoke para contexto
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Cubrir con tests reproducibles la lógica condicional introducida en `PR-66`, separando la validación del payload del smoke Synology para no depender solo del NAS real.
@@ -1010,6 +1011,19 @@ Cubrir con tests reproducibles la lógica condicional introducida en `PR-66`, se
 - helper testeable `scripts/synology_smoke_context_check.py`
 - tests para payload limpio/vacío y payload con contexto útil
 - `scripts/synology_smoke_test.sh` invoca el helper en lugar de mantener Python embebido
+- validación local + smoke real contra Synology
+- mergeado en `bca67a6`
+
+### PR-68 — Manejo limpio de errores CLI del helper de smoke
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Hacer que el helper del smoke falle con mensajes claros en `stderr` y códigos de salida predecibles cuando el archivo no exista, el JSON sea inválido o el payload no cumpla el contrato esperado.
+
+**Entregables**
+- `main()` captura `FileNotFoundError`, `JSONDecodeError` y `ValueError`
+- mensajes de error amigables en `stderr`
+- tests del entrypoint para archivo ausente, JSON inválido y payload inválido
 - validación local + smoke real contra Synology
 
 

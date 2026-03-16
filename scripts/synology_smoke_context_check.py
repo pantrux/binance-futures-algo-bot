@@ -58,8 +58,19 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     payload_path = Path(argv[0])
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    has_non_empty_context = validate_command_center_payload(payload)
+    try:
+        payload = json.loads(payload_path.read_text(encoding="utf-8"))
+        has_non_empty_context = validate_command_center_payload(payload)
+    except FileNotFoundError as exc:
+        print(f"ERROR: archivo no encontrado: {exc}", file=sys.stderr)
+        return 1
+    except json.JSONDecodeError as exc:
+        print(f"ERROR: JSON inválido: {exc}", file=sys.stderr)
+        return 1
+    except ValueError as exc:
+        print(f"ERROR: payload inválido: {exc}", file=sys.stderr)
+        return 1
+
     print("OK")
     print(f"HAS_NON_EMPTY_CONTEXT={'1' if has_non_empty_context else '0'}")
     return 0

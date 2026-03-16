@@ -73,7 +73,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa L — Observabilidad operativa post-corrección
 - PR-63 en adelante.
-- Estado actual: en progreso; `PR-63` dejó `risk_events.context_json` operativo en Synology, `PR-64` lo volvió visible en la UI del command center, `PR-65` subió el contexto del último riesgo al resumen principal, `PR-66` endureció el smoke Synology y `PR-67` cubre con tests reproducibles la rama de payload limpio vs payload con contexto para que esa protección no dependa solo del NAS real.
+- Estado actual: en progreso; `PR-63` dejó `risk_events.context_json` operativo en Synology, `PR-64` lo volvió visible en la UI del command center, `PR-65` subió el contexto del último riesgo al resumen principal, `PR-66` endureció el smoke Synology, `PR-67` cubrió con tests reproducibles la rama de payload limpio vs payload con contexto y `PR-68` remata la DX del helper con errores CLI claros para acelerar debugging en NAS/CI.
 - Entrega esperada: errores/eventos críticos con contexto JSON útil, visible y consultable sin parsear solo texto libre.
 
 ## Reglas inmutables del plan

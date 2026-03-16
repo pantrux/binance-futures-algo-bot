@@ -97,3 +97,36 @@ def test_main_returns_expected_flag_for_non_empty_context(smoke_context_module, 
     assert smoke_context_module.main() == 0
     output = capsys.readouterr().out
     assert "HAS_NON_EMPTY_CONTEXT=1" in output
+
+
+def test_main_returns_error_for_missing_file(smoke_context_module, monkeypatch, tmp_path, capsys):
+    missing_path = tmp_path / "missing.json"
+
+    monkeypatch.setattr("sys.argv", ["synology_smoke_context_check.py", str(missing_path)])
+
+    assert smoke_context_module.main() == 1
+    error = capsys.readouterr().err
+    assert "ERROR: archivo no encontrado:" in error
+
+
+def test_main_returns_error_for_invalid_json(smoke_context_module, monkeypatch, tmp_path, capsys):
+    payload_path = tmp_path / "payload.json"
+    payload_path.write_text("{bad json", encoding="utf-8")
+
+    monkeypatch.setattr("sys.argv", ["synology_smoke_context_check.py", str(payload_path)])
+
+    assert smoke_context_module.main() == 1
+    error = capsys.readouterr().err
+    assert "ERROR: JSON inválido:" in error
+
+
+def test_main_returns_error_for_invalid_payload(smoke_context_module, monkeypatch, tmp_path, capsys):
+    payload_path = tmp_path / "payload.json"
+    payload_path.write_text('{"operation_snapshots":[],"recent_risk_events":[{"message":"missing"}]}', encoding="utf-8")
+
+    monkeypatch.setattr("sys.argv", ["synology_smoke_context_check.py", str(payload_path)])
+
+    assert smoke_context_module.main() == 1
+    captured = capsys.readouterr()
+    assert "WARN_EMPTY_OPERATION_SNAPSHOTS" in captured.out
+    assert "ERROR: payload inválido: recent_risk_events[*] no expone context" in captured.err
