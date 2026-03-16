@@ -39,7 +39,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
 | Fase 14 — Observabilidad operativa post-corrección | ✅ Completada | 100% | PR-63..PR-69 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores, cobertura testeable de sus ramas condicionales, mejor DX de fallos del helper CLI y cobertura local del contrato shell end-to-end |
-| Fase 15 — Hardening del harness operacional | 🟡 En progreso | 75% | PR-70..PR-74 | teardown determinista, tipado explícito y cobertura de fallos de contrato/HTTP del shell smoke, incluyendo rutas base y autenticadas, para minimizar flakes y ambigüedad operativa en CI |
+| Fase 15 — Hardening del harness operacional | 🟡 En progreso | 80% | PR-70..PR-75 | teardown determinista, tipado explícito y cobertura de fallos de contrato/HTTP del shell smoke, incluyendo rutas base, autenticadas y la strictness configurable de dependencias externas, para minimizar flakes y ambigüedad operativa en CI |
 
 
 ---
@@ -285,10 +285,16 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - seguir cerrando failure modes HTTP base del shell smoke
 - mergeado en `23400e5` con `Greptile 5/5` y checks verdes
 
-### PR-74 — `/metrics` autenticado + cleanup de helpers del fixture 🟡
+### PR-74 — `/metrics` autenticado + cleanup de helpers del fixture ✅
 - cubrir con fixture local el camino de `/metrics` cuando se usa `METRICS_API_KEY`
 - validar éxito/fallo explícito del header `x-metrics-key`
 - reducir duplicación menor en helpers del fixture shell donde aporte claridad sin tocar lógica productiva
+- mergeado en `ba68d86` con checks verdes y reviews resueltos
+
+### PR-75 — Cobertura shell para strictness de `testnet/ping` 🟡
+- cubrir el branch `STRICT_EXTERNAL_CHECKS=false` cuando `/integrations/binance/testnet/ping` falla
+- cubrir el branch `STRICT_EXTERNAL_CHECKS=true` para asegurar fallo explícito
+- mantener el harness reproducible sin depender de Binance real
 
 
 ---
