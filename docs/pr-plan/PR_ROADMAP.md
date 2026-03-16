@@ -97,7 +97,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-72 | Cobertura shell para fallos HTTP base | ✅ Mergeado | validar con fixture local que `/health` y `/metrics` rompen el smoke con errores claros |
 | PR-73 | Cobertura shell para summary y trade-plans | ✅ Mergeado | validar con fixture local que `/dashboard/summary` y `/trade-plans` rompen el smoke con errores claros |
 | PR-74 | `/metrics` autenticado + cleanup de helpers del fixture | ✅ Mergeado | cubrir header auth de métricas y reducir duplicación menor del fixture shell |
-| PR-75 | Cobertura shell para strictness de `testnet/ping` | 🟡 En progreso | cubrir branches `STRICT_EXTERNAL_CHECKS=true/false` para `testnet/ping` con fixture local reproducible |
+| PR-75 | Cobertura shell para strictness de `testnet/ping` | ✅ Mergeado | cubrir branches `STRICT_EXTERNAL_CHECKS=true/false` para `testnet/ping` con fixture local reproducible |
+| PR-76 | Failure modes de `WEB /` en el shell smoke | 🟡 En progreso | cubrir `WEB /` non-200 y `WEB /` con body vacío con fixture local reproducible |
 
 
 ## Secuencia de PRs actualizada
