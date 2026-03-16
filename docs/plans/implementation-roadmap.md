@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-80` ya quedó mergeado en `main`, cerrando formalmente la Fase 15 del hardening del harness operacional y sincronizando Outline.
-- **PR activo:** ninguno; el carril de harness quedó formalmente cerrado.
-- **Siguiente carril sugerido:** retomar frentes de producto/trading usando el harness endurecido como red de seguridad, y mantener nuevos follow-ups de smoke solo ante failure modes realmente nuevos.
+- **Estado global actual:** `PR-81` ya quedó mergeado en `main`, dejando el roadmap alineado con el cierre formal de Fase 15 y sin PRs abiertos del carril de harness.
+- **PR activo:** `PR-82` — emparejamiento shadow run sensible a `timeframe`.
+- **Siguiente carril sugerido:** retomar frentes de producto/trading pequeños y reviewables; el primero es endurecer la paridad paper/testnet para no cruzar ejecuciones de distinta temporalidad dentro del mismo símbolo/lado.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
