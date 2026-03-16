@@ -78,7 +78,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa M — Hardening del harness operacional
 - PR-70 en adelante.
-- Estado actual: en progreso; `PR-70` dejó teardown determinista y tipado explícito, `PR-71` cubrió payload inválido del command center y `PR-72` agregó fallos HTTP base del smoke (`/health`, `/metrics`) con fixture local reproducible.
+- Estado actual: en progreso; `PR-70` dejó teardown determinista y tipado explícito, `PR-71` cubrió payload inválido del command center, `PR-72` agregó fallos HTTP base (`/health`, `/metrics`) y `PR-73` extendió esa cobertura a `/dashboard/summary` y `/trade-plans`; `PR-74` apunta al camino autenticado de `/metrics` y a cleanup menor del fixture shell.
 - Entrega esperada: harness operacional limpio, tipado y predecible para que el siguiente frente vuelva a lógica de producto/trading y no a fricción de tests.
 
 ## Reglas inmutables del plan

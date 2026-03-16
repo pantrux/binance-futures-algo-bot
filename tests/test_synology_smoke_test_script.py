@@ -21,10 +21,12 @@ class FixtureServer(ThreadingHTTPServer):
         payload: dict[str, Any],
         html: str,
         overrides: dict[str, tuple[int, Any, str]] | None = None,
+        metrics_api_key: str | None = None,
     ):
         self.payload = payload
         self.html = html
         self.overrides = overrides or {}
+        self.metrics_api_key = metrics_api_key
         super().__init__(server_address, FixtureHandler)
 
 
@@ -57,6 +59,12 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"status": "ok"})
             return
         if self.path == "/metrics":
+            expected_metrics_key = self.server.metrics_api_key
+            if expected_metrics_key is not None:
+                provided_key = self.headers.get("x-metrics-key")
+                if provided_key != expected_metrics_key:
+                    self._send_text(403, "forbidden")
+                    return
             self._send_text(200, "metric_a 1\n")
             return
         if self.path == "/":
