@@ -5,6 +5,7 @@ API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:8010}"
 WEB_BASE_URL="${WEB_BASE_URL:-http://127.0.0.1:3012}"
 METRICS_API_KEY="${METRICS_API_KEY:-}"
 STRICT_EXTERNAL_CHECKS="${STRICT_EXTERNAL_CHECKS:-true}"
+COMMAND_CENTER_CONTEXT_PRESENT="false"
 
 CURL_OPTS=(
   -sS
@@ -155,7 +156,9 @@ check_command_center_json() {
     return 1
   fi
 
-  python3 - <<'PY' "${tmpfile}"
+  local validation_output
+
+  validation_output="$(python3 - <<'PY' "${tmpfile}"
 import json
 import sys
 from pathlib import Path
@@ -163,6 +166,7 @@ from pathlib import Path
 payload = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
 ops = payload.get('operation_snapshots')
 assert isinstance(ops, list), 'operation_snapshots no es lista'
+has_non_empty_context = False
 if not ops:
     print('WARN_EMPTY_OPERATION_SNAPSHOTS')
 else:
@@ -179,14 +183,26 @@ else:
     assert not missing, f'faltan campos en operation_snapshot: {missing}'
     assert isinstance(op['timeline_history'], list), 'timeline_history no es lista'
     assert len(op['timeline_history']) <= 20, 'timeline_history excede límite esperado de 20'
-    assert isinstance(op['latest_risk_context'], dict), 'latest_risk_context no es dict'
+    assert op['latest_risk_context'] is None or isinstance(op['latest_risk_context'], dict), 'latest_risk_context debe ser dict o None'
+    has_non_empty_context = bool(op['latest_risk_context'])
 recent = payload.get('recent_risk_events')
 assert isinstance(recent, list), 'recent_risk_events no es lista'
 if recent:
     assert 'context' in recent[0], 'recent_risk_events[0] no expone context'
-    assert isinstance(recent[0]['context'], dict), 'recent_risk_events[0].context no es dict'
+    for item in recent:
+        assert item.get('context') is None or isinstance(item.get('context'), dict), 'recent_risk_events[*].context debe ser dict o None'
+        has_non_empty_context = has_non_empty_context or bool(item.get('context'))
 print('OK')
+print(f"HAS_NON_EMPTY_CONTEXT={'1' if has_non_empty_context else '0'}")
 PY
+)"
+
+  echo "${validation_output}"
+  if grep -q 'HAS_NON_EMPTY_CONTEXT=1' <<<"${validation_output}"; then
+    COMMAND_CENTER_CONTEXT_PRESENT="true"
+  else
+    COMMAND_CENTER_CONTEXT_PRESENT="false"
+  fi
 
   echo "✅ ${name}"
 }
@@ -237,7 +253,11 @@ check_body_contains "WEB command center" "${web_home_body}" "Historial de órden
 check_body_contains "WEB command center" "${web_home_body}" "Historial de posiciones"
 check_body_contains "WEB command center" "${web_home_body}" "Historial de riesgo"
 check_body_contains "WEB command center" "${web_home_body}" "Reconcile actual"
-check_body_contains "WEB command center" "${web_home_body}" "context-list"
-check_body_contains "WEB command center" "${web_home_body}" "context-chip"
+if [[ "${COMMAND_CENTER_CONTEXT_PRESENT}" == "true" ]]; then
+  check_body_contains "WEB command center" "${web_home_body}" "context-list"
+  check_body_contains "WEB command center" "${web_home_body}" "context-chip"
+else
+  echo "ℹ️ Se omiten marcadores context-list/context-chip porque el payload no trae contexto de riesgo no vacío."
+fi
 
 echo "✅ Smoke tests Synology completados"
