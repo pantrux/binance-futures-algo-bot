@@ -102,7 +102,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-77 | Marcadores faltantes de `WEB /` en el shell smoke | ✅ Mergeado | cubrir respuestas `200` de `WEB /` sin marcadores base/centrales del dashboard con fixture local reproducible |
 | PR-78 | Marcadores adicionales de `WEB /` en el shell smoke | ✅ Mergeado | cubrir respuestas `200` de `WEB /` sin `Detalle por trade plan` o `Reconcile actual` con fixture local reproducible |
 | PR-79 | Marcadores restantes de órdenes y posiciones en el shell smoke | ✅ Mergeado | cubrir respuestas `200` de `WEB /` sin `Historial de órdenes` o `Historial de posiciones` con fixture local reproducible |
-| PR-80 | Cierre formal de Fase 15 | 🟡 En progreso | consolidar el cierre documental del hardening del harness operacional y devolver el foco del roadmap a producto/trading |
+| PR-80 | Cierre formal de Fase 15 | ✅ Mergeado | consolidar el cierre documental del hardening del harness operacional y devolver el foco del roadmap a producto/trading |
 
 
 ## Secuencia de PRs actualizada
