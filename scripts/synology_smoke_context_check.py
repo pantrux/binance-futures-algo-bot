@@ -18,7 +18,8 @@ REQUIRED_OPERATION_FIELDS = [
 
 def validate_command_center_payload(payload: dict[str, Any]) -> bool:
     ops = payload.get("operation_snapshots")
-    assert isinstance(ops, list), "operation_snapshots no es lista"
+    if not isinstance(ops, list):
+        raise ValueError("operation_snapshots no es lista")
 
     has_non_empty_context = False
     if not ops:
@@ -26,28 +27,32 @@ def validate_command_center_payload(payload: dict[str, Any]) -> bool:
     else:
         op = ops[0]
         missing = [key for key in REQUIRED_OPERATION_FIELDS if key not in op]
-        assert not missing, f"faltan campos en operation_snapshot: {missing}"
-        assert isinstance(op["timeline_history"], list), "timeline_history no es lista"
-        assert len(op["timeline_history"]) <= 20, "timeline_history excede límite esperado de 20"
-        assert op["latest_risk_context"] is None or isinstance(
-            op["latest_risk_context"], dict
-        ), "latest_risk_context debe ser dict o None"
+        if missing:
+            raise ValueError(f"faltan campos en operation_snapshot: {missing}")
+        if not isinstance(op["timeline_history"], list):
+            raise ValueError("timeline_history no es lista")
+        if len(op["timeline_history"]) > 20:
+            raise ValueError("timeline_history excede límite esperado de 20")
+        if op["latest_risk_context"] is not None and not isinstance(op["latest_risk_context"], dict):
+            raise ValueError("latest_risk_context debe ser dict o None")
         has_non_empty_context = bool(op["latest_risk_context"])
 
     recent = payload.get("recent_risk_events")
-    assert isinstance(recent, list), "recent_risk_events no es lista"
+    if not isinstance(recent, list):
+        raise ValueError("recent_risk_events no es lista")
     for item in recent:
-        assert "context" in item, "recent_risk_events[*] no expone context"
-        assert item.get("context") is None or isinstance(
-            item.get("context"), dict
-        ), "recent_risk_events[*].context debe ser dict o None"
+        if "context" not in item:
+            raise ValueError("recent_risk_events[*] no expone context")
+        if item.get("context") is not None and not isinstance(item.get("context"), dict):
+            raise ValueError("recent_risk_events[*].context debe ser dict o None")
         has_non_empty_context = has_non_empty_context or bool(item.get("context"))
 
     return has_non_empty_context
 
 
 def main(argv: list[str] | None = None) -> int:
-    argv = argv or sys.argv[1:]
+    if argv is None:
+        argv = sys.argv[1:]
     if len(argv) != 1:
         print("Uso: synology_smoke_context_check.py <payload.json>", file=sys.stderr)
         return 2

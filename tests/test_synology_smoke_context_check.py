@@ -60,14 +60,14 @@ def test_validate_command_center_payload_allows_clean_payload_without_context(sm
 def test_validate_command_center_payload_requires_context_key_in_all_recent_events(smoke_context_module):
     payload = build_payload(recent_risk_events=[{"context": {}}, {"message": "missing"}])
 
-    with pytest.raises(AssertionError, match=r"recent_risk_events\[\*\] no expone context"):
+    with pytest.raises(ValueError, match=r"recent_risk_events\[\*\] no expone context"):
         smoke_context_module.validate_command_center_payload(payload)
 
 
 def test_validate_command_center_payload_still_validates_recent_events_when_snapshots_are_empty(smoke_context_module):
     payload = build_payload(operation_snapshots=[], recent_risk_events=[{"message": "missing"}])
 
-    with pytest.raises(AssertionError, match=r"recent_risk_events\[\*\] no expone context"):
+    with pytest.raises(ValueError, match=r"recent_risk_events\[\*\] no expone context"):
         smoke_context_module.validate_command_center_payload(payload)
 
 
