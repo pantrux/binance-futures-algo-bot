@@ -263,3 +263,41 @@ def test_synology_smoke_script_fails_when_metrics_returns_unexpected_status_with
 
     assert result.returncode != 0
     assert "API /metrics respondió estado inesperado (500) sin METRICS_API_KEY" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_dashboard_summary_returns_unexpected_status() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    overrides = {
+        "/dashboard/summary": (502, {"status": "bad-gateway"}, "application/json"),
+    }
+
+    server, thread, base_url = run_fixture_server(payload, build_html(include_context_markers=True), overrides=overrides)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "API /dashboard/summary no cumple" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_trade_plans_returns_unexpected_status() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    overrides = {
+        "/trade-plans": (503, {"status": "degraded"}, "application/json"),
+    }
+
+    server, thread, base_url = run_fixture_server(payload, build_html(include_context_markers=True), overrides=overrides)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "API /trade-plans no cumple" in result.stderr
