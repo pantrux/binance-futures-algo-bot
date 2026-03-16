@@ -117,7 +117,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-92 | Drill-down por operación con tabs en el cockpit | ✅ Mergeado | navegación por secciones operativas dentro del detalle de cada operación |
 | PR-93 | Live Data Backend y Polling UI | ✅ Mergeado | backend/live polling para refrescar la workstation sin recarga manual |
 | PR-94 | Polish visual y Order Blotter interactivo (Workstation) | ✅ Mergeado | filtros por estado, sticky headers, motion accesible y tabla de órdenes extraída a componente dedicado |
-| PR-95 | Acotar scroll/sticky del order blotter + sync roadmap | 🟡 En progreso | encapsular estilos scrollables del blotter y dejar el estado documental alineado post-merge |
+| PR-96 | Acotar scroll/sticky del order blotter + sync roadmap | 🟡 En progreso | encapsular estilos scrollables del blotter y dejar el estado documental alineado post-merge |
 
 
 ## Secuencia de PRs actualizada
