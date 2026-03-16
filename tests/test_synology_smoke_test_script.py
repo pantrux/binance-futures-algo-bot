@@ -129,6 +129,7 @@ def run_smoke(base_url: str) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         env=env,
         check=False,
+        timeout=120,
     )
 
 
