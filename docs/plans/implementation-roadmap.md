@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-71` ya quedó mergeado en `main`, sincronizado en Outline y validó el failure mode de payload inválido del command center dentro del shell smoke.
-- **PR activo:** `PR-72` — cobertura shell para fallos HTTP base.
-- **Siguiente carril sugerido:** cerrar `PR-72` para cubrir con fixture local los fallos HTTP más críticos del smoke (`/health` y `/metrics`) sin depender del NAS real.
+- **Estado global actual:** `PR-72` ya quedó mergeado en `main`, sincronizado en Outline y amplió el shell smoke con fallos HTTP base reproducibles (`/health` y `/metrics`).
+- **PR activo:** `PR-73` — siguiente endurecimiento de failure modes del harness operacional.
+- **Siguiente carril sugerido:** cubrir con fixture local el siguiente failure mode útil del smoke/release (por ejemplo `trade-plans` no-200 o `dashboard/summary` no-200) para seguir cerrando huecos del harness base.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -39,7 +39,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
 | Fase 14 — Observabilidad operativa post-corrección | ✅ Completada | 100% | PR-63..PR-69 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores, cobertura testeable de sus ramas condicionales, mejor DX de fallos del helper CLI y cobertura local del contrato shell end-to-end |
-| Fase 15 — Hardening del harness operacional | 🟡 En progreso | 50% | PR-70..PR-72 | teardown determinista, tipado explícito y cobertura de fallos de contrato/HTTP del shell smoke para minimizar flakes y ambigüedad operativa en CI |
+| Fase 15 — Hardening del harness operacional | 🟡 En progreso | 65% | PR-70..PR-72 | teardown determinista, tipado explícito y cobertura de fallos de contrato/HTTP del shell smoke para minimizar flakes y ambigüedad operativa en CI |
 
 
 ---
@@ -272,11 +272,12 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - dejar documentado el avance de Fase 15 sobre failure modes del harness
 - mergeado en `5204364` con checks verdes y thread resuelto
 
-### PR-72 — Cobertura shell para fallos HTTP base 🟡
+### PR-72 — Cobertura shell para fallos HTTP base ✅
 - extender el fixture HTTP local con overrides por ruta
 - agregar caso end-to-end para `/health` no-200
 - agregar caso end-to-end para `/metrics` inesperado sin auth
 - validar que el shell smoke emita fallos claros en `stderr` para esos caminos
+- mergeado en `43c1c1c` con `Greptile 5/5` y checks verdes
 
 
 ---

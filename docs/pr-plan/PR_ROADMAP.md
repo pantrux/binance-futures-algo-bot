@@ -94,7 +94,7 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-69 | Fixtures locales para el shell smoke | ✅ Mergeado | cubrir `synology_smoke_test.sh` end-to-end con servidor fixture local y gating HTML reproducible |
 | PR-70 | Cierre formal de Fase 14 + hardening final del fixture shell | ✅ Mergeado | tipado explícito, teardown determinista y cierre formal de la fase de observabilidad |
 | PR-71 | Cobertura shell para payload inválido del command center | ✅ Mergeado | validar end-to-end que el shell smoke falla cuando el payload API rompe el contrato del helper |
-| PR-72 | Cobertura shell para fallos HTTP base | 🟡 En progreso | validar con fixture local que `/health` y `/metrics` rompen el smoke con errores claros |
+| PR-72 | Cobertura shell para fallos HTTP base | ✅ Mergeado | validar con fixture local que `/health` y `/metrics` rompen el smoke con errores claros |
 
 
 ## Secuencia de PRs actualizada
@@ -1070,7 +1070,7 @@ Cubrir end-to-end el failure mode donde `/dashboard/command-center` devuelve un 
 - mergeado en `5204364`
 
 ### PR-72 — Cobertura shell para fallos HTTP base
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Cubrir con fixture local los fallos HTTP base más importantes del smoke (`/health` no-200 y `/metrics` inesperado sin auth), garantizando que `synology_smoke_test.sh` rompa de forma clara y reproducible.
@@ -1080,6 +1080,7 @@ Cubrir con fixture local los fallos HTTP base más importantes del smoke (`/heal
 - test shell donde `/health` responde no-200
 - test shell donde `/metrics` responde estado inesperado sin `METRICS_API_KEY`
 - roadmap/master-plan/PR roadmap actualizados con el nuevo avance de Fase 15
+- mergeado en `43c1c1c`
 
 
 ## Criterio de avance

@@ -27,10 +27,11 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - actualizar roadmap/master-plan/PR roadmap con el nuevo frente activo
 - mergeado en `5204364`
 
-### PR-72 — Cobertura shell para fallos HTTP base 🟡
+### PR-72 — Cobertura shell para fallos HTTP base ✅
 - agregar casos end-to-end para `/health` no-200 y `/metrics` inesperado sin auth
 - validar que el shell smoke falle con mensajes claros en `stderr`
 - extender el fixture HTTP local con overrides por ruta para failure modes reproducibles
+- mergeado en `43c1c1c`
 
 ## Criterio de cierre
 - no deben quedar hilos/threads fixture vivos silenciosamente tras los tests
