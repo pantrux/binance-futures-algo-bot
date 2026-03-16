@@ -39,7 +39,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
 | Fase 14 — Observabilidad operativa post-corrección | ✅ Completada | 100% | PR-63..PR-69 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores, cobertura testeable de sus ramas condicionales, mejor DX de fallos del helper CLI y cobertura local del contrato shell end-to-end |
-| Fase 15 — Hardening del harness operacional | 🟡 En progreso | 95% | PR-70..PR-78 | teardown determinista, tipado explícito y cobertura de fallos de contrato/HTTP del shell smoke, incluyendo rutas base, autenticadas, dependencias externas configurables y failure modes explícitos de la home web, para minimizar flakes y ambigüedad operativa en CI |
+| Fase 15 — Hardening del harness operacional | 🟡 En progreso | 98% | PR-70..PR-79 | teardown determinista, tipado explícito y cobertura de fallos de contrato/HTTP del shell smoke, incluyendo rutas base, autenticadas, dependencias externas configurables y failure modes explícitos de la home web, para minimizar flakes y ambigüedad operativa en CI |
 
 
 ---
@@ -309,10 +309,16 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - mantener el harness reproducible y el diagnóstico claro para fallos de `check_body_contains()`
 - mergeado en `533d884` con checks verdes y reviews resueltas
 
-### PR-78 — Marcadores adicionales de `WEB /` en el shell smoke 🟡
+### PR-78 — Marcadores adicionales de `WEB /` en el shell smoke ✅
 - cubrir el caso donde la home responde `200` pero falta `Detalle por trade plan`
 - cubrir el caso donde la home responde `200` pero falta `Reconcile actual`
 - mantener el harness reproducible y el diagnóstico claro para fallos adicionales de `check_body_contains()`
+- mergeado en `26eaacc` con checks verdes y reviews resueltas
+
+### PR-79 — Marcadores restantes de órdenes y posiciones en el shell smoke 🟡
+- cubrir el caso donde la home responde `200` pero falta `Historial de órdenes`
+- cubrir el caso donde la home responde `200` pero falta `Historial de posiciones`
+- cerrar la cobertura explícita pendiente de `check_body_contains()` sobre los marcadores base del command center
 
 
 ---
@@ -331,3 +337,4 @@ Un sistema de trading **auditable, operable y seguro**, con:
 - `PAPER_TRADING=true` obligatorio hasta cumplir criterios de transición definidos en Fase 9 y aprobar los ensayos operativos de Fase 10.
 - No habilitar live trading por defecto en ninguna fase intermedia.
 - Cada PR debe cerrar con: checks verdes + comentarios/reviews resueltos + roadmap/docs/memoria actualizados.
+moria actualizados.

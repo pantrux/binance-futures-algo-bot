@@ -100,7 +100,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-75 | Cobertura shell para strictness de `testnet/ping` | ✅ Mergeado | cubrir branches `STRICT_EXTERNAL_CHECKS=true/false` para `testnet/ping` con fixture local reproducible |
 | PR-76 | Failure modes de `WEB /` en el shell smoke | ✅ Mergeado | cubrir `WEB /` non-200 y `WEB /` con body vacío con fixture local reproducible |
 | PR-77 | Marcadores faltantes de `WEB /` en el shell smoke | ✅ Mergeado | cubrir respuestas `200` de `WEB /` sin marcadores base/centrales del dashboard con fixture local reproducible |
-| PR-78 | Marcadores adicionales de `WEB /` en el shell smoke | 🟡 En progreso | cubrir respuestas `200` de `WEB /` sin `Detalle por trade plan` o `Reconcile actual` con fixture local reproducible |
+| PR-78 | Marcadores adicionales de `WEB /` en el shell smoke | ✅ Mergeado | cubrir respuestas `200` de `WEB /` sin `Detalle por trade plan` o `Reconcile actual` con fixture local reproducible |
+| PR-79 | Marcadores restantes de órdenes y posiciones en el shell smoke | 🟡 En progreso | cubrir respuestas `200` de `WEB /` sin `Historial de órdenes` o `Historial de posiciones` con fixture local reproducible |
 
 
 ## Secuencia de PRs actualizada

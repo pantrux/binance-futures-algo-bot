@@ -431,6 +431,40 @@ def test_synology_smoke_script_fails_when_web_root_is_missing_reconcile_marker()
     assert "WEB command center no contiene 'Reconcile actual'" in result.stderr
 
 
+def test_synology_smoke_script_fails_when_web_root_is_missing_orders_marker() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    html = build_html(include_context_markers=True).replace("Historial de órdenes ", "")
+
+    server, thread, base_url = run_fixture_server(payload, html)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "WEB command center no contiene 'Historial de órdenes'" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_web_root_is_missing_positions_marker() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    html = build_html(include_context_markers=True).replace("Historial de posiciones ", "")
+
+    server, thread, base_url = run_fixture_server(payload, html)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "WEB command center no contiene 'Historial de posiciones'" in result.stderr
+
+
 def test_synology_smoke_script_passes_when_metrics_returns_200_with_expected_auth() -> None:
     payload = build_payload(
         latest_risk_context={"symbol": "BTCUSDT"},
