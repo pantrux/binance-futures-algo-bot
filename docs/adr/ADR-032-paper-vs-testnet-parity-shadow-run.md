@@ -17,7 +17,7 @@ Introducir `ExecutionParityService` con reporte por símbolo:
 - reporta pares comparados y ejecuciones no emparejadas.
 
 ## API
-- `GET /execution/parity/{symbol}?limit=...`
+- `GET /execution/parity/{symbol}?timeframe=...&limit=...`
 
 ## Consecuencias
 ### Positivas

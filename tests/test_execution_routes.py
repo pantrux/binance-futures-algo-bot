@@ -114,3 +114,42 @@ def test_execution_parity_route_returns_pairs():
     payload = response.json()
     assert payload["symbol"] == "ETHUSDT"
     assert payload["compared_pairs"] == 1
+
+
+def test_execution_parity_route_filters_by_timeframe():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+    db = SessionLocal()
+
+    seed_trade_plan(db, symbol="ETHUSDT", status="paper_executed", side="long")
+    seed_trade_plan(db, symbol="ETHUSDT", status="testnet_executed", side="long")
+    paper_1h = seed_trade_plan(db, symbol="ETHUSDT", status="paper_executed", side="long")
+    testnet_1h = seed_trade_plan(db, symbol="ETHUSDT", status="testnet_executed", side="long")
+    paper_1h.timeframe = "1h"
+    testnet_1h.timeframe = "1h"
+    db.add_all([paper_1h, testnet_1h])
+    db.commit()
+
+    client = make_client(db)
+    response = client.get("/execution/parity/ETHUSDT?timeframe=1h&limit=50")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["symbol"] == "ETHUSDT"
+    assert payload["timeframe"] == "1h"
+    assert payload["compared_pairs"] == 1
+    assert payload["pairs"][0]["paper_trade_plan_id"] == paper_1h.id
+    assert payload["pairs"][0]["testnet_trade_plan_id"] == testnet_1h.id
+
+
+def test_execution_parity_route_rejects_empty_timeframe():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+    db = SessionLocal()
+
+    client = make_client(db)
+    response = client.get("/execution/parity/ETHUSDT?timeframe=&limit=50")
+
+    assert response.status_code == 422
