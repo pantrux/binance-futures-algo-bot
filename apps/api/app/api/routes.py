@@ -236,7 +236,7 @@ def reconcile_execution(trade_plan_id: int, db: Session = Depends(get_db)) -> Re
 @router.get("/execution/parity/{symbol}", response_model=ExecutionParityReport)
 def execution_parity(
     symbol: str,
-    timeframe: str | None = Query(default=None),
+    timeframe: str | None = Query(default=None, min_length=1),
     limit: int = Query(default=50, ge=1, le=500),
     db: Session = Depends(get_db),
 ) -> ExecutionParityReport:

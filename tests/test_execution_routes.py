@@ -141,3 +141,15 @@ def test_execution_parity_route_filters_by_timeframe():
     assert payload["compared_pairs"] == 1
     assert payload["pairs"][0]["paper_trade_plan_id"] == paper_1h.id
     assert payload["pairs"][0]["testnet_trade_plan_id"] == testnet_1h.id
+
+
+def test_execution_parity_route_rejects_empty_timeframe():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+    db = SessionLocal()
+
+    client = make_client(db)
+    response = client.get("/execution/parity/ETHUSDT?timeframe=&limit=50")
+
+    assert response.status_code == 422
