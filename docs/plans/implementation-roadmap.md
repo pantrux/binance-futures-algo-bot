@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-82` ya quedó mergeado en `main`, endureciendo el emparejamiento del shadow run para no cruzar temporalidades.
-- **PR activo:** `PR-83` — paridad paper/testnet sensible a `timeframe`.
-- **Siguiente carril sugerido:** alinear `ExecutionParityService` con la misma semántica del shadow run para evitar desvíos entre reportes agregados y puntuales.
+- **Estado global actual:** `PR-83` ya quedó mergeado en `main`, alineando shadow run y execution parity bajo la misma regla de `timeframe`.
+- **PR activo:** ninguno; Etapa N ya tiene su baseline inicial consolidada.
+- **Siguiente carril sugerido:** pausar follow-ups de parity salvo que aparezcan desviaciones reales en operación y devolver el foco a iniciativas de producto/trading con impacto directo.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

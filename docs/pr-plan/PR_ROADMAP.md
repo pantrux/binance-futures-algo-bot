@@ -105,7 +105,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-80 | Cierre formal de Fase 15 | ✅ Mergeado | consolidar el cierre documental del hardening del harness operacional y devolver el foco del roadmap a producto/trading |
 | PR-81 | Sincronizar resumen del roadmap tras cierre de Fase 15 | ✅ Mergeado | alinear el resumen ejecutivo del roadmap con el estado real tras el cierre formal del carril de harness |
 | PR-82 | Emparejamiento shadow run sensible a timeframe | ✅ Mergeado | evitar cruces paper/testnet entre trade plans del mismo símbolo/lado pero distinta temporalidad |
-| PR-83 | Execution parity sensible a timeframe | 🟡 En progreso | alinear el reporte puntual de parity con la misma regla de `timeframe` usada en shadow run |
+| PR-83 | Execution parity sensible a timeframe | ✅ Mergeado | alinear el reporte puntual de parity con la misma regla de `timeframe` usada en shadow run |
+| PR-84 | Sincronizar roadmap tras baseline de Etapa N | 🟡 En progreso | dejar consistente el estado documental tras el merge de PR-83 y pausar follow-ups de parity no urgentes |
 
 
 ## Secuencia de PRs actualizada
