@@ -68,6 +68,7 @@ type CommandCenterResponse = {
     latest_risk_severity: string | null;
     latest_risk_event_type: string | null;
     latest_risk_message: string | null;
+    latest_risk_context: Record<string, string | number | boolean | null>;
     order_history: Array<{
       id: number;
       trade_plan_id: number;
@@ -463,6 +464,7 @@ export default async function HomePage() {
                         <span className={`status-pill ${statusTone(operation.latest_risk_severity ?? "neutral")}`}>{operation.latest_risk_severity ?? "info"}</span><br />
                         {operation.latest_risk_event_type}<br />
                         <small>{operation.latest_risk_message}</small><br />
+                        {renderRiskContext(operation.latest_risk_context)}
                         Count: {operation.risk_event_count}
                       </>
                     ) : `Sin eventos · Count: ${operation.risk_event_count}`}

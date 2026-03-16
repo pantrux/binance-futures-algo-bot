@@ -157,6 +157,7 @@ def test_dashboard_command_center_builds_operational_snapshot():
     assert len(payload.operation_snapshots[1].risk_event_history) == 1
     assert payload.operation_snapshots[1].risk_event_history[0].event_type == "preflight_note"
     assert payload.operation_snapshots[1].risk_event_history[0].context["checkpoint"] == "preflight"
+    assert payload.operation_snapshots[1].latest_risk_context["checkpoint"] == "preflight"
     assert len(payload.operation_snapshots[1].timeline_history) >= 4
     assert payload.operation_snapshots[0].latest_risk_event_type == "shadow_run_check"
     assert payload.timeline[0].trade_plan_id in {approved.id, testnet.id}
