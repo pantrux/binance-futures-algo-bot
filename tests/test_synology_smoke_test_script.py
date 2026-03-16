@@ -192,9 +192,8 @@ def test_synology_smoke_script_fails_when_context_is_present_but_html_markers_ar
 def test_synology_smoke_script_fails_when_command_center_payload_is_invalid() -> None:
     invalid_payload = build_payload(
         latest_risk_context={"symbol": "BTCUSDT"},
-        recent_risk_events=[],
+        recent_risk_events=[{"message": "missing-context"}],
     )
-    invalid_payload["recent_risk_events"] = [{"message": "missing-context"}]
 
     server, thread, base_url = run_fixture_server(invalid_payload, build_html(include_context_markers=True))
     try:
