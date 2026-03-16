@@ -1,0 +1,394 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
+import { OperationDrillDown } from "./OperationDrillDown";
+
+export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: any) {
+  const [data, setData] = useState(initialData);
+  const [livePrices, setLivePrices] = useState<Record<string, any>>({});
+  const [isPolling, setIsPolling] = useState(true);
+
+  useEffect(() => {
+    if (!isPolling) return;
+    const interval = setInterval(async () => {
+      try {
+        const url = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.0.8:8010';
+        const res = await fetch(`${url}/dashboard/live-pricing`);
+        if (res.ok) {
+          const result = await res.json();
+          const pricesMap: Record<string, any> = {};
+          result.positions.forEach((p: any) => {
+            pricesMap[p.symbol] = {
+              markPrice: p.mark_price,
+              unrealizedPnl: p.unrealized_pnl,
+              positionAmt: p.position_amt,
+            };
+          });
+          setLivePrices(pricesMap);
+        }
+      } catch (err) {
+        console.error("Live pricing poll failed:", err);
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isPolling]);
+
+  // Compute live open PnL
+  let liveOpenPnl = 0;
+  const positions = data.open_positions.map((pos: any) => {
+    const live = livePrices[pos.symbol];
+    const currentPnl = live ? live.unrealizedPnl : pos.unrealized_pnl;
+    const currentMark = live ? live.markPrice : pos.mark_price;
+    liveOpenPnl += currentPnl;
+    return { ...pos, unrealized_pnl: currentPnl, mark_price: currentMark };
+  });
+  
+  if (Object.keys(livePrices).length === 0) {
+    liveOpenPnl = initialOpenPnl;
+  }
+
+  // Update tape with live prices
+  const tape = initialTape.map((item: any) => {
+    const live = livePrices[item.symbol];
+    if (live && ["open", "testnet_executed", "partially_filled"].includes(item.status.toLowerCase())) {
+      return { ...item, price: live.markPrice, pnl: live.unrealizedPnl };
+    }
+    return item;
+  });
+
+  const summary = data.summary;
+  const shadowRun = data.shadow_run;
+  const criticalRisks = data.recent_risk_events.filter((e: any) => e.severity === "critical").length;
+
+  const summaryCards = [
+    { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
+    { title: "Open positions", value: String(summary.open_positions), hint: "inventario vivo", tone: summary.open_positions > 0 ? "ok" : "neutral" },
+    { title: "Fill rate testnet", value: `${formatNumber(shadowRun.testnet_fill_rate_pct, 1)}%`, hint: "órdenes ejecutadas / enviadas", tone: (shadowRun.testnet_fill_rate_pct ?? 0) >= 80 ? "ok" : "warn" },
+    { title: "Pairs parity", value: String(shadowRun.compared_pairs), hint: "paper ↔ testnet comparados", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
+    { title: "Risk 7d", value: `${shadowRun.critical_risk_events_7d}/${shadowRun.warning_risk_events_7d}`, hint: "critical / warning", tone: shadowRun.critical_risk_events_7d > 0 ? "danger" : shadowRun.warning_risk_events_7d > 0 ? "warn" : "ok" },
+    { title: "Trade plans", value: String(summary.trade_plans_total), hint: "universo persistido", tone: "neutral" },
+  ];
+
+  return (
+    <>
+      <header className="workspace-header" id="overview">
+        <div>
+          <p className="eyebrow">Binance USDⓈ-M Futures · Testnet Desk</p>
+          <h1>Trading workstation del bot</h1>
+          <p className="lead">
+            Vista modular para operar el command center como una mesa real: overview corto arriba, paneles especializados al medio y cockpit profundo por operación abajo.
+          </p>
+        </div>
+        <div className="header-status-panel">
+          <span className={`badge ${Object.keys(livePrices).length > 0 ? 'ok pulse' : 'warn'} pulse`}>
+            {Object.keys(livePrices).length > 0 ? 'live pricing' : 'snapshot data'}
+          </span>
+          <strong>{formatDate(data.generated_at)}</strong>
+          <p>Paper/testnet/risk/reconcile unificados en una sola shell operativa.</p>
+        </div>
+      </header>
+
+      <section className="ticker-strip" aria-label="market tape">
+        {tape.length === 0 ? (
+          <div className="ticker-empty">Sin símbolos activos en el snapshot actual.</div>
+        ) : tape.map((item: any) => (
+          <article key={item.key} className="ticker-card">
+            <div className="ticker-topline">
+              <strong>{item.symbol}</strong>
+              <span className={`status-pill ${statusTone(item.status)}`}>{item.status}</span>
+            </div>
+            <div className="ticker-midline">
+              <span>{item.timeframe}</span>
+              <span>{item.side}</span>
+              <span>{item.regime ?? "desk"}</span>
+            </div>
+            <div className="ticker-bottomline">
+              <strong>{formatNumber(item.price, 2)}</strong>
+              <span className={item.pnl == null ? "muted" : item.pnl >= 0 ? "positive" : "negative"}>
+                {item.pnl == null ? "—" : formatNumber(item.pnl, 2)}
+              </span>
+            </div>
+          </article>
+        ))}
+      </section>
+
+      <section className="metric-grid">
+        {summaryCards.map((card) => (
+          <article key={card.title} className="metric-card">
+            <p>{card.title}</p>
+            <h3 className={card.tone === "danger" ? "negative" : card.tone === "ok" ? "positive" : undefined}>{card.value}</h3>
+            <small>{card.hint}</small>
+          </article>
+        ))}
+      </section>
+
+      <section id="desk" className="workspace-section workspace-two-up">
+        <article className="panel workstation-panel">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Desk pulse</p>
+              <h3>Overview ejecutivo</h3>
+            </div>
+            <span className="badge subtle">modular shell</span>
+          </div>
+          <div className="desk-hero-grid">
+            <div className="desk-hero-block accent-block">
+              <span>Testnet orders</span>
+              <strong>{shadowRun.testnet_orders_total}</strong>
+              <small>filled {shadowRun.testnet_orders_filled} · slippage {formatNumber(shadowRun.avg_testnet_slippage_bps, 2)} bps</small>
+            </div>
+            <div className="desk-hero-block">
+              <span>Approved queue</span>
+              <strong>{summary.approved_trade_plans}</strong>
+              <small>planes listos para ejecución / vigilancia</small>
+            </div>
+            <div className="desk-hero-block">
+              <span>Paper / Testnet</span>
+              <strong>{summary.paper_executed_trade_plans} / {summary.testnet_executed_trade_plans}</strong>
+              <small>baseline parity del snapshot</small>
+            </div>
+          </div>
+        </article>
+
+        <article className="panel workstation-panel">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Watchlist</p>
+              <h3>Queue operativa</h3>
+            </div>
+            <span className="badge subtle">últimos setups</span>
+          </div>
+          <div className="watchlist-grid">
+            {data.recent_trade_plans.length === 0 ? (
+              <p className="empty-state">Sin trade plans recientes.</p>
+            ) : data.recent_trade_plans.slice(0, 6).map((plan: any) => (
+              <article key={plan.id} className="watchlist-card">
+                <div className="watchlist-head">
+                  <strong>{plan.symbol}</strong>
+                  <span className={`status-pill ${statusTone(plan.status)}`}>{plan.status}</span>
+                </div>
+                <p>{plan.side} · {plan.market_regime}</p>
+                <small>score {formatNumber(plan.aggregate_score, 2)} · risk {formatNumber(plan.applied_risk_pct, 3)}%</small>
+                <a className="action-link" href={`#operation-${plan.id}`}>abrir cockpit</a>
+              </article>
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section id="operations" className="workspace-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Operations rail</p>
+            <h3>Radar modular por operación</h3>
+          </div>
+          <span className="badge subtle">sin texto estático innecesario</span>
+        </div>
+        <div className="operation-rail">
+          {data.operation_snapshots.length === 0 ? (
+            <p className="empty-state">Sin operaciones consolidadas.</p>
+          ) : data.operation_snapshots.slice(0, 8).map((operation: any) => {
+            const live = livePrices[operation.symbol];
+            let latestPnl = operation.latest_position_unrealized_pnl;
+            let actualEntry = operation.latest_position_entry_price ?? operation.latest_order_price ?? operation.entry_price;
+            
+            if (live && ["open", "testnet_executed", "partially_filled"].includes(operation.status.toLowerCase())) {
+                latestPnl = live.unrealizedPnl;
+                if (!operation.latest_position_entry_price) actualEntry = live.markPrice;
+            }
+            
+            const entryDiffPct = operation.entry_price > 0 ? ((actualEntry - operation.entry_price) / operation.entry_price) * 100 : null;
+            return (
+              <article key={operation.trade_plan_id} className="operation-card" id={`operation-${operation.trade_plan_id}`}>
+                <div className="operation-head">
+                  <div>
+                    <p className="operation-symbol">{operation.symbol}</p>
+                    <small>{operation.timeframe} · {operation.side} · {operation.market_regime}</small>
+                  </div>
+                  <span className={`status-pill ${statusTone(operation.status)}`}>{operation.status}</span>
+                </div>
+                <div className="operation-strip">
+                  <div>
+                    <span>entry / mark</span>
+                    <strong>{formatNumber(actualEntry, 2)}</strong>
+                  </div>
+                  <div>
+                    <span>Δ plan</span>
+                    <strong className={entryDiffPct == null ? "muted" : entryDiffPct >= 0 ? "positive" : "negative"}>{formatPercent(entryDiffPct, 3)}</strong>
+                  </div>
+                  <div>
+                    <span>PnL vivo</span>
+                    <strong className={(latestPnl ?? 0) >= 0 ? "positive" : "negative"}>{formatNumber(latestPnl, 2)}</strong>
+                  </div>
+                </div>
+                <div className="operation-tags">
+                  <span className={`status-pill ${reconcileTone(operation.reconciliation_healthy, operation.reconciliation_primary_severity)}`}>
+                    {operation.reconciliation_healthy ? "healthy" : operation.reconciliation_primary_event ?? "drift"}
+                  </span>
+                  <span className={`status-pill ${statusTone(operation.latest_risk_severity ?? "neutral")}`}>
+                    {operation.latest_risk_event_type ?? `risk ${operation.risk_event_count}`}
+                  </span>
+                </div>
+                {renderRiskContext(operation.latest_risk_context)}
+                <div className="operation-actions">
+                  <a className="action-link primary" href={`#drawer-${operation.trade_plan_id}`}>abrir drill-down</a>
+                  <a className="action-link" href="#book">ver book</a>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="book" className="workspace-section workspace-two-up">
+        <article className="panel workstation-panel">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Positions board</p>
+              <h3>Posiciones abiertas</h3>
+            </div>
+            <span className="badge subtle">inventory</span>
+          </div>
+          <div className="table-shell">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Símbolo</th>
+                  <th>Lado</th>
+                  <th>Qty</th>
+                  <th>Entry / Mark</th>
+                  <th>PnL</th>
+                  <th>Lev</th>
+                </tr>
+              </thead>
+              <tbody>
+                {positions.length === 0 ? (
+                  <tr><td colSpan={7} className="empty-state">Sin posiciones abiertas.</td></tr>
+                ) : positions.map((position: any) => (
+                  <tr key={position.id}>
+                    <td>#{position.id}</td>
+                    <td>{position.symbol}</td>
+                    <td>{position.side}</td>
+                    <td>{formatNumber(position.quantity, 3)}</td>
+                    <td>{formatNumber(position.entry_price, 2)} / {formatNumber(position.mark_price, 2)}</td>
+                    <td className={position.unrealized_pnl >= 0 ? "positive" : "negative"}>{formatNumber(position.unrealized_pnl, 2)}</td>
+                    <td>{position.leverage}x</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article className="panel workstation-panel">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Order blotter</p>
+              <h3>Órdenes recientes</h3>
+            </div>
+            <span className="badge subtle">execution feed</span>
+          </div>
+          <div className="table-shell">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Plan</th>
+                  <th>Símbolo</th>
+                  <th>Venue</th>
+                  <th>Qty / Exec</th>
+                  <th>Estado</th>
+                  <th>Hora</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recent_orders.length === 0 ? (
+                  <tr><td colSpan={7} className="empty-state">Sin órdenes recientes.</td></tr>
+                ) : data.recent_orders.map((order: any) => (
+                  <tr key={order.id}>
+                    <td>#{order.id}</td>
+                    <td>#{order.trade_plan_id}</td>
+                    <td>{order.symbol}</td>
+                    <td>{order.venue}</td>
+                    <td>{formatNumber(order.quantity, 3)} / {formatNumber(order.executed_quantity, 3)}</td>
+                    <td><span className={`status-pill ${statusTone(order.status)}`}>{order.status}</span></td>
+                    <td>{formatDate(order.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="risk" className="workspace-section workspace-two-up">
+        <article className="panel workstation-panel">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Risk feed</p>
+              <h3>Eventos recientes</h3>
+            </div>
+            <span className="badge subtle">últimos 12</span>
+          </div>
+          <div className="feed-list">
+            {data.recent_risk_events.length === 0 ? (
+              <p className="empty-state">Sin eventos recientes.</p>
+            ) : data.recent_risk_events.map((event: any) => (
+              <article key={event.id} className="feed-card">
+                <div className="feed-head">
+                  <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
+                  <small>{event.event_type} · {formatDate(event.created_at)}</small>
+                </div>
+                <p>{event.message}</p>
+                {renderRiskContext(event.context)}
+              </article>
+            ))}
+          </div>
+        </article>
+
+        <article className="panel workstation-panel">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Timeline</p>
+              <h3>Eventos operativos</h3>
+            </div>
+            <span className="badge subtle">últimos 20</span>
+          </div>
+          <div className="feed-list">
+            {data.timeline.length === 0 ? (
+              <p className="empty-state">Sin eventos en timeline.</p>
+            ) : data.timeline.map((item: any, index: number) => (
+              <article key={`${item.entity_kind}-${item.trade_plan_id ?? "na"}-${index}`} className="feed-card">
+                <div className="feed-head">
+                  <span className={`status-pill ${toneClassName(item.tone)}`}>{timelineEntityLabel(item.entity_kind)}</span>
+                  <small>{item.event_kind} · {formatDate(item.occurred_at)}</small>
+                </div>
+                <p>{item.title}</p>
+                <small className="muted">{item.detail}</small>
+              </article>
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section id="drilldown" className="workspace-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Cockpit</p>
+            <h3>Drill-down por operación</h3>
+          </div>
+          <span className="badge subtle">plegable / operativo</span>
+        </div>
+        <div className="drawer-stack">
+          {data.operation_snapshots.length === 0 ? (
+            <p className="empty-state">Sin operaciones para drill-down.</p>
+          ) : data.operation_snapshots.slice(0, 8).map((operation: any, index: number) => (
+            <OperationDrillDown key={operation.trade_plan_id} operation={operation} index={index} livePrice={livePrices[operation.symbol]} />
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
