@@ -217,16 +217,23 @@ export function OperationDrillDown({ operation, index, livePrice }: OperationDri
           <section className="drawer-panel compact-panel" style={{ gridColumn: "1 / -1" }}>
             <h4>Línea de tiempo operativa</h4>
             <div className="compact-list">
-              {timelineHistory.length === 0 ? <p className="empty-state">Sin timeline.</p> : timelineHistory.map((item, itemIndex) => (
-                <article key={`${operation.trade_plan_id}-${itemIndex}`} className="compact-item">
-                  <div className="feed-head">
-                    <span className={`status-pill ${toneClassName(item.tone)}`}>{timelineEntityLabel(item.entity_kind)}</span>
-                    <small>{formatDate(item.occurred_at)}</small>
-                  </div>
-                  <p>{item.title}</p>
-                  <small className="muted">{item.detail}</small>
-                </article>
-              ))}
+              {timelineHistory.length === 0 ? <p className="empty-state">Sin timeline.</p> : (
+                <>
+                  {timelineHistory.map((item, itemIndex) => (
+                    <article key={`${operation.trade_plan_id}-${itemIndex}`} className="compact-item">
+                      <div className="feed-head">
+                        <span className={`status-pill ${toneClassName(item.tone)}`}>{timelineEntityLabel(item.entity_kind)}</span>
+                        <small>{formatDate(item.occurred_at)}</small>
+                      </div>
+                      <p>{item.title}</p>
+                      <small className="muted">{item.detail}</small>
+                    </article>
+                  ))}
+                  {(operation.timeline_history?.length ?? 0) > 12 && (
+                    <p className="muted">{(operation.timeline_history?.length ?? 0) - 12} entradas adicionales omitidas.</p>
+                  )}
+                </>
+              )}
             </div>
           </section>
         )}

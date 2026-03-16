@@ -31,7 +31,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         }
 
         const result = await res.json();
-        const pricesMap: Record<string, any> = {};
+        const pricesMap: Record<string, LivePriceEntry> = {};
         (result.positions ?? []).forEach((position: any) => {
           pricesMap[position.symbol] = {
             markPrice: position.mark_price,
