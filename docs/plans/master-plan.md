@@ -72,9 +72,14 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Entrega esperada: historial operativo completo por `trade_plan_id`, navegación de detalle más profunda, smoke Synology específico del command center y trazabilidad end-to-end por operación.
 
 ### Etapa L — Observabilidad operativa post-corrección
-- PR-63 en adelante.
-- Estado actual: en progreso; `PR-63` dejó `risk_events.context_json` operativo en Synology, `PR-64` lo volvió visible en la UI del command center, `PR-65` subió el contexto del último riesgo al resumen principal, `PR-66` endureció el smoke Synology, `PR-67` cubrió con tests reproducibles la rama de payload limpio vs payload con contexto, `PR-68` remató la DX del helper con errores CLI claros y `PR-69` añade fixtures locales para cubrir el contrato shell end-to-end del smoke sin depender del NAS real.
-- Entrega esperada: errores/eventos críticos con contexto JSON útil, visible y consultable sin parsear solo texto libre.
+- PR-63 a PR-69.
+- Estado actual: completada; el carril dejó `risk_events.context_json` operativo y visible, `latest_risk_context` disponible en resumen, smoke Synology endurecido y cobertura local end-to-end del shell smoke sin dependencia del NAS real.
+- Entrega lograda: errores/eventos críticos con contexto JSON útil, visible y consultable sin parsear solo texto libre.
+
+### Etapa M — Hardening del harness operacional
+- PR-70 en adelante.
+- Estado actual: en progreso; el foco pasa a teardown determinista, tipado explícito y ergonomía final de los fixtures/automatizaciones del carril smoke/release para reducir flakes y ambigüedad en CI.
+- Entrega esperada: harness operacional limpio, tipado y predecible para que el siguiente frente vuelva a lógica de producto/trading y no a fricción de tests.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.

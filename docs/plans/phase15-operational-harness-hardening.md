@@ -1,0 +1,26 @@
+# Fase 15 — Hardening del harness operacional
+
+## Propósito
+Cerrar los detalles de robustez del harness de tests operacionales que aún pueden generar ruido, flakes o ambigüedad en CI, especialmente alrededor de fixtures shell/HTTP y teardown determinista.
+
+## Objetivo de la fase
+Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles de depurar, para que el foco del proyecto vuelva a lógica de trading y no a fricción del harness.
+
+## Entregables esperados
+- tipado explícito en helpers de fixtures operacionales
+- cierre determinista de threads/servidores fixture
+- timeouts y cleanup consistentes en tests shell/end-to-end
+- runbooks/roadmaps reflejando el cierre del bloque de observabilidad anterior
+
+## PR inicial de la fase
+### PR-70 — Cierre formal de Fase 14 + hardening final del fixture shell
+- tipar explícitamente `run_fixture_server`
+- centralizar apagado del servidor fixture
+- verificar que el thread realmente termina tras `join`
+- actualizar roadmap/master-plan/PR roadmap para marcar Fase 14 como cerrada y Fase 15 como activa
+- documentar cierre formal en `phase14-observability-closure.md`
+
+## Criterio de cierre
+- no deben quedar hilos/threads fixture vivos silenciosamente tras los tests
+- la documentación debe distinguir con claridad Fase 14 cerrada vs Fase 15 activa
+- CI debe seguir verde sin depender del NAS real para validar el contrato del smoke
