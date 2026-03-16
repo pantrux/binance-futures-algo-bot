@@ -159,13 +159,18 @@ def build_html(*, include_context_markers: bool) -> str:
     )
 
 
-def run_smoke(base_url: str, *, metrics_api_key: str | None = None) -> subprocess.CompletedProcess[str]:
+def run_smoke(
+    base_url: str,
+    *,
+    metrics_api_key: str | None = None,
+    strict_external_checks: bool = False,
+) -> subprocess.CompletedProcess[str]:
     python_dir = str(Path(sys.executable).resolve().parent)
     env = {
         "PATH": os.pathsep.join([python_dir, os.environ.get("PATH", "/usr/bin:/bin")]),
         "API_BASE_URL": base_url,
         "WEB_BASE_URL": base_url,
-        "STRICT_EXTERNAL_CHECKS": "false",
+        "STRICT_EXTERNAL_CHECKS": "true" if strict_external_checks else "false",
     }
     if metrics_api_key is not None:
         env["METRICS_API_KEY"] = metrics_api_key
@@ -358,3 +363,49 @@ def test_synology_smoke_script_fails_when_metrics_auth_is_incorrect() -> None:
 
     assert result.returncode != 0
     assert "API /metrics (auth) no cumple (esperado 200)" in result.stderr
+
+
+def test_synology_smoke_script_passes_when_testnet_ping_fails_with_strict_external_checks_disabled() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    overrides = {
+        "/integrations/binance/testnet/ping": (503, {"status": "down"}, "application/json"),
+    }
+
+    server, thread, base_url = run_fixture_server(
+        payload,
+        build_html(include_context_markers=True),
+        overrides=overrides,
+    )
+    try:
+        result = run_smoke(base_url, strict_external_checks=False)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode == 0, result.stderr + result.stdout
+    assert "Se omite fallo de testnet/ping por STRICT_EXTERNAL_CHECKS=false" in result.stdout
+
+
+def test_synology_smoke_script_fails_when_testnet_ping_fails_with_strict_external_checks_enabled() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    overrides = {
+        "/integrations/binance/testnet/ping": (503, {"status": "down"}, "application/json"),
+    }
+
+    server, thread, base_url = run_fixture_server(
+        payload,
+        build_html(include_context_markers=True),
+        overrides=overrides,
+    )
+    try:
+        result = run_smoke(base_url, strict_external_checks=True)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "API /integrations/binance/testnet/ping no cumple" in result.stderr

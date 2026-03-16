@@ -38,11 +38,17 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - validar que el shell smoke falle con mensajes claros en `stderr` para ambos casos
 - mergeado en `23400e5`
 
-### PR-74 — `/metrics` autenticado + cleanup de helpers del fixture 🟡
+### PR-74 — `/metrics` autenticado + cleanup de helpers del fixture ✅
 - cubrir el camino de `/metrics` con `METRICS_API_KEY` presente
 - validar header `x-metrics-key` correcto/incorrecto desde el fixture local
 - limpiar duplicación menor en helpers del fixture si mejora legibilidad y mantenimiento
 - mantener el smoke shell totalmente reproducible sin dependencia del NAS real también en el camino autenticado de métricas
+- mergeado en `ba68d86`
+
+### PR-75 — Cobertura shell para strictness de `testnet/ping` 🟡
+- cubrir el branch `STRICT_EXTERNAL_CHECKS=false` cuando `/integrations/binance/testnet/ping` falla
+- cubrir el branch `STRICT_EXTERNAL_CHECKS=true` para asegurar fallo explícito
+- mantener el harness reproducible sin depender de Binance real
 
 ## Criterio de cierre
 - no deben quedar hilos/threads fixture vivos silenciosamente tras los tests
