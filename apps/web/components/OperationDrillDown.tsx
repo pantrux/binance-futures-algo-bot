@@ -150,7 +150,14 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
                 <li><span>Estado orden</span><strong>{operation.latest_order_status ?? "—"}</strong></li>
                 <li><span>Exec qty</span><strong>{formatNumber(operation.latest_order_executed_quantity, 3)}</strong></li>
                 <li><span>Posición activa</span><strong>{operation.latest_position_id ? `#${operation.latest_position_id}` : "—"}</strong></li>
-                <li><span>Feed live</span><strong>{liveState.label}</strong></li>
+                <li>
+                  <span>Feed live</span>
+                  <strong>
+                    <span className={`status-pill ${toneClassName(liveState.tone)}`} title={liveState.hint}>
+                      {liveState.label}
+                    </span>
+                  </strong>
+                </li>
                 <li><span>Entry real</span><strong>{formatNumber(actualEntry, 2)}</strong></li>
                 <li><span>Δ vs plan</span><strong className={entryDiffPct == null ? "muted" : entryDiffPct >= 0 ? "positive" : "negative"}>{formatPercent(entryDiffPct, 3)}</strong></li>
               </ul>

@@ -350,6 +350,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             <p className="empty-state">Sin operaciones consolidadas.</p>
           ) : data.operation_snapshots.slice(0, 8).map((operation: any) => {
             const live = livePrices[operation.symbol];
+            const liveState = getSymbolLiveState(operation.symbol);
             let latestPnl = operation.latest_position_unrealized_pnl;
             const actualEntry = getActualEntryPrice(operation);
 
@@ -384,6 +385,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
                   </div>
                 </div>
                 <div className="operation-tags">
+                  <span className={`status-pill ${toneClassName(liveState.tone)}`} title={liveState.hint}>{liveState.label}</span>
                   <span className={`status-pill ${reconcileTone(operation.reconciliation_healthy, operation.reconciliation_primary_severity)}`}>
                     {operation.reconciliation_healthy ? "healthy" : operation.reconciliation_primary_event ?? "drift"}
                   </span>
