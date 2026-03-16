@@ -19,15 +19,16 @@ class ExecutionParityService:
         baseline = abs(lhs)
         return round(abs(lhs - rhs) / baseline * 100, 4)
 
-    def build_report(self, *, symbol: str, limit: int = 50) -> ExecutionParityReport:
+    def build_report(self, *, symbol: str, timeframe: str | None = None, limit: int = 50) -> ExecutionParityReport:
         query = (
             self.db.query(TradePlan)
             .filter(TradePlan.symbol == symbol)
             .filter(TradePlan.status.in_(["paper_executed", "testnet_executed"]))
-            .order_by(TradePlan.created_at.desc())
-            .limit(limit)
         )
-        plans = list(reversed(query.all()))
+        if timeframe is not None:
+            query = query.filter(TradePlan.timeframe == timeframe)
+
+        plans = list(reversed(query.order_by(TradePlan.created_at.desc()).limit(limit).all()))
 
         paper_queue = deque(plan for plan in plans if plan.status == "paper_executed")
         testnet_queue = [plan for plan in plans if plan.status == "testnet_executed"]
@@ -71,6 +72,7 @@ class ExecutionParityService:
         if not pairs:
             return ExecutionParityReport(
                 symbol=symbol,
+                timeframe=timeframe,
                 compared_pairs=0,
                 unmatched_paper=unmatched_paper,
                 unmatched_testnet=unmatched_testnet,
@@ -83,6 +85,7 @@ class ExecutionParityService:
 
         return ExecutionParityReport(
             symbol=symbol,
+            timeframe=timeframe,
             compared_pairs=len(pairs),
             unmatched_paper=unmatched_paper,
             unmatched_testnet=unmatched_testnet,

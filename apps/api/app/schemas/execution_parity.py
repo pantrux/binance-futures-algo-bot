@@ -12,6 +12,7 @@ class ParityPairDiff(BaseModel):
 
 class ExecutionParityReport(BaseModel):
     symbol: str
+    timeframe: str | None = None
     compared_pairs: int
     unmatched_paper: int
     unmatched_testnet: int

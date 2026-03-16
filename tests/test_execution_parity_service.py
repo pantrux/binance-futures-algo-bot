@@ -219,3 +219,40 @@ def test_execution_parity_does_not_pair_same_symbol_side_when_timeframe_differs(
     assert report.unmatched_paper == 1
     assert report.unmatched_testnet == 1
     assert report.avg_entry_price_diff_pct is None
+
+
+def test_execution_parity_filters_report_by_timeframe_when_requested():
+    db = build_db()
+    seed_plan(db, symbol="BTCUSDT", side="long", status="paper_executed", entry_price=50000, risk_pct=1.0, notional=200)
+    paper_1h = seed_plan(db, symbol="BTCUSDT", side="long", status="paper_executed", entry_price=50100, risk_pct=1.0, notional=220)
+    paper_1h.timeframe = "1h"
+    db.add(paper_1h)
+    testnet_15m = seed_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=50010, risk_pct=1.0, notional=200)
+    testnet_1h = seed_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=50110, risk_pct=1.0, notional=220)
+    testnet_1h.timeframe = "1h"
+    db.add_all([testnet_15m, testnet_1h])
+    db.commit()
+
+    report = ExecutionParityService(db).build_report(symbol="BTCUSDT", timeframe="1h", limit=50)
+
+    assert report.symbol == "BTCUSDT"
+    assert report.timeframe == "1h"
+    assert report.compared_pairs == 1
+    assert report.unmatched_paper == 0
+    assert report.unmatched_testnet == 0
+    assert report.pairs[0].paper_trade_plan_id == paper_1h.id
+    assert report.pairs[0].testnet_trade_plan_id == testnet_1h.id
+
+
+def test_execution_parity_returns_empty_filtered_report_when_timeframe_has_no_matches():
+    db = build_db()
+    seed_plan(db, symbol="ETHUSDT", side="long", status="paper_executed", entry_price=3000, risk_pct=1.0, notional=150)
+
+    report = ExecutionParityService(db).build_report(symbol="ETHUSDT", timeframe="4h", limit=50)
+
+    assert report.symbol == "ETHUSDT"
+    assert report.timeframe == "4h"
+    assert report.compared_pairs == 0
+    assert report.unmatched_paper == 0
+    assert report.unmatched_testnet == 0
+    assert report.pairs == []
