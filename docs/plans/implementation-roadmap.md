@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-96` ya quedó mergeado en `main`, dejando la baseline UX de la trading workstation estabilizada visualmente y el roadmap nuevamente alineado.
-- **PR activo:** `PR-97` — hardening residual de workstation heredado de `PR-91..PR-93`.
-- **Siguiente carril sugerido:** cerrar esta deuda técnica transversal (URLs hardcodeadas, fallback/resiliencia, precisión de `entry real`, estado del polling live y vacíos del drill-down) antes de volver a expandir capacidades nuevas de la workstation.
+- **Estado global actual:** `PR-97` ya quedó mergeado en `main`, dejando la baseline UX de la trading workstation sin deuda heredada gruesa del primer bloque de rediseño.
+- **PR activo:** `PR-98` — freshness / reliability UX del live polling en la workstation.
+- **Siguiente carril sugerido:** convertir el live en una señal operacional confiable: exponer antigüedad del último tick, degradar visualmente cuando el feed envejece y dejar el polling listo para evoluciones futuras (polling selectivo o SSE) sin ambigüedad para el operador.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

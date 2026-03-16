@@ -119,7 +119,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-94 | Polish visual y Order Blotter interactivo (Workstation) | ✅ Mergeado | filtros por estado, sticky headers, motion accesible y tabla de órdenes extraída a componente dedicado |
 | PR-95 | Número lógico reservado/no usado | ⚪ Omitido | se reserva para mantener trazabilidad tras el cruce entre numeración lógica del plan y GitHub PR #95 (titulado `PR-94`) |
 | PR-96 | Acotar scroll/sticky del order blotter + sync roadmap | ✅ Mergeado | encapsular estilos scrollables del blotter, preservar empty states genéricos y re-alinear el roadmap post-merge |
-| PR-97 | Hardening residual de workstation post PR-91..PR-93 | 🟡 En progreso | quitar URLs LAN hardcodeadas, restaurar fallback/resiliencia del shell live y corregir señales ambiguas del drill-down |
+| PR-97 | Hardening residual de workstation post PR-91..PR-93 | ✅ Mergeado | quitar URLs LAN hardcodeadas, restaurar fallback/resiliencia del shell live y corregir señales ambiguas del drill-down |
+| PR-98 | Freshness / reliability UX del live polling | 🟡 En progreso | degradar visualmente el live cuando envejece, exponer antigüedad del último tick y reducir ambigüedad operativa del feed |
 
 
 ## Secuencia de PRs actualizada

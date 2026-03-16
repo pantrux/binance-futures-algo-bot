@@ -7,9 +7,28 @@ import { OperationDrillDown } from "./OperationDrillDown";
 
 import { OrderBlotter } from "./OrderBlotter";
 
+const LIVE_POLL_INTERVAL_MS = 4000;
+const LIVE_STALE_WARN_MS = LIVE_POLL_INTERVAL_MS * 3;
+const LIVE_STALE_DANGER_MS = LIVE_POLL_INTERVAL_MS * 8;
+
 function buildLivePricingUrl() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
   return apiBaseUrl ? `${apiBaseUrl}/dashboard/live-pricing` : null;
+}
+
+function formatElapsedMs(value: number) {
+  if (value < 1_000) {
+    return "ahora";
+  }
+
+  const totalSeconds = Math.floor(value / 1_000);
+  if (totalSeconds < 60) {
+    return `${totalSeconds}s`;
+  }
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
 }
 
 export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: any) {
@@ -18,6 +37,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [isPolling, setIsPolling] = useState(true);
   const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
+  const [liveClockMs, setLiveClockMs] = useState(() => Date.now());
   const livePricingUrl = buildLivePricingUrl();
 
   useEffect(() => {
@@ -52,10 +72,22 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     void pollLivePricing();
     const interval = setInterval(() => {
       void pollLivePricing();
-    }, 4000);
+    }, LIVE_POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [isPolling, livePricingUrl]);
+
+  useEffect(() => {
+    if (!lastLiveUpdateAt || !isPolling) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLiveClockMs(Date.now());
+    }, 1_000);
+
+    return () => clearInterval(interval);
+  }, [lastLiveUpdateAt, isPolling]);
 
   // Compute live open PnL
   let liveOpenPnl = 0;
@@ -84,29 +116,54 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const shadowRun = data.shadow_run;
   const hasLivePrices = Object.keys(livePrices).length > 0;
   const isLivePaused = !isPolling;
+  const liveAgeMs = lastLiveUpdateAt ? Math.max(0, liveClockMs - Date.parse(lastLiveUpdateAt)) : null;
+  const isLiveStaleDanger = liveAgeMs != null && liveAgeMs >= LIVE_STALE_DANGER_MS;
+  const isLiveStaleWarn = liveAgeMs != null && liveAgeMs >= LIVE_STALE_WARN_MS && !isLiveStaleDanger;
+  const liveFreshnessValue = liveAgeMs == null ? "—" : formatElapsedMs(liveAgeMs);
+  const liveFreshnessHint = isLivePaused
+    ? "polling pausado"
+    : livePollingError
+      ? hasLivePrices ? "error activo con último tick cacheado" : "polling con error"
+      : liveAgeMs == null
+        ? "sin tick live todavía"
+        : isLiveStaleDanger
+          ? "feed demasiado viejo"
+          : isLiveStaleWarn
+            ? "feed envejeciendo"
+            : "dentro de ventana fresca";
   const liveBadgeClassName = isLivePaused
     ? hasLivePrices ? "badge warn" : "badge neutral"
     : livePollingError
-      ? hasLivePrices ? "badge warn" : "badge danger"
-      : hasLivePrices ? "badge ok pulse" : livePricingUrl ? "badge warn" : "badge neutral";
+      ? isLiveStaleDanger ? "badge danger" : hasLivePrices ? "badge warn" : "badge danger"
+      : isLiveStaleDanger
+        ? "badge danger"
+        : isLiveStaleWarn
+          ? "badge warn"
+          : hasLivePrices ? "badge ok pulse" : livePricingUrl ? "badge warn" : "badge neutral";
   const liveBadgeLabel = isLivePaused
     ? "live pausado"
     : livePollingError
-      ? "live degradado"
-      : hasLivePrices ? "live pricing" : livePricingUrl ? "snapshot data" : "snapshot only";
+      ? isLiveStaleDanger ? "live crítico" : "live degradado"
+      : isLiveStaleDanger
+        ? "live vencido"
+        : isLiveStaleWarn
+          ? "live envejeciendo"
+          : hasLivePrices ? "live pricing" : livePricingUrl ? "snapshot data" : "snapshot only";
   const liveStatusCopy = isLivePaused
     ? lastLiveUpdateAt
-      ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)}`
+      ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`
       : "polling pausado"
     : livePollingError
       ? lastLiveUpdateAt
-        ? `${livePollingError} · último tick ${formatDate(lastLiveUpdateAt)}`
+        ? `${livePollingError} · último tick ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`
         : livePollingError
-      : lastLiveUpdateAt
-        ? `último live ${formatDate(lastLiveUpdateAt)}`
-        : livePricingUrl
-          ? "esperando primer tick live"
-          : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
+      : isLiveStaleDanger || isLiveStaleWarn
+        ? `último tick ${formatDate(lastLiveUpdateAt!)} · feed con ${formatElapsedMs(liveAgeMs ?? 0)} de antigüedad`
+        : lastLiveUpdateAt
+          ? `último live ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`
+          : livePricingUrl
+            ? "esperando primer tick live"
+            : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
 
   const summaryCards = [
     { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
@@ -114,6 +171,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     { title: "Fill rate testnet", value: `${formatNumber(shadowRun.testnet_fill_rate_pct, 1)}%`, hint: "órdenes ejecutadas / enviadas", tone: (shadowRun.testnet_fill_rate_pct ?? 0) >= 80 ? "ok" : "warn" },
     { title: "Pairs parity", value: String(shadowRun.compared_pairs), hint: "paper ↔ testnet comparados", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
     { title: "Risk 7d", value: `${shadowRun.critical_risk_events_7d}/${shadowRun.warning_risk_events_7d}`, hint: "critical / warning", tone: shadowRun.critical_risk_events_7d > 0 ? "danger" : shadowRun.warning_risk_events_7d > 0 ? "warn" : "ok" },
+    { title: "Live freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
     { title: "Trade plans", value: String(summary.trade_plans_total), hint: "universo persistido", tone: "neutral" },
   ];
 
@@ -134,6 +192,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
             {isPolling ? "pausar live" : "reanudar live"}
           </button>
+          <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
         </div>
       </header>
 
