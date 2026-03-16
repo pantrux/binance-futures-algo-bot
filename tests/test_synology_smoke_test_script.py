@@ -75,12 +75,19 @@ class FixtureHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
 
-def run_fixture_server(payload: dict[str, Any], html: str):
+def run_fixture_server(payload: dict[str, Any], html: str) -> tuple[FixtureServer, threading.Thread, str]:
     server = FixtureServer(("127.0.0.1", 0), payload=payload, html=html)
     port = int(server.server_address[1])
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     return server, thread, f"http://127.0.0.1:{port}"
+
+
+def stop_fixture_server(server: FixtureServer, thread: threading.Thread) -> None:
+    server.shutdown()
+    server.server_close()
+    thread.join(timeout=2)
+    assert not thread.is_alive(), "fixture thread sigue vivo tras shutdown()"
 
 
 def build_payload(*, latest_risk_context: dict[str, Any] | None, recent_risk_events: list[dict[str, Any]]) -> dict[str, Any]:
@@ -161,9 +168,7 @@ def test_synology_smoke_script_passes_with_clean_payload_without_markers() -> No
     try:
         result = run_smoke(base_url)
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=2)
+        stop_fixture_server(server, thread)
 
     assert result.returncode == 0, result.stderr + result.stdout
     assert "HAS_NON_EMPTY_CONTEXT=0" in result.stdout
@@ -179,9 +184,7 @@ def test_synology_smoke_script_fails_when_context_is_present_but_html_markers_ar
     try:
         result = run_smoke(base_url)
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=2)
+        stop_fixture_server(server, thread)
 
     assert result.returncode != 0
     assert "no contiene 'context-list'" in result.stderr

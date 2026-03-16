@@ -91,7 +91,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-66 | Smoke Synology para contexto de riesgo | ✅ Mergeado | validar por smoke automatizado los nuevos marcadores/contextos del command center en API y UI, con gating condicional para payloads limpios |
 | PR-67 | Cobertura testeable del smoke para contexto | ✅ Mergeado | extraer la validación del smoke a helper testeable y cubrir payload limpio vs payload con contexto |
 | PR-68 | Manejo limpio de errores CLI del helper de smoke | ✅ Mergeado | capturar errores del entrypoint con mensajes claros en stderr y tests reproducibles de fallo |
-| PR-69 | Fixtures locales para el shell smoke | 🟡 En progreso | cubrir `synology_smoke_test.sh` end-to-end con servidor fixture local y gating HTML reproducible |
+| PR-69 | Fixtures locales para el shell smoke | ✅ Mergeado | cubrir `synology_smoke_test.sh` end-to-end con servidor fixture local y gating HTML reproducible |
+| PR-70 | Cierre formal de Fase 14 + hardening final del fixture shell | 🟡 En progreso | tipado explícito, teardown determinista y cierre formal de la fase de observabilidad |
 
 
 ## Secuencia de PRs actualizada
@@ -1029,7 +1030,7 @@ Hacer que el helper del smoke falle con mensajes claros en `stderr` y códigos d
 - mergeado en `c5396d7`
 
 ### PR-69 — Fixtures locales para el shell smoke
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Cubrir el contrato completo de `scripts/synology_smoke_test.sh` con un fixture local reproducible, de modo que el gating HTML condicional quede validado en CI sin depender del NAS real.
@@ -1039,6 +1040,19 @@ Cubrir el contrato completo de `scripts/synology_smoke_test.sh` con un fixture l
 - caso con contexto real + `context-list` / `context-chip` presentes
 - caso limpio sin markers HTML, esperado como PASS
 - caso de fallo cuando el payload exige markers pero la home no los trae
+- mergeado en `11eb418`
+
+### PR-70 — Cierre formal de Fase 14 + hardening final del fixture shell
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Cerrar formalmente la Fase 14 en la documentación del repo y eliminar la fricción menor restante del fixture shell para dejar el harness operativo con teardown determinista y tipado explícito.
+
+**Entregables**
+- `run_fixture_server` con anotación explícita de retorno
+- helper compartido para apagar servidor fixture + verificar cierre real del thread
+- documento de cierre formal `docs/plans/phase14-observability-closure.md`
+- apertura documentada de la Fase 15 en roadmap/master-plan/PR roadmap
 
 
 ## Criterio de avance

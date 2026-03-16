@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-68` ya quedó mergeado en `main`, sincronizado en Outline y validado contra Synology; el helper del smoke ya falla con mensajes CLI limpios y sin tracebacks ruidosos para archivo ausente, JSON inválido o payload inválido.
-- **PR activo:** `PR-69` — fixtures locales para cubrir el contrato completo de `synology_smoke_test.sh`.
-- **Siguiente carril sugerido:** cerrar `PR-69` para que el shell smoke también quede cubierto en CI con servidor fixture local, incluyendo el gating HTML `context-list` / `context-chip`.
+- **Estado global actual:** `PR-69` ya quedó mergeado en `main`, sincronizado en Outline y validado con fixture shell local; el smoke del command center ya quedó cubierto end-to-end sin depender del NAS real.
+- **PR activo:** `PR-70` — cierre formal de Fase 14 + hardening final del fixture shell.
+- **Siguiente carril sugerido:** cerrar `PR-70` para dejar Fase 14 formalmente completada y arrancar Fase 15 con teardown determinista y tipado explícito del harness operacional.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -38,7 +38,8 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
-| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 94% | PR-63..PR-69 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores, cobertura testeable de sus ramas condicionales, mejor DX de fallos del helper CLI y cobertura local del contrato shell end-to-end |
+| Fase 14 — Observabilidad operativa post-corrección | ✅ Completada | 100% | PR-63..PR-69 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores, cobertura testeable de sus ramas condicionales, mejor DX de fallos del helper CLI y cobertura local del contrato shell end-to-end |
+| Fase 15 — Hardening del harness operacional | 🟡 En progreso | 20% | PR-70 | teardown determinista, tipado explícito y cierre documental del carril smoke/release para minimizar flakes y ambigüedad operativa en CI |
 
 
 ---
@@ -251,11 +252,18 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - mantener el contrato del shell smoke (`exit != 0` cuando el helper falla)
 - mergeado en `c5396d7` y validado en Synology con `Greptile 5/5`
 
-### PR-69 — Fixtures locales para el shell smoke 🟡
+### PR-69 — Fixtures locales para el shell smoke ✅
 - cubrir `scripts/synology_smoke_test.sh` end-to-end con un servidor fixture local
 - probar payload con contexto + markers HTML presentes
 - probar payload limpio sin markers HTML
 - probar fallo cuando hay contexto pero faltan `context-list` / `context-chip`
+- mergeado en `11eb418` y validado con `Greptile 4/5`, checks verdes y fixture shell robustecido
+
+### PR-70 — Cierre formal de Fase 14 + hardening final del fixture shell 🟡
+- tipar explícitamente `run_fixture_server`
+- centralizar el apagado del servidor fixture en un helper compartido
+- verificar que el thread realmente termina tras `shutdown()` + `join()`
+- cerrar formalmente Fase 14 y abrir Fase 15 en la documentación viva del repo
 
 
 ---
