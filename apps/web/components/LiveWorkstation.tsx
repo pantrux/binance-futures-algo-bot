@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 import { OperationDrillDown } from "./OperationDrillDown";
 
+import { OrderBlotter } from "./OrderBlotter";
+
 export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: any) {
   const [data, setData] = useState(initialData);
   const [livePrices, setLivePrices] = useState<Record<string, any>>({});
@@ -290,36 +292,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             </div>
             <span className="badge subtle">execution feed</span>
           </div>
-          <div className="table-shell">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Plan</th>
-                  <th>Símbolo</th>
-                  <th>Venue</th>
-                  <th>Qty / Exec</th>
-                  <th>Estado</th>
-                  <th>Hora</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recent_orders.length === 0 ? (
-                  <tr><td colSpan={7} className="empty-state">Sin órdenes recientes.</td></tr>
-                ) : data.recent_orders.map((order: any) => (
-                  <tr key={order.id}>
-                    <td>#{order.id}</td>
-                    <td>#{order.trade_plan_id}</td>
-                    <td>{order.symbol}</td>
-                    <td>{order.venue}</td>
-                    <td>{formatNumber(order.quantity, 3)} / {formatNumber(order.executed_quantity, 3)}</td>
-                    <td><span className={`status-pill ${statusTone(order.status)}`}>{order.status}</span></td>
-                    <td>{formatDate(order.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <OrderBlotter orders={data.recent_orders} />
         </article>
       </section>
 
