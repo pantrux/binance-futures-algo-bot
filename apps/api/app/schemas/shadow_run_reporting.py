@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class ShadowRunSymbolSummary(BaseModel):
     symbol: str
+    timeframe: str
     paper_executed_trade_plans: int
     testnet_executed_trade_plans: int
     compared_pairs: int

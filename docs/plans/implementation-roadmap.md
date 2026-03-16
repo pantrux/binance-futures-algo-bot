@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-86` ya quedó mergeado en `main`, agregando filtro por `timeframe` al reporte puntual de execution parity.
-- **PR activo:** `PR-87` — filtro por `timeframe` en shadow run summary.
-- **Siguiente carril sugerido:** seguir con mejoras pequeñas de producto/trading que hagan más utilizable la observabilidad ya endurecida, manteniendo consistencia entre reportes puntuales y agregados.
+- **Estado global actual:** `PR-87` ya quedó mergeado en `main`, agregando filtro por `timeframe` al resumen agregado de shadow run.
+- **PR activo:** `PR-88` — breakdown de `symbols` por `timeframe` en shadow run summary.
+- **Siguiente carril sugerido:** seguir con mejoras pequeñas de producto/trading que hagan más utilizable la observabilidad ya endurecida, empezando por evitar agregados ambiguos cuando un mismo símbolo opera varias temporalidades.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

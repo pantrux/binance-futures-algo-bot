@@ -112,6 +112,7 @@ def test_shadow_run_summary_aggregates_pairs_fill_rate_slippage_and_risk() -> No
     assert summary.total_risk_events_30d == 2
     assert len(summary.symbols) == 2
     assert summary.symbols[0].symbol == "BTCUSDT"
+    assert summary.symbols[0].timeframe == "15m"
 
 
 
@@ -239,6 +240,7 @@ def test_shadow_run_summary_filters_by_timeframe_when_requested() -> None:
     assert summary.compared_pairs == 1
     assert len(summary.symbols) == 1
     assert summary.symbols[0].symbol == "BTCUSDT"
+    assert summary.symbols[0].timeframe == "1h"
 
 
 def test_shadow_run_summary_returns_empty_filtered_summary_when_timeframe_has_no_matches() -> None:
@@ -308,3 +310,25 @@ def test_shadow_run_summary_filters_order_aggregates_by_timeframe_when_requested
     assert summary.testnet_orders_filled == 1
     assert summary.testnet_fill_rate_pct == 100.0
     assert summary.avg_testnet_slippage_bps == 3.9139
+
+
+def test_shadow_run_summary_breaks_down_same_symbol_by_timeframe() -> None:
+    db = build_db()
+    now = datetime.now(timezone.utc)
+    seed_trade_plan(db, symbol="BTCUSDT", side="long", status="paper_executed", entry_price=50000, created_at=now - timedelta(days=10))
+    seed_trade_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=50100, created_at=now - timedelta(days=9, hours=12))
+    paper_1h = seed_trade_plan(db, symbol="BTCUSDT", side="long", status="paper_executed", entry_price=51000, created_at=now - timedelta(days=8))
+    testnet_1h = seed_trade_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=51100, created_at=now - timedelta(days=7, hours=12))
+    paper_1h.timeframe = "1h"
+    testnet_1h.timeframe = "1h"
+    db.add_all([paper_1h, testnet_1h])
+    db.commit()
+
+    summary = ShadowRunReportingService(db).build_summary(window_days=30)
+
+    assert summary.paper_executed_trade_plans == 2
+    assert summary.testnet_executed_trade_plans == 2
+    assert summary.compared_pairs == 2
+    assert len(summary.symbols) == 2
+    assert [(item.symbol, item.timeframe) for item in summary.symbols] == [("BTCUSDT", "15m"), ("BTCUSDT", "1h")]
+    assert all(item.compared_pairs == 1 for item in summary.symbols)
