@@ -158,44 +158,7 @@ check_command_center_json() {
 
   local validation_output
 
-  validation_output="$(python3 - <<'PY' "${tmpfile}"
-import json
-import sys
-from pathlib import Path
-
-payload = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
-ops = payload.get('operation_snapshots')
-assert isinstance(ops, list), 'operation_snapshots no es lista'
-has_non_empty_context = False
-if not ops:
-    print('WARN_EMPTY_OPERATION_SNAPSHOTS')
-else:
-    op = ops[0]
-    required = [
-        'order_history',
-        'position_history',
-        'risk_event_history',
-        'timeline_history',
-        'reconciliation_recommended_actions',
-        'latest_risk_context',
-    ]
-    missing = [key for key in required if key not in op]
-    assert not missing, f'faltan campos en operation_snapshot: {missing}'
-    assert isinstance(op['timeline_history'], list), 'timeline_history no es lista'
-    assert len(op['timeline_history']) <= 20, 'timeline_history excede límite esperado de 20'
-    assert op['latest_risk_context'] is None or isinstance(op['latest_risk_context'], dict), 'latest_risk_context debe ser dict o None'
-    has_non_empty_context = bool(op['latest_risk_context'])
-recent = payload.get('recent_risk_events')
-assert isinstance(recent, list), 'recent_risk_events no es lista'
-if recent:
-    for item in recent:
-        assert 'context' in item, 'recent_risk_events[*] no expone context'
-        assert item.get('context') is None or isinstance(item.get('context'), dict), 'recent_risk_events[*].context debe ser dict o None'
-        has_non_empty_context = has_non_empty_context or bool(item.get('context'))
-print('OK')
-print(f"HAS_NON_EMPTY_CONTEXT={'1' if has_non_empty_context else '0'}")
-PY
-)"
+  validation_output="$(python3 ./scripts/synology_smoke_context_check.py "${tmpfile}")"
 
   echo "${validation_output}"
   if grep -q 'HAS_NON_EMPTY_CONTEXT=1' <<<"${validation_output}"; then

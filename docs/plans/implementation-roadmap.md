@@ -38,7 +38,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
-| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 65% | PR-63..PR-66 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo y smoke automatizado de estos marcadores |
+| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 80% | PR-63..PR-67 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores y cobertura testeable de sus ramas condicionales |
 
 
 ---
@@ -230,11 +230,18 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - mantener consistencia visual entre resumen y drill-down
 - mergeado en `9b1bb33` y validado en Synology con contexto visible en la celda resumen del radar principal
 
-### PR-66 — Smoke Synology para contexto de riesgo 🟡
+### PR-66 — Smoke Synology para contexto de riesgo ✅
 - endurecer `scripts/synology_smoke_test.sh` para exigir `latest_risk_context` en API
 - validar `context` en `recent_risk_events`
 - exigir marcadores `context-list` / `context-chip` en la home del dashboard
 - alinear runbook con el nuevo criterio mínimo de aprobación
+- mergeado en `95e1c39` y validado en Synology con gating condicional para payload con/sin contexto
+
+### PR-67 — Cobertura testeable del smoke para contexto 🟡
+- extraer la validación JSON del smoke a `scripts/synology_smoke_context_check.py`
+- cubrir con tests reproducibles el caso de payload limpio/vacío
+- cubrir con tests reproducibles el caso de payload con contexto útil
+- mantener `scripts/synology_smoke_test.sh` como orquestador del smoke real sobre NAS
 
 
 ---
