@@ -15,14 +15,32 @@ SMOKE_SCRIPT = REPO_ROOT / "scripts" / "synology_smoke_test.sh"
 
 
 class FixtureServer(ThreadingHTTPServer):
-    def __init__(self, server_address: tuple[str, int], payload: dict[str, Any], html: str):
+    def __init__(
+        self,
+        server_address: tuple[str, int],
+        payload: dict[str, Any],
+        html: str,
+        overrides: dict[str, tuple[int, Any, str]] | None = None,
+    ):
         self.payload = payload
         self.html = html
+        self.overrides = overrides or {}
         super().__init__(server_address, FixtureHandler)
 
 
 class FixtureHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
+        override = self.server.overrides.get(self.path)
+        if override is not None:
+            status, body, content_type = override
+            if content_type == "application/json":
+                self._send_json(status, body)
+            elif content_type == "text/html":
+                self._send_html(status, str(body))
+            else:
+                self._send_text(status, str(body))
+            return
+
         if self.path == "/health":
             self._send_json(200, {"status": "ok"})
             return
@@ -75,8 +93,12 @@ class FixtureHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
 
-def run_fixture_server(payload: dict[str, Any], html: str) -> tuple[FixtureServer, threading.Thread, str]:
-    server = FixtureServer(("127.0.0.1", 0), payload=payload, html=html)
+def run_fixture_server(
+    payload: dict[str, Any],
+    html: str,
+    overrides: dict[str, tuple[int, Any, str]] | None = None,
+) -> tuple[FixtureServer, threading.Thread, str]:
+    server = FixtureServer(("127.0.0.1", 0), payload=payload, html=html, overrides=overrides)
     port = int(server.server_address[1])
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -203,3 +225,41 @@ def test_synology_smoke_script_fails_when_command_center_payload_is_invalid() ->
 
     assert result.returncode != 0
     assert "recent_risk_events[*] no expone context" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_health_endpoint_returns_unexpected_status() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    overrides = {
+        "/health": (503, {"status": "down"}, "application/json"),
+    }
+
+    server, thread, base_url = run_fixture_server(payload, build_html(include_context_markers=True), overrides=overrides)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "API /health no cumple" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_metrics_returns_unexpected_status_without_auth() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    overrides = {
+        "/metrics": (500, "boom", "text/plain"),
+    }
+
+    server, thread, base_url = run_fixture_server(payload, build_html(include_context_markers=True), overrides=overrides)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "API /metrics respondió estado inesperado (500) sin METRICS_API_KEY" in result.stderr

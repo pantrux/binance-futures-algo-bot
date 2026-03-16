@@ -21,10 +21,16 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - documentar cierre formal en `phase14-observability-closure.md`
 - mergeado en `6f5a580`
 
-### PR-71 — Cobertura shell para payload inválido del command center 🟡
+### PR-71 — Cobertura shell para payload inválido del command center ✅
 - agregar caso end-to-end donde `/dashboard/command-center` devuelve payload inválido
 - validar que `synology_smoke_test.sh` falle propagando el error del helper de contexto
 - actualizar roadmap/master-plan/PR roadmap con el nuevo frente activo
+- mergeado en `5204364`
+
+### PR-72 — Cobertura shell para fallos HTTP base 🟡
+- agregar casos end-to-end para `/health` no-200 y `/metrics` inesperado sin auth
+- validar que el shell smoke falle con mensajes claros en `stderr`
+- extender el fixture HTTP local con overrides por ruta para failure modes reproducibles
 
 ## Criterio de cierre
 - no deben quedar hilos/threads fixture vivos silenciosamente tras los tests
