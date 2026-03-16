@@ -703,3 +703,68 @@ th {
   color: var(--accent-2);
   border-color: rgba(75, 163, 255, 0.24);
 }
+
+/* Polish PR-94 Additions */
+.table-shell table {
+  /* Keep separate so sticky headers keep rendering reliably inside the scroll shell. */
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Non-motion hover affordances (background, border, shadow) remain enabled even with reduced motion; only animated transitions/transforms are gated below. */
+.table-shell tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.table-shell th {
+  position: sticky;
+  top: 0;
+  background-color: var(--panel-strong);
+  z-index: 10;
+  border-bottom: 2px solid var(--border-strong);
+}
+
+.metric-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.desk-hero-block:hover {
+  border-color: var(--accent-2);
+}
+
+.operation-drawer summary:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.table-shell td.empty-state {
+  font-style: italic;
+  opacity: 0.8;
+  padding: 2rem;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .table-shell tbody tr {
+    transition: background-color 0.2s ease;
+  }
+
+  .metric-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .desk-hero-block {
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  .desk-hero-block:hover {
+    transform: translateY(-2px);
+  }
+
+  .operation-drawer summary {
+    transition: background-color 0.2s ease;
+  }
+}
