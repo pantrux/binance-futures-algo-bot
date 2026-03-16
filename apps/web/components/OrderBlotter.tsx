@@ -13,16 +13,17 @@ const ORDER_FILTERS = [
 
 type OrderFilter = (typeof ORDER_FILTERS)[number]["value"];
 
-export function OrderBlotter({ orders = [] }: { orders?: any[] }) {
+export function OrderBlotter({ orders }: { orders?: any[] | null }) {
+  const safeOrders = useMemo(() => orders ?? [], [orders]);
   const [filter, setFilter] = useState<OrderFilter>("ALL");
 
   const filteredOrders = useMemo(() => {
     if (filter === "ALL") {
-      return orders;
+      return safeOrders;
     }
 
-    return orders.filter((order) => String(order.status ?? "").toUpperCase() === filter);
-  }, [filter, orders]);
+    return safeOrders.filter((order) => String(order.status ?? "").toUpperCase() === filter);
+  }, [filter, safeOrders]);
 
   const activeFilterLabel = ORDER_FILTERS.find((option) => option.value === filter)?.label ?? filter;
 
@@ -33,6 +34,7 @@ export function OrderBlotter({ orders = [] }: { orders?: any[] }) {
           <button
             key={option.value}
             type="button"
+            aria-pressed={filter === option.value}
             onClick={() => setFilter(option.value)}
             className={`action-link ${filter === option.value ? "primary" : ""}`}
             style={{ minHeight: "28px", padding: "0 10px", fontSize: "0.8rem" }}
