@@ -118,6 +118,9 @@ th { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-
 .history-item { padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: rgba(7, 17, 31, 0.42); }
 .history-item p { margin: 0 0 6px; }
 .history-item small { color: var(--muted); line-height: 1.5; }
+.context-list { display:flex; flex-wrap:wrap; gap: 8px; margin: 8px 0 6px; }
+.context-chip { display:inline-flex; align-items:center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(158, 180, 204, 0.24); background: rgba(158, 180, 204, 0.08); color: var(--muted); font-size: 0.76rem; }
+.context-chip strong { color: var(--text); font-weight: 700; }
 .history-actions { margin-top: 8px; padding: 12px; border-radius: 12px; border: 1px dashed var(--border); background: rgba(7, 17, 31, 0.35); }
 .history-actions strong { display:block; margin-bottom: 6px; }
 .history-actions ul { margin: 0; padding-left: 18px; color: var(--muted); }

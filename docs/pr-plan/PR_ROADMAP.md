@@ -85,7 +85,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-60 | Auto-ingestar mercado antes de caer a demo | ✅ Mergeado | si faltan candles/snapshot, el worker intenta `POST /market/ingest/{symbol}` y reintenta el setup market-driven |
 | PR-61 | Normalizar cantidad testnet para Binance | ✅ Mergeado | serialización limpia de quantity para evitar `400 Bad Request` por artefactos float |
 | PR-62 | Hardening fino del serializer de quantity | ✅ Mergeado | rechazar `NaN` / infinitos y completar la cobertura del serializer de quantity |
-| PR-63 | Metadata estructurada para `risk_events` | 🟡 En progreso | agregar contexto JSON auditable a errores/eventos críticos para acelerar debugging operativo |
+| PR-63 | Metadata estructurada para `risk_events` | ✅ Mergeado | agregar contexto JSON auditable a errores/eventos críticos para acelerar debugging operativo |
+| PR-64 | Hacer visible `risk_events.context_json` en el command center | 🟡 En progreso | renderizar la metadata estructurada de eventos en la UI para debugging y postmortems más rápidos |
 
 
 ## Secuencia de PRs actualizada
@@ -944,7 +945,7 @@ Cerrar deuda técnica menor del serializer de `quantity`: rechazar explícitamen
 - mergeado en `526f240`
 
 ### PR-63 — Metadata estructurada para `risk_events`
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Agregar contexto estructurado a `risk_events` (por ejemplo símbolo, source, códigos de error y payload operativo mínimo) para acelerar debugging y postmortems sin depender de parsear `message` libre.
@@ -955,6 +956,19 @@ Agregar contexto estructurado a `risk_events` (por ejemplo símbolo, source, có
 - helpers para persistir contexto en eventos críticos de ejecución/reconcile
 - command center expone metadata útil cuando exista
 - migración Alembic + cobertura de tests del flujo persistencia/serialización
+- mergeado en `00ad36b`
+
+### PR-64 — Hacer visible `risk_events.context_json` en el command center
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Consumir visualmente la metadata estructurada recién agregada a `risk_events` para que el debugging operativo no dependa solo del endpoint JSON o consultas SQL.
+
+**Entregables**
+- tipado front para `context` en `risk_event_history` y `recent_risk_events`
+- chips/labels visuales con claves relevantes del contexto (`symbol`, `side`, `binance_side`, `quantity`, `external_order_id`, etc.)
+- visualización usable en drill-down y feed global de eventos de riesgo
+- validación con `next build` y deploy posterior en Synology
 
 
 ## Criterio de avance

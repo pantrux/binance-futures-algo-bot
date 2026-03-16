@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-57` y `PR-62` ya quedaron mergeados en `main`; el carril correctivo del command center/testnet quedó consolidado con evidencia operacional alineada, fills reales persistidos, bloqueo de setups demo, auto-ingesta de mercado y hardening final del serializer de quantity.
-- **PR activo:** `PR-63` — metadata estructurada para `risk_events`.
-- **Siguiente carril sugerido:** cerrar `PR-63` para dejar los errores/eventos críticos consultables con contexto JSON en DB y command center, reduciendo el debugging por parsing de texto libre.
+- **Estado global actual:** `PR-63` ya quedó mergeado en `main` y desplegado en Synology; `risk_events.context_json` existe en Postgres, el worker generó nuevos eventos reales con metadata estructurada y el endpoint `GET /dashboard/command-center` ya entrega `context` poblado.
+- **PR activo:** `PR-64` — hacer visible `risk_events.context_json` en la UI del command center.
+- **Siguiente carril sugerido:** cerrar `PR-64` para convertir la metadata estructurada en debugging visual útil dentro del dashboard, no solo en DB/API.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -38,7 +38,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
-| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 15% | PR-63.. | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology |
+| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 35% | PR-63..PR-64 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center |
 
 
 ---
@@ -211,11 +211,17 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - cerrar observaciones menores post-merge del cliente Binance
 - mergeado en `526f240`
 
-### PR-63 — Metadata estructurada para `risk_events` 🟡
+### PR-63 — Metadata estructurada para `risk_events` ✅
 - agregar columna JSON estructurada para contexto operativo de eventos críticos
 - persistir `context` del motor de riesgo sin degradarlo a texto libre
 - persistir detalles útiles de ejecución/reconcile en errores reales
 - exponer esa metadata en command center para debugging más rápido
+- mergeado en `00ad36b` y validado en Synology con eventos reales para BTC/ETH/SOL
+
+### PR-64 — Hacer visible `risk_events.context_json` en la UI 🟡
+- tipar `context` en el frontend del command center
+- renderizar chips/labels con metadata útil en historial de riesgo y feed global
+- validar con `next build` y deploy posterior en Synology
 
 
 ---

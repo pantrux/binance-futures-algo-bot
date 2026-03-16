@@ -99,6 +99,7 @@ type CommandCenterResponse = {
       event_type: string;
       severity: string;
       message: string;
+      context: Record<string, string | number | boolean | null>;
       created_at: string;
     }>;
     timeline_history: Array<{
@@ -165,6 +166,7 @@ type CommandCenterResponse = {
     event_type: string;
     severity: string;
     message: string;
+    context: Record<string, string | number | boolean | null>;
     created_at: string;
   }>;
 };
@@ -266,6 +268,54 @@ function reconcileTone(healthy: boolean, severity: string | null) {
   if (severity === "critical") return "danger";
   if (severity === "warning") return "warn";
   return "neutral";
+}
+
+function contextLabel(key: string) {
+  switch (key) {
+    case "external_order_id":
+      return "order";
+    case "market_regime":
+      return "régimen";
+    case "regime_confidence":
+      return "conf.";
+    case "executed_quantity":
+      return "exec";
+    case "binance_side":
+      return "side API";
+    case "portfolio_risk_after":
+      return "risk pf";
+    case "cluster_risk_after":
+      return "risk cluster";
+    case "symbol_risk_after":
+      return "risk sym";
+    default:
+      return key.replaceAll("_", " ");
+  }
+}
+
+function formatContextValue(value: string | number | boolean | null) {
+  if (value == null) return "—";
+  if (typeof value === "number") {
+    if (Number.isInteger(value)) return formatNumber(value, 0);
+    return formatNumber(value, Math.abs(value) >= 100 ? 2 : 4);
+  }
+  if (typeof value === "boolean") return value ? "sí" : "no";
+  return value;
+}
+
+function renderRiskContext(context: Record<string, string | number | boolean | null> | null | undefined) {
+  const entries = Object.entries(context ?? {}).filter(([, value]) => value !== null && value !== "").slice(0, 6);
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="context-list">
+      {entries.map(([key, value]) => (
+        <span key={`${key}-${String(value)}`} className="context-chip">
+          <strong>{contextLabel(key)}:</strong> {formatContextValue(value)}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export default async function HomePage() {
@@ -555,6 +605,7 @@ export default async function HomePage() {
                             <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
                           </div>
                           <p>{event.message}</p>
+                          {renderRiskContext(event.context)}
                         </article>
                       ))}
                     </div>
@@ -742,6 +793,7 @@ export default async function HomePage() {
                   <span className="risk-meta">{event.event_type} · {formatDate(event.created_at)}</span>
                 </div>
                 <p>{event.message}</p>
+                {renderRiskContext(event.context)}
                 <small>trade_plan_id: {event.trade_plan_id ?? "—"}</small>
               </article>
             ))}
