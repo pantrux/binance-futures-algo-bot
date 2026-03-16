@@ -95,6 +95,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-70 | Cierre formal de Fase 14 + hardening final del fixture shell | ✅ Mergeado | tipado explícito, teardown determinista y cierre formal de la fase de observabilidad |
 | PR-71 | Cobertura shell para payload inválido del command center | ✅ Mergeado | validar end-to-end que el shell smoke falla cuando el payload API rompe el contrato del helper |
 | PR-72 | Cobertura shell para fallos HTTP base | ✅ Mergeado | validar con fixture local que `/health` y `/metrics` rompen el smoke con errores claros |
+| PR-73 | Cobertura shell para summary y trade-plans | ✅ Mergeado | validar con fixture local que `/dashboard/summary` y `/trade-plans` rompen el smoke con errores claros |
+| PR-74 | `/metrics` autenticado + cleanup de helpers del fixture | 🟡 En progreso | cubrir header auth de métricas y reducir duplicación menor del fixture shell |
 
 
 ## Secuencia de PRs actualizada

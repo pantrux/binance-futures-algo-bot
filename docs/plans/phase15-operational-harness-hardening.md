@@ -33,6 +33,17 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - extender el fixture HTTP local con overrides por ruta para failure modes reproducibles
 - mergeado en `43c1c1c`
 
+### PR-73 — Cobertura shell para summary y trade-plans ✅
+- agregar casos end-to-end para `/dashboard/summary` no-200 y `/trade-plans` no-200
+- validar que el shell smoke falle con mensajes claros en `stderr` para ambos casos
+- mergeado en `23400e5`
+
+### PR-74 — `/metrics` autenticado + cleanup de helpers del fixture 🟡
+- cubrir el camino de `/metrics` con `METRICS_API_KEY` presente
+- validar header `x-metrics-key` correcto/incorrecto desde el fixture local
+- limpiar duplicación menor en helpers del fixture si mejora legibilidad y mantenimiento
+- mantener el smoke shell totalmente reproducible sin dependencia del NAS real también en el camino autenticado de métricas
+
 ## Criterio de cierre
 - no deben quedar hilos/threads fixture vivos silenciosamente tras los tests
 - la documentación debe distinguir con claridad Fase 14 cerrada vs Fase 15 activa
