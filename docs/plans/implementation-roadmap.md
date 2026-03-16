@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-65` ya quedó mergeado en `main`, sincronizado en Outline y desplegado en Synology; el resumen principal del command center ya expone `latest_risk_context` y mantiene `external_order_id` sin separadores de miles.
-- **PR activo:** `PR-66` — endurecer el smoke Synology para validar contexto de riesgo en API/UI.
-- **Siguiente carril sugerido:** cerrar `PR-66` para que las mejoras de observabilidad de `PR-64`/`PR-65` queden cubiertas por smoke automatizado y no regresen silenciosamente.
+- **Estado global actual:** `PR-67` ya quedó mergeado en `main`, sincronizado en Outline y validado contra Synology; el smoke del command center ahora tiene helper testeable, cobertura reproducible para payload limpio vs payload con contexto y ejecución robusta fuera de la raíz del repo.
+- **PR activo:** `PR-68` — manejo limpio de errores CLI para el helper del smoke.
+- **Siguiente carril sugerido:** cerrar `PR-68` para que el helper del smoke falle con mensajes claros en `stderr` (archivo ausente, JSON inválido, payload inválido) y la depuración en NAS/CI sea más rápida.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
@@ -38,7 +38,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 | Fase 11 — Guardrails documentales + readiness automation | ✅ Completada | 100% | PR-40..PR-41 | lint documental + gate auditable de shadow run desplegado en Synology |
 | Fase 12 — Activación operativa de testnet | ✅ Completada | 100% | PR-42..PR-52 | primeras ejecuciones testnet reales + command center enriquecido + persistencia del fill real + hardening fino del refresh testnet |
 | Fase 13 — Profundización del command center | ✅ Completada | 100% | PR-53..PR-62 | historial operativo completo por `trade_plan_id`, smoke Synology específico, evidencia operacional del gate, corrección de precios reales, bloqueo de setups demo, auto-ingesta de mercado y normalización/hardening final de quantity hacia Binance |
-| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 80% | PR-63..PR-67 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores y cobertura testeable de sus ramas condicionales |
+| Fase 14 — Observabilidad operativa post-corrección | 🟡 En progreso | 88% | PR-63..PR-68 | metadata estructurada para errores/eventos y debugging más rápido sobre operación real en Synology, incluyendo consumo visual en el command center, resumen contextual del último riesgo, smoke automatizado de estos marcadores, cobertura testeable de sus ramas condicionales y mejor DX de fallos del helper CLI |
 
 
 ---
@@ -237,11 +237,18 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - alinear runbook con el nuevo criterio mínimo de aprobación
 - mergeado en `95e1c39` y validado en Synology con gating condicional para payload con/sin contexto
 
-### PR-67 — Cobertura testeable del smoke para contexto 🟡
+### PR-67 — Cobertura testeable del smoke para contexto ✅
 - extraer la validación JSON del smoke a `scripts/synology_smoke_context_check.py`
 - cubrir con tests reproducibles el caso de payload limpio/vacío
 - cubrir con tests reproducibles el caso de payload con contexto útil
 - mantener `scripts/synology_smoke_test.sh` como orquestador del smoke real sobre NAS
+- mergeado en `bca67a6` y validado en Synology incluso ejecutando el smoke desde fuera de la raíz del repo
+
+### PR-68 — Manejo limpio de errores CLI en el helper del smoke 🟡
+- agregar manejo explícito de `FileNotFoundError`, `JSONDecodeError` y `ValueError` en `main()`
+- emitir mensajes claros a `stderr` sin tracebacks ruidosos
+- cubrir los caminos de error del entrypoint con tests reproducibles
+- mantener el contrato del shell smoke (`exit != 0` cuando el helper falla)
 
 
 ---
