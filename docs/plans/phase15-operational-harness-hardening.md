@@ -69,10 +69,16 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - mantener el harness reproducible y el diagnóstico claro para fallos adicionales de `check_body_contains()`
 - mergeado en `26eaacc`
 
-### PR-79 — Marcadores restantes de órdenes y posiciones en el shell smoke 🟡
+### PR-79 — Marcadores restantes de órdenes y posiciones en el shell smoke ✅
 - cubrir el caso donde la home responde `200` pero falta `Historial de órdenes`
 - cubrir el caso donde la home responde `200` pero falta `Historial de posiciones`
 - cerrar la cobertura explícita pendiente de `check_body_contains()` sobre los marcadores base del command center
+- mergeado en `6968007`
+
+### PR-80 — Cierre formal de Fase 15 ✅
+- consolidar documentalmente que el harness operacional quedó endurecido y reproducible
+- dejar evidencia de cierre en `phase15-operational-harness-closure.md`
+- preparar el roadmap para volver a lógica de producto/trading
 
 ## Criterio de cierre
 - no deben quedar hilos/threads fixture vivos silenciosamente tras los tests
