@@ -78,7 +78,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa M — Hardening del harness operacional
 - PR-70 en adelante.
-- Estado actual: en progreso; el foco pasa a teardown determinista, tipado explícito y ergonomía final de los fixtures/automatizaciones del carril smoke/release para reducir flakes y ambigüedad en CI.
+- Estado actual: en progreso; `PR-70` dejó teardown determinista y tipado explícito, y `PR-71` extiende la fase a failure modes del shell smoke cuando el payload del command center rompe el contrato esperado.
 - Entrega esperada: harness operacional limpio, tipado y predecible para que el siguiente frente vuelva a lógica de producto/trading y no a fricción de tests.
 
 ## Reglas inmutables del plan

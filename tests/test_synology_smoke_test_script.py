@@ -187,3 +187,19 @@ def test_synology_smoke_script_fails_when_context_is_present_but_html_markers_ar
 
     assert result.returncode != 0
     assert "no contiene 'context-list'" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_command_center_payload_is_invalid() -> None:
+    invalid_payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[{"message": "missing-context"}],
+    )
+
+    server, thread, base_url = run_fixture_server(invalid_payload, build_html(include_context_markers=True))
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "recent_risk_events[*] no expone context" in result.stderr

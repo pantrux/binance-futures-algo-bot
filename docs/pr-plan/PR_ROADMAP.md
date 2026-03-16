@@ -92,7 +92,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-67 | Cobertura testeable del smoke para contexto | ✅ Mergeado | extraer la validación del smoke a helper testeable y cubrir payload limpio vs payload con contexto |
 | PR-68 | Manejo limpio de errores CLI del helper de smoke | ✅ Mergeado | capturar errores del entrypoint con mensajes claros en stderr y tests reproducibles de fallo |
 | PR-69 | Fixtures locales para el shell smoke | ✅ Mergeado | cubrir `synology_smoke_test.sh` end-to-end con servidor fixture local y gating HTML reproducible |
-| PR-70 | Cierre formal de Fase 14 + hardening final del fixture shell | 🟡 En progreso | tipado explícito, teardown determinista y cierre formal de la fase de observabilidad |
+| PR-70 | Cierre formal de Fase 14 + hardening final del fixture shell | ✅ Mergeado | tipado explícito, teardown determinista y cierre formal de la fase de observabilidad |
+| PR-71 | Cobertura shell para payload inválido del command center | 🟡 En progreso | validar end-to-end que el shell smoke falla cuando el payload API rompe el contrato del helper |
 
 
 ## Secuencia de PRs actualizada
@@ -1043,7 +1044,7 @@ Cubrir el contrato completo de `scripts/synology_smoke_test.sh` con un fixture l
 - mergeado en `11eb418`
 
 ### PR-70 — Cierre formal de Fase 14 + hardening final del fixture shell
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Cerrar formalmente la Fase 14 en la documentación del repo y eliminar la fricción menor restante del fixture shell para dejar el harness operativo con teardown determinista y tipado explícito.
@@ -1053,6 +1054,18 @@ Cerrar formalmente la Fase 14 en la documentación del repo y eliminar la fricci
 - helper compartido para apagar servidor fixture + verificar cierre real del thread
 - documento de cierre formal `docs/plans/phase14-observability-closure.md`
 - apertura documentada de la Fase 15 en roadmap/master-plan/PR roadmap
+- mergeado en `6f5a580`
+
+### PR-71 — Cobertura shell para payload inválido del command center
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Cubrir end-to-end el failure mode donde `/dashboard/command-center` devuelve un payload inválido y el shell smoke debe fallar propagando el error del helper de contexto, no pasar silenciosamente.
+
+**Entregables**
+- test shell con payload inválido (`recent_risk_events[*]` sin `context`)
+- validación explícita del mensaje de error propagado por `synology_smoke_context_check.py`
+- roadmap/master-plan/PR roadmap actualizados con el avance de Fase 15
 
 
 ## Criterio de avance
