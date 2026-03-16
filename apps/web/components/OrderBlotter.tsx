@@ -6,6 +6,7 @@ import { formatNumber, formatDate, statusTone } from "../lib/formatters";
 const ORDER_FILTERS = [
   { value: "ALL", label: "Todas" },
   { value: "NEW", label: "Nuevas" },
+  { value: "PARTIALLY_FILLED", label: "Parciales" },
   { value: "FILLED", label: "Ejecutadas" },
   { value: "CANCELED", label: "Canceladas" },
 ] as const;
@@ -62,8 +63,12 @@ export function OrderBlotter({ orders = [] }: { orders?: any[] }) {
                 </td>
               </tr>
             ) : (
-              filteredOrders.map((order: any) => (
-                <tr key={order.id}>
+              filteredOrders.map((order: any, index: number) => (
+                <tr
+                  key={
+                    order.id ?? `${order.trade_plan_id ?? "na"}-${order.symbol ?? "na"}-${order.created_at ?? "na"}-${index}`
+                  }
+                >
                   <td>#{order.id}</td>
                   <td>#{order.trade_plan_id}</td>
                   <td>
