@@ -706,12 +706,9 @@ th {
 
 /* Polish PR-94 Additions */
 .table-shell table {
+  /* Keep separate so sticky headers keep rendering reliably inside the scroll shell. */
   border-collapse: separate;
   border-spacing: 0;
-}
-
-.table-shell tbody tr {
-  transition: background-color 0.2s ease;
 }
 
 .table-shell tbody tr:hover {
@@ -726,36 +723,47 @@ th {
   border-bottom: 2px solid var(--border-strong);
 }
 
-.metric-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
 .metric-card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-.desk-hero-block {
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
 .desk-hero-block:hover {
-  transform: translateY(-2px);
   border-color: var(--accent-2);
-}
-
-.operation-drawer summary {
-  transition: background-color 0.2s ease;
 }
 
 .operation-drawer summary:hover {
   background-color: rgba(255, 255, 255, 0.03);
 }
 
-.empty-state,
 .table-shell td.empty-state {
   font-style: italic;
   opacity: 0.8;
   padding: 2rem;
   text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .table-shell tbody tr {
+    transition: background-color 0.2s ease;
+  }
+
+  .metric-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .desk-hero-block {
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  .desk-hero-block:hover {
+    transform: translateY(-2px);
+  }
+
+  .operation-drawer summary {
+    transition: background-color 0.2s ease;
+  }
 }
