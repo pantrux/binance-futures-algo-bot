@@ -736,7 +736,7 @@ th {
   background-color: rgba(255, 255, 255, 0.03);
 }
 
-.table-shell--scrollable td.empty-state {
+td.empty-state {
   font-style: italic;
   opacity: 0.8;
   padding: 2rem;
