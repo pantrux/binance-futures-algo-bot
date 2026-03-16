@@ -87,7 +87,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-62 | Hardening fino del serializer de quantity | ✅ Mergeado | rechazar `NaN` / infinitos y completar la cobertura del serializer de quantity |
 | PR-63 | Metadata estructurada para `risk_events` | ✅ Mergeado | agregar contexto JSON auditable a errores/eventos críticos para acelerar debugging operativo |
 | PR-64 | Hacer visible `risk_events.context_json` en el command center | ✅ Mergeado | renderizar la metadata estructurada de eventos en la UI para debugging y postmortems más rápidos |
-| PR-65 | Resumen contextual del último riesgo por operación | 🟡 En progreso | exponer y renderizar `latest_risk_context` en la vista resumida del command center |
+| PR-65 | Resumen contextual del último riesgo por operación | ✅ Mergeado | exponer y renderizar `latest_risk_context` en la vista resumida del command center |
+| PR-66 | Smoke Synology para contexto de riesgo | 🟡 En progreso | validar por smoke automatizado los nuevos marcadores/contextos del command center en API y UI |
 
 
 ## Secuencia de PRs actualizada
@@ -973,7 +974,7 @@ Consumir visualmente la metadata estructurada recién agregada a `risk_events` p
 - mergeado en `f14db14`
 
 ### PR-65 — Resumen contextual del último riesgo por operación
-**Estado:** 🟡 En progreso
+**Estado:** ✅ Mergeado
 
 **Objetivo**
 Llevar el contexto del último evento de riesgo al resumen principal de cada operación para acelerar lectura operativa sin depender del historial detallado.
@@ -983,6 +984,19 @@ Llevar el contexto del último evento de riesgo al resumen principal de cada ope
 - serialización backend desde el último `RiskEvent`
 - renderizado de chips/contexto también en la celda resumen de riesgo
 - cobertura en tests de servicio/route + validación `next build`
+- mergeado en `9b1bb33`
+
+### PR-66 — Smoke Synology para contexto de riesgo
+**Estado:** 🟡 En progreso
+
+**Objetivo**
+Hacer que el smoke Synology proteja explícitamente los marcadores de observabilidad agregados en `PR-64` y `PR-65`, tanto en payload API como en la UI del command center.
+
+**Entregables**
+- `scripts/synology_smoke_test.sh` exige `latest_risk_context` en `operation_snapshots`
+- smoke valida `context` en `recent_risk_events`
+- smoke exige `context-list` / `context-chip` en la home del dashboard
+- `docs/plans/synology-runbook.md` actualiza el criterio mínimo de aprobación
 
 
 ## Criterio de avance
