@@ -714,29 +714,28 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
               livePrice={livePrices[operation.symbol]}
               liveState={symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState}
               onToggleOpen={(tradePlanId, isOpen) => {
-                setOpenDrilldownTradePlanIds((current) => {
-                  const next = new Set(current);
-                  if (isOpen) {
-                    next.add(tradePlanId);
-                  } else {
-                    next.delete(tradePlanId);
-                  }
+                const previousIds = openDrilldownTradePlanIds;
+                const next = new Set(previousIds);
+                if (isOpen) {
+                  next.add(tradePlanId);
+                } else {
+                  next.delete(tradePlanId);
+                }
 
-                  const nextIds = Array.from(next).sort((a, b) => a - b);
-                  const previousSymbols = collectVisibleSymbols(data, initialTape, visibleSectionIds, current);
-                  const nextSymbols = collectVisibleSymbols(data, initialTape, visibleSectionIds, nextIds);
-                  const previousScopeKey = previousSymbols.join("|");
-                  const nextScopeKey = nextSymbols.join("|");
+                const nextIds = Array.from(next).sort((a, b) => a - b);
+                const previousSymbols = collectVisibleSymbols(data, initialTape, visibleSectionIds, previousIds);
+                const nextSymbols = collectVisibleSymbols(data, initialTape, visibleSectionIds, nextIds);
+                const previousScopeKey = previousSymbols.join("|");
+                const nextScopeKey = nextSymbols.join("|");
 
-                  if (previousScopeKey !== nextScopeKey) {
-                    setLiveScopeNote(
-                      nextIds.length === 0
-                        ? `scope live actualizado: se cerró #${tradePlanId} ${operation.symbol} y drill-down volvió al fallback (${nextSymbols.length} símbolos en scope)`
-                        : `scope live actualizado: ${isOpen ? "abierto" : "cerrado"} #${tradePlanId} ${operation.symbol} · ${nextSymbols.length} símbolos en scope · drawers activos ${nextIds.join(", ")}`,
-                    );
-                  }
-                  return nextIds;
-                });
+                setOpenDrilldownTradePlanIds(nextIds);
+                if (previousScopeKey !== nextScopeKey) {
+                  setLiveScopeNote(
+                    nextIds.length === 0
+                      ? `scope live actualizado: se cerró #${tradePlanId} ${operation.symbol} y drill-down volvió al fallback (${nextSymbols.length} símbolos en scope)`
+                      : `scope live actualizado: ${isOpen ? "abierto" : "cerrado"} #${tradePlanId} ${operation.symbol} · ${nextSymbols.length} símbolos en scope · drawers activos ${nextIds.join(", ")}`,
+                  );
+                }
               }}
             />
           ))}
