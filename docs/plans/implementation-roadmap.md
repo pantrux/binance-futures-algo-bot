@@ -6,8 +6,8 @@
 ## Resumen ejecutivo
 
 - **Estado global actual:** `PR-107` ya quedó mergeado en `main`, dejando el polling live del drill-down acotado a drawers abiertos cuando aplica, con `PR-105`/`PR-106` ya visibles en Synology tras redeploy y smoke real exitoso.
-- **PR activo:** `PR-110` — resumen glance del último `reconcile now` dentro del summary de cada operación.
-- **Siguiente carril sugerido:** cerrar esta microcapa de feedback operativo antes de evaluar una mejora adicional de UX operacional o un salto a realtime más fino.
+- **PR activo:** `PR-111` — nota efímera cuando el cambio de drawers altera el scope live efectivo.
+- **Siguiente carril sugerido:** seguir cerrando esta microcapa de feedback operativo antes de evaluar una mejora adicional de UX operacional o un salto a realtime más fino.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

@@ -14,6 +14,30 @@ const LIVE_SCOPE_SECTION_IDS = ["desk", "operations", "drilldown"] as const;
 
 type LiveScopeSectionId = (typeof LIVE_SCOPE_SECTION_IDS)[number];
 
+function collectVisibleSymbols(data: any, initialTape: any[], visibleSectionIds: LiveScopeSectionId[], openDrilldownTradePlanIds: number[]) {
+  const scopedSymbols = new Set<string>(data.open_positions.map((position: any) => position.symbol));
+  const visibleSectionSet = new Set(visibleSectionIds);
+
+  if (visibleSectionSet.has("desk")) {
+    initialTape
+      .filter((item: any) => ["open", "testnet_executed", "partially_filled"].includes(String(item.status ?? "").toLowerCase()))
+      .forEach((item: any) => scopedSymbols.add(item.symbol));
+  }
+
+  if (visibleSectionSet.has("operations")) {
+    data.operation_snapshots.forEach((operation: any) => scopedSymbols.add(operation.symbol));
+  }
+
+  if (visibleSectionSet.has("drilldown")) {
+    const scopedDrilldownOperations = openDrilldownTradePlanIds.length > 0
+      ? data.operation_snapshots.filter((operation: any) => openDrilldownTradePlanIds.includes(operation.trade_plan_id))
+      : data.operation_snapshots;
+    scopedDrilldownOperations.forEach((operation: any) => scopedSymbols.add(operation.symbol));
+  }
+
+  return Array.from(scopedSymbols).sort();
+}
+
 function buildLivePricingUrl() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
   return apiBaseUrl ? `${apiBaseUrl}/dashboard/live-pricing` : null;
@@ -42,6 +66,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
   const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
   const [liveRefreshNote, setLiveRefreshNote] = useState<string | null>(null);
+  const [liveScopeNote, setLiveScopeNote] = useState<string | null>(null);
   const [liveClockMs, setLiveClockMs] = useState(() => Date.now());
   const [visibleSectionIds, setVisibleSectionIds] = useState<LiveScopeSectionId[]>([...LIVE_SCOPE_SECTION_IDS]);
   const [openDrilldownTradePlanIds, setOpenDrilldownTradePlanIds] = useState<number[]>(() =>
@@ -49,29 +74,10 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   );
   const livePricingUrl = buildLivePricingUrl();
   const livePricingRequestUrlRef = useRef<string | null>(null);
-  const visibleSymbols = useMemo(() => {
-    const scopedSymbols = new Set<string>(data.open_positions.map((position: any) => position.symbol));
-    const visibleSectionSet = new Set(visibleSectionIds);
-
-    if (visibleSectionSet.has("desk")) {
-      initialTape
-        .filter((item: any) => ["open", "testnet_executed", "partially_filled"].includes(String(item.status ?? "").toLowerCase()))
-        .forEach((item: any) => scopedSymbols.add(item.symbol));
-    }
-
-    if (visibleSectionSet.has("operations")) {
-      data.operation_snapshots.forEach((operation: any) => scopedSymbols.add(operation.symbol));
-    }
-
-    if (visibleSectionSet.has("drilldown")) {
-      const scopedDrilldownOperations = openDrilldownTradePlanIds.length > 0
-        ? data.operation_snapshots.filter((operation: any) => openDrilldownTradePlanIds.includes(operation.trade_plan_id))
-        : data.operation_snapshots;
-      scopedDrilldownOperations.forEach((operation: any) => scopedSymbols.add(operation.symbol));
-    }
-
-    return Array.from(scopedSymbols).sort();
-  }, [data.open_positions, data.operation_snapshots, initialTape, openDrilldownTradePlanIds, visibleSectionIds]);
+  const visibleSymbols = useMemo(
+    () => collectVisibleSymbols(data, initialTape, visibleSectionIds, openDrilldownTradePlanIds),
+    [data, initialTape, openDrilldownTradePlanIds, visibleSectionIds],
+  );
   const livePricingRequestUrl = useMemo(() => {
     if (!livePricingUrl) {
       return null;
@@ -201,6 +207,18 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
 
     return () => clearTimeout(timeout);
   }, [liveRefreshNote]);
+
+  useEffect(() => {
+    if (!liveScopeNote) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setLiveScopeNote(null);
+    }, 5_000);
+
+    return () => clearTimeout(timeout);
+  }, [liveScopeNote]);
 
   useEffect(() => {
     if (!lastLiveUpdateAt || !isPolling) {
@@ -414,6 +432,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length || "idle"} símbolos ({liveScopeLabel}) · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
           <small className="muted">{liveScopeSymbolsLabel}</small>
           <small className="muted">{liveScopeDriverLabel}</small>
+          {liveScopeNote && <small className="muted">{liveScopeNote}</small>}
           {liveRefreshNote && <small className="muted">{liveRefreshNote}</small>}
         </div>
       </header>
@@ -702,7 +721,21 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
                   } else {
                     next.delete(tradePlanId);
                   }
-                  return Array.from(next).sort((a, b) => a - b);
+
+                  const nextIds = Array.from(next).sort((a, b) => a - b);
+                  const previousSymbols = collectVisibleSymbols(data, initialTape, visibleSectionIds, current);
+                  const nextSymbols = collectVisibleSymbols(data, initialTape, visibleSectionIds, nextIds);
+                  const previousScopeKey = previousSymbols.join("|");
+                  const nextScopeKey = nextSymbols.join("|");
+
+                  if (previousScopeKey !== nextScopeKey) {
+                    setLiveScopeNote(
+                      nextIds.length === 0
+                        ? `scope live actualizado: se cerró #${tradePlanId} ${operation.symbol} y drill-down volvió al fallback (${nextSymbols.length} símbolos en scope)`
+                        : `scope live actualizado: ${isOpen ? "abierto" : "cerrado"} #${tradePlanId} ${operation.symbol} · ${nextSymbols.length} símbolos en scope · drawers activos ${nextIds.join(", ")}`,
+                    );
+                  }
+                  return nextIds;
                 });
               }}
             />
