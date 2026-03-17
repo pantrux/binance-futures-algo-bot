@@ -120,7 +120,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-95 | Número lógico reservado/no usado | ⚪ Omitido | se reserva para mantener trazabilidad tras el cruce entre numeración lógica del plan y GitHub PR #95 (titulado `PR-94`) |
 | PR-96 | Acotar scroll/sticky del order blotter + sync roadmap | ✅ Mergeado | encapsular estilos scrollables del blotter, preservar empty states genéricos y re-alinear el roadmap post-merge |
 | PR-97 | Hardening residual de workstation post PR-91..PR-93 | ✅ Mergeado | quitar URLs LAN hardcodeadas, restaurar fallback/resiliencia del shell live y corregir señales ambiguas del drill-down |
-| PR-98 | Freshness / reliability UX del live polling | 🟡 En progreso | degradar visualmente el live cuando envejece, exponer antigüedad del último tick y reducir ambigüedad operativa del feed |
+| PR-98 | Freshness / reliability UX del live polling | ✅ Mergeado | degradar visualmente el live cuando envejece, exponer antigüedad del último tick y reducir ambigüedad operativa del feed |
+| PR-99 | Cobertura/freshness live por operación | 🟡 En progreso | llevar la salud del feed al nivel de operación/símbolo, con cobertura live visible y pills de origen/frescura dentro del cockpit |
 
 
 ## Secuencia de PRs actualizada

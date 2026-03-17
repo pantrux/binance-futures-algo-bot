@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-97` ya quedó mergeado en `main`, dejando la baseline UX de la trading workstation sin deuda heredada gruesa del primer bloque de rediseño.
-- **PR activo:** `PR-98` — freshness / reliability UX del live polling en la workstation.
-- **Siguiente carril sugerido:** convertir el live en una señal operacional confiable: exponer antigüedad del último tick, degradar visualmente cuando el feed envejece y dejar el polling listo para evoluciones futuras (polling selectivo o SSE) sin ambigüedad para el operador.
+- **Estado global actual:** `PR-98` ya quedó mergeado en `main`, dejando resuelta la freshness/reliability UX del live polling a nivel global de la workstation.
+- **PR activo:** `PR-99` — cobertura/freshness live por operación.
+- **Siguiente carril sugerido:** propagar la salud del feed al cockpit real: mostrar qué operaciones/símbolos están usando datos live frescos vs snapshot/cacheado, y medir cobertura live efectiva sobre posiciones y operaciones antes de saltar a acciones operativas mayores.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

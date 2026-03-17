@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
@@ -89,19 +89,24 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     return () => clearInterval(interval);
   }, [lastLiveUpdateAt, isPolling]);
 
-  // Compute live open PnL
-  let liveOpenPnl = 0;
-  const positions = data.open_positions.map((pos: any) => {
-    const live = livePrices[pos.symbol];
-    const currentPnl = live ? live.unrealizedPnl : pos.unrealized_pnl;
-    const currentMark = live ? live.markPrice : pos.mark_price;
-    liveOpenPnl += currentPnl;
-    return { ...pos, unrealized_pnl: currentPnl, mark_price: currentMark };
-  });
-  
-  if (Object.keys(livePrices).length === 0) {
-    liveOpenPnl = initialOpenPnl;
-  }
+  const positions = useMemo(
+    () =>
+      data.open_positions.map((pos: any) => {
+        const live = livePrices[pos.symbol];
+        const currentPnl = live ? live.unrealizedPnl : pos.unrealized_pnl;
+        const currentMark = live ? live.markPrice : pos.mark_price;
+
+        return { ...pos, unrealized_pnl: currentPnl, mark_price: currentMark };
+      }),
+    [data.open_positions, livePrices],
+  );
+  const liveOpenPnl = useMemo(() => {
+    if (Object.keys(livePrices).length === 0) {
+      return initialOpenPnl;
+    }
+
+    return positions.reduce((acc: number, position: any) => acc + (position.unrealized_pnl ?? 0), 0);
+  }, [initialOpenPnl, livePrices, positions]);
 
   // Update tape with live prices
   const tape = initialTape.map((item: any) => {
@@ -164,6 +169,78 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           : livePricingUrl
             ? "esperando primer tick live"
             : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
+  const liveCoveredPositions = positions.filter((position: any) => livePrices[position.symbol]).length;
+  const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => livePrices[operation.symbol]).length;
+
+  const defaultSnapshotLiveState = useMemo(
+    () => ({
+      label: "snapshot",
+      tone: livePricingUrl ? "warn" : "neutral",
+      hint: livePricingUrl ? "sin cobertura live para este símbolo" : "live pricing deshabilitado",
+    }),
+    [livePricingUrl],
+  );
+
+  const symbolLiveStates = useMemo(() => {
+    const symbols = new Set<string>([
+      ...positions.map((position: any) => position.symbol),
+      ...data.operation_snapshots.map((operation: any) => operation.symbol),
+    ]);
+    const states: Record<string, { label: string; tone: string; hint: string }> = {};
+
+    symbols.forEach((symbol) => {
+      const hasSymbolLivePrice = Boolean(livePrices[symbol]);
+
+      if (!hasSymbolLivePrice) {
+        states[symbol] = defaultSnapshotLiveState;
+        return;
+      }
+
+      if (isLivePaused) {
+        states[symbol] = {
+          label: "live pausado",
+          tone: "warn",
+          hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "polling pausado",
+        };
+        return;
+      }
+
+      if (livePollingError) {
+        states[symbol] = {
+          label: isLiveStaleDanger ? "live crítico" : "live degradado",
+          tone: isLiveStaleDanger ? "danger" : "warn",
+          hint: "error activo con último tick cacheado",
+        };
+        return;
+      }
+
+      if (isLiveStaleDanger) {
+        states[symbol] = {
+          label: "live vencido",
+          tone: "danger",
+          hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
+        };
+        return;
+      }
+
+      if (isLiveStaleWarn) {
+        states[symbol] = {
+          label: "live envejeciendo",
+          tone: "warn",
+          hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
+        };
+        return;
+      }
+
+      states[symbol] = {
+        label: "live fresco",
+        tone: "ok",
+        hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "live pricing activo",
+      };
+    });
+
+    return states;
+  }, [data.operation_snapshots, defaultSnapshotLiveState, isLivePaused, isLiveStaleDanger, isLiveStaleWarn, lastLiveUpdateAt, liveAgeMs, livePollingError, livePrices, positions]);
 
   const summaryCards = [
     { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
@@ -171,7 +248,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     { title: "Fill rate testnet", value: `${formatNumber(shadowRun.testnet_fill_rate_pct, 1)}%`, hint: "órdenes ejecutadas / enviadas", tone: (shadowRun.testnet_fill_rate_pct ?? 0) >= 80 ? "ok" : "warn" },
     { title: "Pairs parity", value: String(shadowRun.compared_pairs), hint: "paper ↔ testnet comparados", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
     { title: "Risk 7d", value: `${shadowRun.critical_risk_events_7d}/${shadowRun.warning_risk_events_7d}`, hint: "critical / warning", tone: shadowRun.critical_risk_events_7d > 0 ? "danger" : shadowRun.warning_risk_events_7d > 0 ? "warn" : "ok" },
-    { title: "Live freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
+    { title: "Live freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || !!livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
+    { title: "Live coverage", value: `${liveCoveredPositions}/${positions.length}`, hint: `posiciones con mark live · ${liveCoveredOperations}/${data.operation_snapshots.length} operaciones`, tone: liveCoveredPositions === positions.length && positions.length > 0 ? "ok" : liveCoveredPositions > 0 ? "warn" : "neutral" },
     { title: "Trade plans", value: String(summary.trade_plans_total), hint: "universo persistido", tone: "neutral" },
   ];
 
@@ -297,6 +375,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             <p className="empty-state">Sin operaciones consolidadas.</p>
           ) : data.operation_snapshots.slice(0, 8).map((operation: any) => {
             const live = livePrices[operation.symbol];
+            const liveState = symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState;
             let latestPnl = operation.latest_position_unrealized_pnl;
             const actualEntry = getActualEntryPrice(operation);
 
@@ -331,6 +410,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
                   </div>
                 </div>
                 <div className="operation-tags">
+                  <span className={`status-pill ${toneClassName(liveState.tone)}`} title={liveState.hint}>{liveState.label}</span>
                   <span className={`status-pill ${reconcileTone(operation.reconciliation_healthy, operation.reconciliation_primary_severity)}`}>
                     {operation.reconciliation_healthy ? "healthy" : operation.reconciliation_primary_event ?? "drift"}
                   </span>
@@ -464,7 +544,13 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           {data.operation_snapshots.length === 0 ? (
             <p className="empty-state">Sin operaciones para drill-down.</p>
           ) : data.operation_snapshots.slice(0, 8).map((operation: any, index: number) => (
-            <OperationDrillDown key={operation.trade_plan_id} operation={operation} index={index} livePrice={livePrices[operation.symbol]} />
+            <OperationDrillDown
+              key={operation.trade_plan_id}
+              operation={operation}
+              index={index}
+              livePrice={livePrices[operation.symbol]}
+              liveState={symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState}
+            />
           ))}
         </div>
       </section>
