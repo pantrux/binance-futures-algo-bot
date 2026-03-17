@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-99` ya quedó mergeado en `main`, dejando la salud del live visible a nivel de operación/símbolo dentro del cockpit.
-- **PR activo:** `PR-100` — scope selectivo del live polling por símbolos visibles.
-- **Siguiente carril sugerido:** reducir payload y churn del live sin tocar ejecución: que el frontend pida solo los símbolos visibles del cockpit y que la API devuelva el subconjunto correspondiente, como base para un futuro polling selectivo o live scope más fino.
+- **Estado global actual:** `PR-101` ya quedó mergeado en `main`, dejando Synology alineado con la trading workstation real tanto en deploy como en smoke/release validation.
+- **PR activo:** `PR-102` — scope live inteligente por sección visible.
+- **Siguiente carril sugerido:** reducir payload/churn aún más sin tocar ejecución: mantener posiciones abiertas en scope constante y sumar tape/operaciones solo cuando las secciones relevantes estén en foco, como paso previo a un polling selectivo todavía más fino.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

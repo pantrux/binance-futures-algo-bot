@@ -123,7 +123,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-98 | Freshness / reliability UX del live polling | ✅ Mergeado | degradar visualmente el live cuando envejece, exponer antigüedad del último tick y reducir ambigüedad operativa del feed |
 | PR-99 | Cobertura/freshness live por operación | ✅ Mergeado | llevar la salud del feed al nivel de operación/símbolo, con cobertura live visible y pills de origen/frescura dentro del cockpit |
 | PR-100 | Scope selectivo del live polling por símbolos visibles | ✅ Mergeado | reducir payload/churn pidiendo y devolviendo solo símbolos visibles del cockpit cuando aplique |
-| PR-101 | Alinear smoke Synology + env `web` con la trading workstation | 🟡 En progreso | sustituir marcadores viejos del shell smoke por los headings reales de la UI y corregir `SYNOLOGY_API_BASE_URL`/`NEXT_PUBLIC_API_URL` para evitar fallback vacío en Synology |
+| PR-101 | Alinear smoke Synology + env `web` con la trading workstation | ✅ Mergeado | sustituir marcadores viejos del shell smoke por los headings reales de la UI y corregir `SYNOLOGY_API_BASE_URL`/`NEXT_PUBLIC_API_URL` para evitar fallback vacío en Synology |
+| PR-102 | Scope live inteligente por sección visible | 🟡 En progreso | mantener posiciones abiertas siempre en scope y sumar símbolos extra solo si `desk` / `operations` / `drilldown` están en foco |
 
 
 ## Secuencia de PRs actualizada

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
@@ -10,6 +10,9 @@ import { OrderBlotter } from "./OrderBlotter";
 const LIVE_POLL_INTERVAL_MS = 4000;
 const LIVE_STALE_WARN_MS = LIVE_POLL_INTERVAL_MS * 3;
 const LIVE_STALE_DANGER_MS = LIVE_POLL_INTERVAL_MS * 8;
+const LIVE_SCOPE_SECTION_IDS = ["desk", "operations", "drilldown"] as const;
+
+type LiveScopeSectionId = (typeof LIVE_SCOPE_SECTION_IDS)[number];
 
 function buildLivePricingUrl() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
@@ -38,20 +41,25 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
   const [liveClockMs, setLiveClockMs] = useState(() => Date.now());
+  const [visibleSectionIds, setVisibleSectionIds] = useState<LiveScopeSectionId[]>([...LIVE_SCOPE_SECTION_IDS]);
   const livePricingUrl = buildLivePricingUrl();
-  const visibleSymbols = useMemo(
-    () =>
-      Array.from(
-        new Set<string>([
-          ...data.open_positions.map((position: any) => position.symbol),
-          ...data.operation_snapshots.map((operation: any) => operation.symbol),
-          ...initialTape
-            .filter((item: any) => ["open", "testnet_executed", "partially_filled"].includes(String(item.status ?? "").toLowerCase()))
-            .map((item: any) => item.symbol),
-        ]),
-      ).sort(),
-    [data.open_positions, data.operation_snapshots, initialTape],
-  );
+  const livePricingRequestUrlRef = useRef<string | null>(null);
+  const visibleSymbols = useMemo(() => {
+    const scopedSymbols = new Set<string>(data.open_positions.map((position: any) => position.symbol));
+    const visibleSectionSet = new Set(visibleSectionIds);
+
+    if (visibleSectionSet.has("desk")) {
+      initialTape
+        .filter((item: any) => ["open", "testnet_executed", "partially_filled"].includes(String(item.status ?? "").toLowerCase()))
+        .forEach((item: any) => scopedSymbols.add(item.symbol));
+    }
+
+    if (visibleSectionSet.has("operations") || visibleSectionSet.has("drilldown")) {
+      data.operation_snapshots.forEach((operation: any) => scopedSymbols.add(operation.symbol));
+    }
+
+    return Array.from(scopedSymbols).sort();
+  }, [data.open_positions, data.operation_snapshots, initialTape, visibleSectionIds]);
   const livePricingRequestUrl = useMemo(() => {
     if (!livePricingUrl) {
       return null;
@@ -67,11 +75,56 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   }, [livePricingUrl, visibleSymbols]);
 
   useEffect(() => {
-    if (!isPolling || !livePricingRequestUrl) return;
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setVisibleSectionIds((current) => {
+          const next = new Set(current);
+
+          entries.forEach((entry) => {
+            const sectionId = entry.target.id as LiveScopeSectionId;
+            if (entry.isIntersecting) {
+              next.add(sectionId);
+            } else {
+              next.delete(sectionId);
+            }
+          });
+
+          return LIVE_SCOPE_SECTION_IDS.filter((sectionId) => next.has(sectionId));
+        });
+      },
+      { rootMargin: "0px 0px -35% 0px", threshold: 0.2 },
+    );
+
+    LIVE_SCOPE_SECTION_IDS.forEach((sectionId) => {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    livePricingRequestUrlRef.current = livePricingRequestUrl;
+  }, [livePricingRequestUrl]);
+
+  useEffect(() => {
+    if (!isPolling || !livePricingUrl) return;
 
     const pollLivePricing = async () => {
+      const requestUrl = livePricingRequestUrlRef.current;
+      if (!requestUrl) {
+        setLivePollingError(null);
+        return;
+      }
+
       try {
-        const res = await fetch(livePricingRequestUrl, { cache: "no-store" });
+        const res = await fetch(requestUrl, { cache: "no-store" });
         if (!res.ok) {
           throw new Error(`Live pricing poll failed (${res.status})`);
         }
@@ -101,7 +154,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     }, LIVE_POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [isPolling, livePricingRequestUrl]);
+  }, [isPolling, livePricingUrl]);
 
   useEffect(() => {
     if (!lastLiveUpdateAt || !isPolling) {
@@ -180,6 +233,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         : isLiveStaleWarn
           ? "live envejeciendo"
           : hasLivePrices ? "live pricing" : livePricingUrl ? "snapshot data" : "snapshot only";
+  const liveScopeLabel = visibleSectionIds.length === 0 ? "idle" : visibleSectionIds.join("+");
   const liveStatusCopy = isLivePaused
     ? lastLiveUpdateAt
       ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`
@@ -296,7 +350,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
             {isPolling ? "pausar live" : "reanudar live"}
           </button>
-          <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length || "idle"} · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
+          <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length || "idle"} símbolos ({liveScopeLabel}) · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
         </div>
       </header>
 
