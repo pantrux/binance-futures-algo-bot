@@ -293,7 +293,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
             {isPolling ? "pausar live" : "reanudar live"}
           </button>
-          <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length} símbolos · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
+          <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length || "idle"} · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
         </div>
       </header>
 

@@ -15,9 +15,6 @@ class LivePricingService:
         if not positions_raw:
             positions_raw = []
 
-        if isinstance(positions_raw, dict):
-            positions_raw = [positions_raw]
-
         if normalized_symbols:
             allowed_symbols = set(normalized_symbols)
             positions_raw = [position for position in positions_raw if position.get("symbol") in allowed_symbols]
