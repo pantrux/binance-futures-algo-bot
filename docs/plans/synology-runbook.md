@@ -245,12 +245,18 @@ API_BASE_URL="http://IP_NAS:API_PORT" \
 WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
 METRICS_API_KEY="<opcional>" \
 ./scripts/synology_smoke_test.sh
+
+> Para la trading workstation actual, el servicio `web` debe construirse/arrancar con:
+> - `SYNOLOGY_API_BASE_URL=http://api:8000` (SSR dentro de Docker)
+> - `NEXT_PUBLIC_API_URL=http://IP_NAS:API_PORT` (polling live desde el navegador; debe existir tanto en build args como en runtime env)
+>
+> `PR-101` consolidó este wiring junto con la actualización del smoke Synology, porque ambas piezas resultaron ser parte del mismo problema operativo: la UI nueva desplegada sin env correctos caía al fallback vacío y el smoke seguía buscando marcadores históricos.
 ```
 
 ### Criterio mínimo de aprobación
 1. Todos los checks del script en verde.
 2. `docker compose ps` sin servicios `unhealthy`.
-3. Dashboard responde sin errores 5xx y la home renderiza el command center enriquecido (`Detalle por trade plan`, `Historial de órdenes`, `Historial de posiciones`, `Historial de riesgo`, `Reconcile actual`). Si el payload trae contexto de riesgo no vacío, además deben verse chips `context-list` / `context-chip` en la home.
+3. Dashboard responde sin errores 5xx y la home renderiza la trading workstation actual (`Trading workstation del bot`, `Posiciones abiertas`, `Órdenes recientes`, `Eventos recientes`, `Drill-down por operación`, `Live freshness`, `Live coverage`). Si el payload trae contexto de riesgo no vacío, además deben verse chips `context-list` / `context-chip` en la home.
 4. `GET /dashboard/command-center` responde 200 y expone payload enriquecido por operación (`order_history`, `position_history`, `risk_event_history`, `timeline_history`, `reconciliation_recommended_actions`, `latest_risk_context`) y `context` en `recent_risk_events`; esos contextos pueden venir vacíos en entornos limpios.
 5. API responde `testnet/ping` correctamente.
 6. Gate C de shadow run puede evaluarse con artifact auditable (`synology-shadow-run-gate`).

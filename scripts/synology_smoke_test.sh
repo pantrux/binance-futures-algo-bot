@@ -213,11 +213,13 @@ fi
 
 web_home_body="$(fetch_body "WEB /" "${WEB_BASE_URL}/")"
 check_body_contains "WEB /" "${web_home_body}" "bot"
-check_body_contains "WEB command center" "${web_home_body}" "Detalle por trade plan"
-check_body_contains "WEB command center" "${web_home_body}" "Historial de órdenes"
-check_body_contains "WEB command center" "${web_home_body}" "Historial de posiciones"
-check_body_contains "WEB command center" "${web_home_body}" "Historial de riesgo"
-check_body_contains "WEB command center" "${web_home_body}" "Reconcile actual"
+check_body_contains "WEB command center" "${web_home_body}" "Trading workstation del bot"
+check_body_contains "WEB command center" "${web_home_body}" "Posiciones abiertas"
+check_body_contains "WEB command center" "${web_home_body}" "Órdenes recientes"
+check_body_contains "WEB command center" "${web_home_body}" "Eventos recientes"
+check_body_contains "WEB command center" "${web_home_body}" "Drill-down por operación"
+check_body_contains "WEB command center" "${web_home_body}" "Live freshness"
+check_body_contains "WEB command center" "${web_home_body}" "Live coverage"
 if [[ "${COMMAND_CENTER_CONTEXT_PRESENT}" == "true" ]]; then
   check_body_contains "WEB command center" "${web_home_body}" "context-list"
   check_body_contains "WEB command center" "${web_home_body}" "context-chip"
