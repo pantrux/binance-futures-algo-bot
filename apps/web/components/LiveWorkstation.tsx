@@ -281,12 +281,15 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           : hasLivePrices ? "live pricing" : livePricingUrl ? "snapshot data" : "snapshot only";
   const liveScopeLabel = visibleSectionIds.length === 0 ? "idle" : visibleSectionIds.join("+");
   const liveScopeSymbolsLabel = visibleSymbols.length === 0 ? "sin símbolos en scope" : `scope symbols: ${visibleSymbols.join(", ")}`;
-  const openDrilldownOperations = data.operation_snapshots.filter((operation: any) => openDrilldownTradePlanIds.includes(operation.trade_plan_id));
+  const openDrilldownOperations = useMemo(
+    () => data.operation_snapshots.filter((operation: any) => openDrilldownTradePlanIds.includes(operation.trade_plan_id)),
+    [data.operation_snapshots, openDrilldownTradePlanIds],
+  );
   const liveScopeDriverLabel = !visibleSectionIds.includes("drilldown")
     ? "driver: scope guiado por secciones visibles"
     : openDrilldownTradePlanIds.length === 0
       ? "driver: drill-down visible sin drawers abiertos; fallback a todas las operaciones"
-      : `driver: drill-down gobierna ${openDrilldownOperations.length} drawer(s) abierto(s) → ${openDrilldownOperations.map((operation: any) => `#${operation.trade_plan_id} ${operation.symbol}`).join(", ")}`;
+      : `driver: drill-down aporta ${openDrilldownOperations.length} drawer(s) abierto(s) al scope → ${openDrilldownOperations.map((operation: any) => `#${operation.trade_plan_id} ${operation.symbol}`).join(", ")}`;
   const liveStatusCopy = isLivePaused
     ? lastLiveUpdateAt
       ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`
