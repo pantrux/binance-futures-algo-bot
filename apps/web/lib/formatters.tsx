@@ -1,3 +1,4 @@
+import { formatRelativeAge } from "./time-format";
 export function formatNumber(value: number | null | undefined, digits = 0) {
   if (value == null || Number.isNaN(value)) return "—";
   return new Intl.NumberFormat("es-CL", {

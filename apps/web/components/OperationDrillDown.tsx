@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext } from "../lib/formatters";
+import { formatRelativeAge } from "../lib/time-format";
 import { getActualEntryPrice, type ActualEntryOperation, type LivePriceEntry } from "../lib/trade-utils";
 
 type RiskContext = Record<string, string | number | boolean | null> | null | undefined;
@@ -134,19 +135,21 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
   const riskEventHistory = operation.risk_event_history ?? [];
   const timelineHistory = (operation.timeline_history ?? []).slice(0, 12);
   const reconcileTimestampLabel = reconcileCompletedAt ? formatDate(reconcileCompletedAt) : null;
+  const reconcileRelativeAgeLabel = reconcileCompletedAt ? formatRelativeAge(reconcileCompletedAt) : null;
   const snapshotTimestamp = snapshotGeneratedAt ?? operation.snapshot_generated_at;
   const snapshotTimestampLabel = snapshotTimestamp ? formatDate(snapshotTimestamp) : null;
+  const snapshotRelativeAgeLabel = snapshotTimestamp ? formatRelativeAge(snapshotTimestamp) : null;
   const reconcileSummaryLabel = reconcileLoading
     ? "reconcile en progreso"
     : reconcileError
       ? `último reconcile falló: ${reconcileError}`
       : reconcileReport
         ? reconcileReport.healthy
-          ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}`
-          : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}`
+          ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}${reconcileRelativeAgeLabel ? ` (${reconcileRelativeAgeLabel})` : ""}`
+          : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}${reconcileRelativeAgeLabel ? ` (${reconcileRelativeAgeLabel})` : ""}`
         : operation.reconciliation_healthy
-          ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}`
-          : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}`;
+          ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}${snapshotRelativeAgeLabel ? ` (${snapshotRelativeAgeLabel})` : ""}`
+          : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}${snapshotRelativeAgeLabel ? ` (${snapshotRelativeAgeLabel})` : ""}`;
 
   const runReconcile = async () => {
     const requestUrl = buildReconcileUrl(operation.trade_plan_id);
@@ -277,7 +280,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
                       <strong>Reporte #{reconcileReport.trade_plan_id}</strong>
                       <small>{reconcileReport.trade_plan_status}</small>
                     </div>
-                    {reconcileTimestampLabel && <small className="muted">ejecutado {reconcileTimestampLabel}</small>}
+                    {reconcileTimestampLabel && <small className="muted">ejecutado {reconcileTimestampLabel}{reconcileRelativeAgeLabel ? ` (${reconcileRelativeAgeLabel})` : ""}</small>}
                     <p>
                       órdenes: {reconcileReport.order_count} · fills: {reconcileReport.filled_order_count} · open positions: {reconcileReport.open_position_count}
                     </p>
