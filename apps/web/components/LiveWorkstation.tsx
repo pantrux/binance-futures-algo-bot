@@ -713,6 +713,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
               index={index}
               livePrice={livePrices[operation.symbol]}
               liveState={symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState}
+              snapshotGeneratedAt={data.generated_at}
               onToggleOpen={(tradePlanId, isOpen) => {
                 const previousIds = openDrilldownTradePlanIds;
                 const next = new Set(previousIds);

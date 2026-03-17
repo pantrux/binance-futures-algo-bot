@@ -70,6 +70,7 @@ type OperationSnapshot = {
   reconciliation_healthy: boolean;
   reconciliation_drift_events?: unknown[];
   latest_risk_context?: RiskContext;
+  snapshot_generated_at?: string;
   order_history?: OrderHistoryItem[];
   position_history?: PositionHistoryItem[];
   risk_event_history?: RiskEventHistoryItem[];
@@ -105,6 +106,7 @@ type OperationDrillDownProps = {
   livePrice?: LivePriceEntry;
   liveState: OperationLiveState;
   onToggleOpen?: (tradePlanId: number, isOpen: boolean) => void;
+  snapshotGeneratedAt?: string;
 };
 
 function buildReconcileUrl(tradePlanId: number) {
@@ -112,7 +114,7 @@ function buildReconcileUrl(tradePlanId: number) {
   return apiBaseUrl ? `${apiBaseUrl}/execution/reconcile/${tradePlanId}` : null;
 }
 
-export function OperationDrillDown({ operation, index, livePrice, liveState, onToggleOpen }: OperationDrillDownProps) {
+export function OperationDrillDown({ operation, index, livePrice, liveState, onToggleOpen, snapshotGeneratedAt }: OperationDrillDownProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [reconcileReport, setReconcileReport] = useState<ReconciliationReport | null>(null);
   const [reconcileLoading, setReconcileLoading] = useState(false);
@@ -132,6 +134,8 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
   const riskEventHistory = operation.risk_event_history ?? [];
   const timelineHistory = (operation.timeline_history ?? []).slice(0, 12);
   const reconcileTimestampLabel = reconcileCompletedAt ? formatDate(reconcileCompletedAt) : null;
+  const snapshotTimestamp = snapshotGeneratedAt ?? operation.snapshot_generated_at;
+  const snapshotTimestampLabel = snapshotTimestamp ? formatDate(snapshotTimestamp) : null;
   const reconcileSummaryLabel = reconcileLoading
     ? "reconcile en progreso"
     : reconcileError
@@ -141,8 +145,8 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
           ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}`
           : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}`
         : operation.reconciliation_healthy
-          ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)`
-          : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)`;
+          ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}`
+          : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}`;
 
   const runReconcile = async () => {
     const requestUrl = buildReconcileUrl(operation.trade_plan_id);

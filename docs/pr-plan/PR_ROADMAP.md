@@ -134,7 +134,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-109 | Driver visible del scope live en drill-down | ✅ Mergeado | mostrar cuándo el drill-down está aportando símbolos al scope live y qué drawers abiertos están afectando el polling |
 | PR-110 | Resumen glance del último reconcile por operación | ✅ Mergeado | acercar al summary del drawer el último estado/error de reconcile para evitar abrir el bloque completo de riesgo cada vez |
 | PR-111 | Nota efímera de cambio de scope live | ✅ Mergeado | avisar cuando la apertura/cierre de drawers cambia el scope live efectivo para que el operador note el cambio sin deducirlo solo por los labels |
-| PR-112 | Timestamp visible del último reconcile manual | 🟡 En progreso | mostrar cuándo se ejecutó el último `reconcile now` directamente en el summary del drawer para dar contexto temporal al estado healthy/drift |
+| PR-112 | Timestamp visible del último reconcile manual | ✅ Mergeado | mostrar cuándo se ejecutó el último `reconcile now` directamente en el summary del drawer para dar contexto temporal al estado healthy/drift |
+| PR-113 | Timestamp también para el estado snapshot de reconcile | 🟡 En progreso | mostrar la referencia temporal del snapshot cuando aún no hubo reconcile manual para evitar summaries sin contexto temporal |
 
 
 ## Secuencia de PRs actualizada
