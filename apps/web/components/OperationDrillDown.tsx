@@ -134,7 +134,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
   const riskEventHistory = operation.risk_event_history ?? [];
   const timelineHistory = (operation.timeline_history ?? []).slice(0, 12);
   const reconcileTimestampLabel = reconcileCompletedAt ? formatDate(reconcileCompletedAt) : null;
-  const snapshotTimestamp = operation.snapshot_generated_at ?? snapshotGeneratedAt;
+  const snapshotTimestamp = snapshotGeneratedAt ?? operation.snapshot_generated_at;
   const snapshotTimestampLabel = snapshotTimestamp ? formatDate(snapshotTimestamp) : null;
   const reconcileSummaryLabel = reconcileLoading
     ? "reconcile en progreso"
