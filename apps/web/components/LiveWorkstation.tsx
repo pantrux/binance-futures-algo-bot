@@ -403,6 +403,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             </button>
           </div>
           <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length || "idle"} símbolos ({liveScopeLabel}) · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
+          <small className="muted">{liveScopeSymbolsLabel}</small>
           {liveRefreshNote && <small className="muted">{liveRefreshNote}</small>}
         </div>
       </header>
