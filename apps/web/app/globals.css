@@ -577,6 +577,9 @@ th {
 }
 
 .drawer-summary-main small { color: var(--muted); }
+.drawer-summary-main small.positive { color: var(--accent); }
+.drawer-summary-main small.negative { color: var(--danger); }
+.drawer-summary-main small.warn { color: var(--warn); }
 
 .drawer-summary-stats {
   flex-wrap: wrap;
