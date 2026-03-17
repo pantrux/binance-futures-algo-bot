@@ -104,6 +104,7 @@ type OperationDrillDownProps = {
   index: number;
   livePrice?: LivePriceEntry;
   liveState: OperationLiveState;
+  onToggleOpen?: (tradePlanId: number, isOpen: boolean) => void;
 };
 
 function buildReconcileUrl(tradePlanId: number) {
@@ -111,7 +112,7 @@ function buildReconcileUrl(tradePlanId: number) {
   return apiBaseUrl ? `${apiBaseUrl}/execution/reconcile/${tradePlanId}` : null;
 }
 
-export function OperationDrillDown({ operation, index, livePrice, liveState }: OperationDrillDownProps) {
+export function OperationDrillDown({ operation, index, livePrice, liveState, onToggleOpen }: OperationDrillDownProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [reconcileReport, setReconcileReport] = useState<ReconciliationReport | null>(null);
   const [reconcileLoading, setReconcileLoading] = useState(false);
