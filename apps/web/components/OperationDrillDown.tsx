@@ -117,6 +117,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
   const [reconcileReport, setReconcileReport] = useState<ReconciliationReport | null>(null);
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [reconcileError, setReconcileError] = useState<string | null>(null);
+  const [reconcileCompletedAt, setReconcileCompletedAt] = useState<string | null>(null);
 
   const actualEntry = getActualEntryPrice(operation);
   const latestPnl = livePrice && ["open", "testnet_executed", "partially_filled"].includes(operation.status.toLowerCase())
@@ -130,14 +131,15 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
   const positionHistory = operation.position_history ?? [];
   const riskEventHistory = operation.risk_event_history ?? [];
   const timelineHistory = (operation.timeline_history ?? []).slice(0, 12);
+  const reconcileTimestampLabel = reconcileCompletedAt ? formatDate(reconcileCompletedAt) : null;
   const reconcileSummaryLabel = reconcileLoading
     ? "reconcile en progreso"
     : reconcileError
       ? `último reconcile falló: ${reconcileError}`
       : reconcileReport
         ? reconcileReport.healthy
-          ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)`
-          : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)`
+          ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}`
+          : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}`
         : operation.reconciliation_healthy
           ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)`
           : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)`;
@@ -161,6 +163,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
 
       const payload = (await response.json()) as ReconciliationReport;
       setReconcileReport(payload);
+      setReconcileCompletedAt(new Date().toISOString());
     } catch (error) {
       setReconcileError(error instanceof Error ? error.message : "Reconcile failed");
     } finally {
@@ -270,6 +273,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
                       <strong>Reporte #{reconcileReport.trade_plan_id}</strong>
                       <small>{reconcileReport.trade_plan_status}</small>
                     </div>
+                    {reconcileTimestampLabel && <small className="muted">ejecutado {reconcileTimestampLabel}</small>}
                     <p>
                       órdenes: {reconcileReport.order_count} · fills: {reconcileReport.filled_order_count} · open positions: {reconcileReport.open_position_count}
                     </p>
