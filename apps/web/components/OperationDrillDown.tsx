@@ -258,8 +258,8 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
                         ))}
                       </div>
                     )}
-                    {reconcileReport.recommended_actions.length > 0 && (
-                      <p className="muted">acciones sugeridas: {reconcileReport.recommended_actions.join(", ")}</p>
+                    {(reconcileReport.recommended_actions?.length ?? 0) > 0 && (
+                      <p className="muted">acciones sugeridas: {reconcileReport.recommended_actions?.join(", ") ?? ""}</p>
                     )}
                   </article>
                 </div>
