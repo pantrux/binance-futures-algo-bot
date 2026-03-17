@@ -130,7 +130,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-105 | Acción manual `refresh now` en la workstation | ✅ Mergeado | refresco manual del feed live reutilizando el mismo fetch del polling automático con feedback corto para el operador |
 | PR-106 | Hotfix de compose para `NEXT_PUBLIC_API_URL` en Synology | ✅ Mergeado | citar correctamente la variable requerida en `docker-compose.yml` para evitar parseos rotos en el deploy de `web` |
 | PR-107 | Scope live del drill-down según drawers abiertos | ✅ Mergeado | cuando `drilldown` está visible y existen drawers abiertos, el polling se concentra en esos trade plans en vez de pedir todas las operaciones |
-| PR-108 | Visibilidad explícita de símbolos en scope live | 🟡 En progreso | exponer los símbolos exactos actualmente cubiertos por el polling live y endurecer el wiring residual del drill-down para no romper builds futuras |
+| PR-108 | Visibilidad explícita de símbolos en scope live | ✅ Mergeado | exponer los símbolos exactos actualmente cubiertos por el polling live y endurecer el wiring residual del drill-down para no romper builds futuras |
+| PR-109 | Driver visible del scope live en drill-down | 🟡 En progreso | mostrar cuándo el drill-down está gobernando el scope live y qué drawers abiertos están aportando símbolos al polling |
 
 
 ## Secuencia de PRs actualizada

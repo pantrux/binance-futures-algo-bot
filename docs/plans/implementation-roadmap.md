@@ -6,8 +6,8 @@
 ## Resumen ejecutivo
 
 - **Estado global actual:** `PR-107` ya quedó mergeado en `main`, dejando el polling live del drill-down acotado a drawers abiertos cuando aplica, con `PR-105`/`PR-106` ya visibles en Synology tras redeploy y smoke real exitoso.
-- **PR activo:** `PR-108` — visibilidad explícita de los símbolos en scope live + hardening residual del wiring `onToggleOpen` del drill-down.
-- **Siguiente carril sugerido:** cerrar esta capa de observabilidad del polling antes de evaluar una mejora adicional de UX operacional o un salto a realtime más fino.
+- **PR activo:** `PR-109` — visibilidad del driver del scope live cuando el `drilldown` toma control, mostrando qué drawers abiertos están aportando símbolos al polling.
+- **Siguiente carril sugerido:** completar esta trazabilidad fina del polling antes de evaluar una mejora adicional de UX operacional o un salto a realtime más fino.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
