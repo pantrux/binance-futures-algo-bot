@@ -82,6 +82,23 @@ type OperationLiveState = {
   hint: string;
 };
 
+type ReconciliationDriftEvent = {
+  event_type: string;
+  severity: string;
+  message: string;
+};
+
+type ReconciliationReport = {
+  trade_plan_id: number;
+  trade_plan_status: string;
+  healthy: boolean;
+  order_count: number;
+  open_position_count: number;
+  filled_order_count: number;
+  drift_events: ReconciliationDriftEvent[];
+  recommended_actions: string[];
+};
+
 type OperationDrillDownProps = {
   operation: OperationSnapshot;
   index: number;
@@ -89,8 +106,16 @@ type OperationDrillDownProps = {
   liveState: OperationLiveState;
 };
 
+function buildReconcileUrl(tradePlanId: number) {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
+  return apiBaseUrl ? `${apiBaseUrl}/execution/reconcile/${tradePlanId}` : null;
+}
+
 export function OperationDrillDown({ operation, index, livePrice, liveState }: OperationDrillDownProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [reconcileReport, setReconcileReport] = useState<ReconciliationReport | null>(null);
+  const [reconcileLoading, setReconcileLoading] = useState(false);
+  const [reconcileError, setReconcileError] = useState<string | null>(null);
 
   const actualEntry = getActualEntryPrice(operation);
   const latestPnl = livePrice && ["open", "testnet_executed", "partially_filled"].includes(operation.status.toLowerCase())
@@ -104,6 +129,31 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
   const positionHistory = operation.position_history ?? [];
   const riskEventHistory = operation.risk_event_history ?? [];
   const timelineHistory = (operation.timeline_history ?? []).slice(0, 12);
+
+  const runReconcile = async () => {
+    const requestUrl = buildReconcileUrl(operation.trade_plan_id);
+    if (!requestUrl) {
+      setReconcileError("NEXT_PUBLIC_API_URL no configurado");
+      return;
+    }
+
+    setReconcileLoading(true);
+    setReconcileError(null);
+
+    try {
+      const response = await fetch(requestUrl, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Reconcile failed (${response.status})`);
+      }
+
+      const payload = (await response.json()) as ReconciliationReport;
+      setReconcileReport(payload);
+    } catch (error) {
+      setReconcileError(error instanceof Error ? error.message : "Reconcile failed");
+    } finally {
+      setReconcileLoading(false);
+    }
+  };
 
   return (
     <details className="operation-drawer" id={`drawer-${operation.trade_plan_id}`} open={index === 0}>
@@ -171,6 +221,48 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
                 <li><span>Healthy</span><strong>{operation.reconciliation_healthy ? "sí" : "no"}</strong></li>
                 <li><span>Drifts detectados</span><strong>{operation.reconciliation_drift_events?.length || 0}</strong></li>
               </ul>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.75rem" }}>
+                <button type="button" className="action-link" onClick={() => void runReconcile()} disabled={reconcileLoading}>
+                  {reconcileLoading ? "reconciliando..." : "reconcile now"}
+                </button>
+                {reconcileReport && (
+                  <span className={`status-pill ${reconcileReport.healthy ? "ok" : "warn"}`}>
+                    {reconcileReport.healthy ? "reconcile healthy" : "reconcile drift"}
+                  </span>
+                )}
+              </div>
+              {reconcileError && <p className="muted">{reconcileError}</p>}
+              {reconcileReport && (
+                <div className="compact-list" style={{ marginTop: "0.9rem" }}>
+                  <article className="compact-item">
+                    <div className="feed-head">
+                      <strong>Reporte #{reconcileReport.trade_plan_id}</strong>
+                      <small>{reconcileReport.trade_plan_status}</small>
+                    </div>
+                    <p>
+                      órdenes: {reconcileReport.order_count} · fills: {reconcileReport.filled_order_count} · open positions: {reconcileReport.open_position_count}
+                    </p>
+                    {reconcileReport.drift_events.length === 0 ? (
+                      <small className="muted">Sin drift events.</small>
+                    ) : (
+                      <div className="compact-list" style={{ marginTop: "0.75rem" }}>
+                        {reconcileReport.drift_events.map((event, eventIndex) => (
+                          <article key={`${event.event_type}-${eventIndex}`} className="compact-item">
+                            <div className="feed-head">
+                              <span className={`status-pill ${statusTone(event.severity)}`}>{event.severity}</span>
+                              <small>{event.event_type}</small>
+                            </div>
+                            <p>{event.message}</p>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                    {reconcileReport.recommended_actions.length > 0 && (
+                      <p className="muted">acciones sugeridas: {reconcileReport.recommended_actions.join(", ")}</p>
+                    )}
+                  </article>
+                </div>
+              )}
               {renderRiskContext(operation.latest_risk_context)}
             </section>
           </div>
