@@ -132,7 +132,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-107 | Scope live del drill-down según drawers abiertos | ✅ Mergeado | cuando `drilldown` está visible y existen drawers abiertos, el polling se concentra en esos trade plans en vez de pedir todas las operaciones |
 | PR-108 | Visibilidad explícita de símbolos en scope live | ✅ Mergeado | exponer los símbolos exactos actualmente cubiertos por el polling live y endurecer el wiring residual del drill-down para no romper builds futuras |
 | PR-109 | Driver visible del scope live en drill-down | ✅ Mergeado | mostrar cuándo el drill-down está aportando símbolos al scope live y qué drawers abiertos están afectando el polling |
-| PR-110 | Resumen glance del último reconcile por operación | 🟡 En progreso | acercar al summary del drawer el último estado/error de reconcile para evitar abrir el bloque completo de riesgo cada vez |
+| PR-110 | Resumen glance del último reconcile por operación | ✅ Mergeado | acercar al summary del drawer el último estado/error de reconcile para evitar abrir el bloque completo de riesgo cada vez |
+| PR-111 | Nota efímera de cambio de scope live | 🟡 En progreso | avisar cuando la apertura/cierre de drawers cambia el scope live efectivo para que el operador note el cambio sin deducirlo solo por los labels |
 
 
 ## Secuencia de PRs actualizada
