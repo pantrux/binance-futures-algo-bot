@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-101` ya quedó mergeado en `main`, dejando Synology alineado con la trading workstation real tanto en deploy como en smoke/release validation.
-- **PR activo:** `PR-102` — scope live inteligente por sección visible.
-- **Siguiente carril sugerido:** reducir payload/churn aún más sin tocar ejecución: mantener posiciones abiertas en scope constante y sumar tape/operaciones solo cuando las secciones relevantes estén en foco, como paso previo a un polling selectivo todavía más fino.
+- **Estado global actual:** `PR-103` ya quedó mergeado en `main`, dejando disponible la acción segura `reconcile now` dentro del drill-down.
+- **PR activo:** `PR-104` — hardening del feedback de reconcile manual.
+- **Siguiente carril sugerido:** dejar esa acción realmente robusta para operadores (errores visibles, reporte stale limpiado, payload parcial tolerado) antes de volver a expandir acciones operativas o refinar el realtime.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

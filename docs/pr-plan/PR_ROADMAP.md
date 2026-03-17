@@ -125,7 +125,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-100 | Scope selectivo del live polling por símbolos visibles | ✅ Mergeado | reducir payload/churn pidiendo y devolviendo solo símbolos visibles del cockpit cuando aplique |
 | PR-101 | Alinear smoke Synology + env `web` con la trading workstation | ✅ Mergeado | sustituir marcadores viejos del shell smoke por los headings reales de la UI y corregir `SYNOLOGY_API_BASE_URL`/`NEXT_PUBLIC_API_URL` para evitar fallback vacío en Synology |
 | PR-102 | Scope live inteligente por sección visible | ✅ Mergeado | mantener posiciones abiertas siempre en scope y sumar símbolos extra solo si `desk` / `operations` / `drilldown` están en foco |
-| PR-103 | Acción segura `reconcile now` en drill-down | 🟡 En progreso | exponer diagnóstico manual del trade plan desde la workstation sin ejecutar acciones destructivas |
+| PR-103 | Acción segura `reconcile now` en drill-down | ✅ Mergeado | exponer diagnóstico manual del trade plan desde la workstation sin ejecutar acciones destructivas |
+| PR-104 | Hardening del feedback de reconcile manual | 🟡 En progreso | errores visibles en rojo, mensajes en español, payload safe y limpieza de reporte stale tras retries fallidos |
 
 
 ## Secuencia de PRs actualizada

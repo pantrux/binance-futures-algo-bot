@@ -139,6 +139,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
 
     setReconcileLoading(true);
     setReconcileError(null);
+    setReconcileReport(null);
 
     try {
       const response = await fetch(requestUrl, { cache: "no-store" });
@@ -231,7 +232,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
                   </span>
                 )}
               </div>
-              {reconcileError && <p className="muted">{reconcileError}</p>}
+              {reconcileError && <p className="negative">{reconcileError}</p>}
               {reconcileReport && (
                 <div className="compact-list" style={{ marginTop: "0.9rem" }}>
                   <article className="compact-item">
@@ -242,7 +243,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
                     <p>
                       órdenes: {reconcileReport.order_count} · fills: {reconcileReport.filled_order_count} · open positions: {reconcileReport.open_position_count}
                     </p>
-                    {reconcileReport.drift_events.length === 0 ? (
+                    {(reconcileReport.drift_events?.length ?? 0) === 0 ? (
                       <small className="muted">Sin drift events.</small>
                     ) : (
                       <div className="compact-list" style={{ marginTop: "0.75rem" }}>
@@ -257,8 +258,8 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
                         ))}
                       </div>
                     )}
-                    {reconcileReport.recommended_actions.length > 0 && (
-                      <p className="muted">acciones sugeridas: {reconcileReport.recommended_actions.join(", ")}</p>
+                    {(reconcileReport.recommended_actions?.length ?? 0) > 0 && (
+                      <p className="muted">acciones sugeridas: {reconcileReport.recommended_actions?.join(", ") ?? ""}</p>
                     )}
                   </article>
                 </div>
