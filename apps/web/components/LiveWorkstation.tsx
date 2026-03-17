@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
@@ -10,7 +10,7 @@ import { OrderBlotter } from "./OrderBlotter";
 const LIVE_POLL_INTERVAL_MS = 4000;
 const LIVE_STALE_WARN_MS = LIVE_POLL_INTERVAL_MS * 3;
 const LIVE_STALE_DANGER_MS = LIVE_POLL_INTERVAL_MS * 8;
-const LIVE_SCOPE_SECTION_IDS = ["desk", "operations", "book", "risk", "drilldown"] as const;
+const LIVE_SCOPE_SECTION_IDS = ["desk", "operations", "drilldown"] as const;
 
 type LiveScopeSectionId = (typeof LIVE_SCOPE_SECTION_IDS)[number];
 
@@ -41,8 +41,9 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
   const [liveClockMs, setLiveClockMs] = useState(() => Date.now());
-  const [visibleSectionIds, setVisibleSectionIds] = useState<LiveScopeSectionId[]>(["desk", "operations", "book", "risk", "drilldown"]);
+  const [visibleSectionIds, setVisibleSectionIds] = useState<LiveScopeSectionId[]>([...LIVE_SCOPE_SECTION_IDS]);
   const livePricingUrl = buildLivePricingUrl();
+  const livePricingRequestUrlRef = useRef<string | null>(null);
   const visibleSymbols = useMemo(() => {
     const scopedSymbols = new Set<string>(data.open_positions.map((position: any) => position.symbol));
     const visibleSectionSet = new Set(visibleSectionIds);
@@ -109,11 +110,21 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   }, []);
 
   useEffect(() => {
-    if (!isPolling || !livePricingRequestUrl) return;
+    livePricingRequestUrlRef.current = livePricingRequestUrl;
+  }, [livePricingRequestUrl]);
+
+  useEffect(() => {
+    if (!isPolling || !livePricingUrl) return;
 
     const pollLivePricing = async () => {
+      const requestUrl = livePricingRequestUrlRef.current;
+      if (!requestUrl) {
+        setLivePollingError(null);
+        return;
+      }
+
       try {
-        const res = await fetch(livePricingRequestUrl, { cache: "no-store" });
+        const res = await fetch(requestUrl, { cache: "no-store" });
         if (!res.ok) {
           throw new Error(`Live pricing poll failed (${res.status})`);
         }
@@ -143,7 +154,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     }, LIVE_POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [isPolling, livePricingRequestUrl]);
+  }, [isPolling, livePricingUrl]);
 
   useEffect(() => {
     if (!lastLiveUpdateAt || !isPolling) {
