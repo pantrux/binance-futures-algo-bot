@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
@@ -167,55 +167,75 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const liveCoveredPositions = positions.filter((position: any) => livePrices[position.symbol]).length;
   const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => livePrices[operation.symbol]).length;
 
-  function getSymbolLiveState(symbol: string) {
-    const hasSymbolLivePrice = Boolean(livePrices[symbol]);
+  const defaultSnapshotLiveState = useMemo(
+    () => ({
+      label: "snapshot",
+      tone: livePricingUrl ? "warn" : "neutral",
+      hint: livePricingUrl ? "sin cobertura live para este símbolo" : "live pricing deshabilitado",
+    }),
+    [livePricingUrl],
+  );
 
-    if (!hasSymbolLivePrice) {
-      return {
-        label: "snapshot",
-        tone: livePricingUrl ? "neutral" : "warn",
-        hint: livePricingUrl ? "sin cobertura live para este símbolo" : "live pricing deshabilitado",
+  const symbolLiveStates = useMemo(() => {
+    const symbols = new Set<string>([
+      ...positions.map((position: any) => position.symbol),
+      ...data.operation_snapshots.map((operation: any) => operation.symbol),
+    ]);
+    const states: Record<string, { label: string; tone: string; hint: string }> = {};
+
+    symbols.forEach((symbol) => {
+      const hasSymbolLivePrice = Boolean(livePrices[symbol]);
+
+      if (!hasSymbolLivePrice) {
+        states[symbol] = defaultSnapshotLiveState;
+        return;
+      }
+
+      if (isLivePaused) {
+        states[symbol] = {
+          label: "live pausado",
+          tone: "warn",
+          hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "polling pausado",
+        };
+        return;
+      }
+
+      if (livePollingError) {
+        states[symbol] = {
+          label: isLiveStaleDanger ? "live crítico" : "live degradado",
+          tone: isLiveStaleDanger ? "danger" : "warn",
+          hint: "error activo con último tick cacheado",
+        };
+        return;
+      }
+
+      if (isLiveStaleDanger) {
+        states[symbol] = {
+          label: "live vencido",
+          tone: "danger",
+          hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
+        };
+        return;
+      }
+
+      if (isLiveStaleWarn) {
+        states[symbol] = {
+          label: "live envejeciendo",
+          tone: "warn",
+          hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
+        };
+        return;
+      }
+
+      states[symbol] = {
+        label: "live fresco",
+        tone: "ok",
+        hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "live pricing activo",
       };
-    }
+    });
 
-    if (isLivePaused) {
-      return {
-        label: "live pausado",
-        tone: "warn",
-        hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "polling pausado",
-      };
-    }
-
-    if (livePollingError) {
-      return {
-        label: isLiveStaleDanger ? "live crítico" : "live degradado",
-        tone: isLiveStaleDanger ? "danger" : "warn",
-        hint: hasLivePrices ? "error activo con último tick cacheado" : "polling con error",
-      };
-    }
-
-    if (isLiveStaleDanger) {
-      return {
-        label: "live vencido",
-        tone: "danger",
-        hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
-      };
-    }
-
-    if (isLiveStaleWarn) {
-      return {
-        label: "live envejeciendo",
-        tone: "warn",
-        hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
-      };
-    }
-
-    return {
-      label: "live fresco",
-      tone: "ok",
-      hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "live pricing activo",
-    };
-  }
+    return states;
+  }, [data.operation_snapshots, defaultSnapshotLiveState, isLivePaused, isLiveStaleDanger, isLiveStaleWarn, lastLiveUpdateAt, liveAgeMs, livePollingError, livePrices, positions]);
 
   const summaryCards = [
     { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
@@ -350,7 +370,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             <p className="empty-state">Sin operaciones consolidadas.</p>
           ) : data.operation_snapshots.slice(0, 8).map((operation: any) => {
             const live = livePrices[operation.symbol];
-            const liveState = getSymbolLiveState(operation.symbol);
+            const liveState = symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState;
             let latestPnl = operation.latest_position_unrealized_pnl;
             const actualEntry = getActualEntryPrice(operation);
 
@@ -524,7 +544,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
               operation={operation}
               index={index}
               livePrice={livePrices[operation.symbol]}
-              liveState={getSymbolLiveState(operation.symbol)}
+              liveState={symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState}
             />
           ))}
         </div>
