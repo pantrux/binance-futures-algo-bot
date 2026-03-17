@@ -284,7 +284,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const openDrilldownOperations = data.operation_snapshots.filter((operation: any) => openDrilldownTradePlanIds.includes(operation.trade_plan_id));
   const liveScopeDriverLabel = !visibleSectionIds.includes("drilldown")
     ? "driver: scope guiado por secciones visibles"
-    : openDrilldownOperations.length === 0
+    : openDrilldownTradePlanIds.length === 0
       ? "driver: drill-down visible sin drawers abiertos; fallback a todas las operaciones"
       : `driver: drill-down gobierna ${openDrilldownOperations.length} drawer(s) abierto(s) → ${openDrilldownOperations.map((operation: any) => `#${operation.trade_plan_id} ${operation.symbol}`).join(", ")}`;
   const liveStatusCopy = isLivePaused
