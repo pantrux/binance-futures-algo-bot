@@ -10,9 +10,8 @@ class LivePricingService:
 
     async def get_live_pricing(self, symbols: list[str] | None = None) -> DashboardLivePricingResponse:
         normalized_symbols = sorted({symbol.strip().upper() for symbol in symbols or [] if symbol.strip()})
-        requested_symbol = normalized_symbols[0] if len(normalized_symbols) == 1 else None
 
-        positions_raw = await self.client.get_position_risk(symbol=requested_symbol)
+        positions_raw = await self.client.get_position_risk(symbol=None)
         if not positions_raw:
             positions_raw = []
 
