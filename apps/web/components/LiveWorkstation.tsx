@@ -74,6 +74,41 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   }, [livePricingUrl, visibleSymbols]);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setVisibleSectionIds((current) => {
+          const next = new Set(current);
+
+          entries.forEach((entry) => {
+            const sectionId = entry.target.id as LiveScopeSectionId;
+            if (entry.isIntersecting) {
+              next.add(sectionId);
+            } else {
+              next.delete(sectionId);
+            }
+          });
+
+          return LIVE_SCOPE_SECTION_IDS.filter((sectionId) => next.has(sectionId));
+        });
+      },
+      { rootMargin: "0px 0px -35% 0px", threshold: 0.2 },
+    );
+
+    LIVE_SCOPE_SECTION_IDS.forEach((sectionId) => {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!isPolling || !livePricingRequestUrl) return;
 
     const pollLivePricing = async () => {
