@@ -6,7 +6,7 @@
 ## Resumen ejecutivo
 
 - **Estado global actual:** `PR-107` ya quedó mergeado en `main`, dejando el polling live del drill-down acotado a drawers abiertos cuando aplica, con `PR-105`/`PR-106` ya visibles en Synology tras redeploy y smoke real exitoso.
-- **PR activo:** `PR-113` — timestamp también para el estado de snapshot del reconcile en el summary del drawer.
+- **PR activo:** `PR-114` — edad relativa visible del snapshot/reconcile (`hace 12s / 3m / 1h`) en el summary del drawer.
 - **Siguiente carril sugerido:** seguir endureciendo la microcapa de feedback operativo antes de saltar a realtime más fino o SSE/WebSocket.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?

@@ -114,6 +114,31 @@ function buildReconcileUrl(tradePlanId: number) {
   return apiBaseUrl ? `${apiBaseUrl}/execution/reconcile/${tradePlanId}` : null;
 }
 
+function formatRelativeAge(value: string) {
+  const timestampMs = Date.parse(value);
+  if (Number.isNaN(timestampMs)) {
+    return null;
+  }
+
+  const diffSeconds = Math.max(0, Math.floor((Date.now() - timestampMs) / 1000));
+  if (diffSeconds < 60) {
+    return `hace ${diffSeconds}s`;
+  }
+
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) {
+    return `hace ${diffMinutes}m`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `hace ${diffHours}h`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `hace ${diffDays}d`;
+}
+
 export function OperationDrillDown({ operation, index, livePrice, liveState, onToggleOpen, snapshotGeneratedAt }: OperationDrillDownProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [reconcileReport, setReconcileReport] = useState<ReconciliationReport | null>(null);
@@ -134,19 +159,21 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
   const riskEventHistory = operation.risk_event_history ?? [];
   const timelineHistory = (operation.timeline_history ?? []).slice(0, 12);
   const reconcileTimestampLabel = reconcileCompletedAt ? formatDate(reconcileCompletedAt) : null;
+  const reconcileRelativeAgeLabel = reconcileCompletedAt ? formatRelativeAge(reconcileCompletedAt) : null;
   const snapshotTimestamp = snapshotGeneratedAt ?? operation.snapshot_generated_at;
   const snapshotTimestampLabel = snapshotTimestamp ? formatDate(snapshotTimestamp) : null;
+  const snapshotRelativeAgeLabel = snapshotTimestamp ? formatRelativeAge(snapshotTimestamp) : null;
   const reconcileSummaryLabel = reconcileLoading
     ? "reconcile en progreso"
     : reconcileError
       ? `último reconcile falló: ${reconcileError}`
       : reconcileReport
         ? reconcileReport.healthy
-          ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}`
-          : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}`
+          ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}${reconcileRelativeAgeLabel ? ` (${reconcileRelativeAgeLabel})` : ""}`
+          : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}${reconcileRelativeAgeLabel ? ` (${reconcileRelativeAgeLabel})` : ""}`
         : operation.reconciliation_healthy
-          ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}`
-          : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}`;
+          ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}${snapshotRelativeAgeLabel ? ` (${snapshotRelativeAgeLabel})` : ""}`
+          : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}${snapshotRelativeAgeLabel ? ` (${snapshotRelativeAgeLabel})` : ""}`;
 
   const runReconcile = async () => {
     const requestUrl = buildReconcileUrl(operation.trade_plan_id);
@@ -277,7 +304,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
                       <strong>Reporte #{reconcileReport.trade_plan_id}</strong>
                       <small>{reconcileReport.trade_plan_status}</small>
                     </div>
-                    {reconcileTimestampLabel && <small className="muted">ejecutado {reconcileTimestampLabel}</small>}
+                    {reconcileTimestampLabel && <small className="muted">ejecutado {reconcileTimestampLabel}{reconcileRelativeAgeLabel ? ` (${reconcileRelativeAgeLabel})` : ""}</small>}
                     <p>
                       órdenes: {reconcileReport.order_count} · fills: {reconcileReport.filled_order_count} · open positions: {reconcileReport.open_position_count}
                     </p>
