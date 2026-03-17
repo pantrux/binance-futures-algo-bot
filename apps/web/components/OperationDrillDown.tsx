@@ -179,7 +179,19 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
         <div className="drawer-summary-main">
           <strong>#{operation.trade_plan_id} · {operation.symbol}</strong>
           <small>{operation.timeframe} · {operation.side} · {operation.market_regime}</small>
-          <small className={reconcileError ? "negative" : "muted"}>{reconcileSummaryLabel}</small>
+          <small className={
+            reconcileError
+              ? "negative"
+              : reconcileLoading
+                ? "muted"
+                : reconcileReport
+                  ? reconcileReport.healthy
+                    ? "positive"
+                    : "warn"
+                  : operation.reconciliation_healthy
+                    ? "muted"
+                    : "warn"
+          }>{reconcileSummaryLabel}</small>
         </div>
         <div className="drawer-summary-stats">
           <span>{formatNumber(actualEntry, 2)}</span>
