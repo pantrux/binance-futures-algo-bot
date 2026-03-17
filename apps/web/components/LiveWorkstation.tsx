@@ -181,6 +181,18 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   }, [isPolling, livePricingUrl, refreshLivePricing]);
 
   useEffect(() => {
+    if (!liveRefreshNote) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setLiveRefreshNote(null);
+    }, 5_000);
+
+    return () => clearTimeout(timeout);
+  }, [liveRefreshNote]);
+
+  useEffect(() => {
     if (!lastLiveUpdateAt || !isPolling) {
       return;
     }
@@ -371,10 +383,16 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           <span className={liveBadgeClassName}>{liveBadgeLabel}</span>
           <strong>{formatDate(data.generated_at)}</strong>
           <p>{liveStatusCopy}</p>
-          <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
-            {isPolling ? "pausar live" : "reanudar live"}
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <button type="button" className="action-link" onClick={() => void refreshLivePricing("manual")} disabled={isLiveRefreshing}>
+              {isLiveRefreshing ? "refrescando..." : "refresh now"}
+            </button>
+            <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
+              {isPolling ? "pausar live" : "reanudar live"}
+            </button>
+          </div>
           <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length || "idle"} símbolos ({liveScopeLabel}) · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
+          {liveRefreshNote && <small className="muted">{liveRefreshNote}</small>}
         </div>
       </header>
 
