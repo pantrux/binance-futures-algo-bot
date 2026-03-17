@@ -89,19 +89,24 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     return () => clearInterval(interval);
   }, [lastLiveUpdateAt, isPolling]);
 
-  // Compute live open PnL
-  let liveOpenPnl = 0;
-  const positions = data.open_positions.map((pos: any) => {
-    const live = livePrices[pos.symbol];
-    const currentPnl = live ? live.unrealizedPnl : pos.unrealized_pnl;
-    const currentMark = live ? live.markPrice : pos.mark_price;
-    liveOpenPnl += currentPnl;
-    return { ...pos, unrealized_pnl: currentPnl, mark_price: currentMark };
-  });
-  
-  if (Object.keys(livePrices).length === 0) {
-    liveOpenPnl = initialOpenPnl;
-  }
+  const positions = useMemo(
+    () =>
+      data.open_positions.map((pos: any) => {
+        const live = livePrices[pos.symbol];
+        const currentPnl = live ? live.unrealizedPnl : pos.unrealized_pnl;
+        const currentMark = live ? live.markPrice : pos.mark_price;
+
+        return { ...pos, unrealized_pnl: currentPnl, mark_price: currentMark };
+      }),
+    [data.open_positions, livePrices],
+  );
+  const liveOpenPnl = useMemo(() => {
+    if (Object.keys(livePrices).length === 0) {
+      return initialOpenPnl;
+    }
+
+    return positions.reduce((acc: number, position: any) => acc + (position.unrealized_pnl ?? 0), 0);
+  }, [initialOpenPnl, livePrices, positions]);
 
   // Update tape with live prices
   const tape = initialTape.map((item: any) => {
