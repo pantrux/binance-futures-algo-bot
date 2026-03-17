@@ -90,8 +90,8 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - PR-91 en adelante.
 - Estado actual: baseline UX ya aterrizada con `PR-91` (shell modular), `PR-92` (drill-down por tabs), `PR-93` (live data backend + polling UI), `PR-94` (polish visual + order blotter interactivo), `PR-96` (scope fino del blotter + sync documental), `PR-97` (hardening residual post-auditoría), `PR-98` (freshness/reliability UX global del live polling) y `PR-99` (cobertura/freshness live por operación).
 - Entrega lograda: command center más navegable, moderno y orientado a operación real, con navegación explícita, polling vivo y señales de frescura tanto globales como por operación.
-- Carril inmediato (`PR-100`): scope selectivo del live polling — pedir y devolver solo símbolos visibles del cockpit para reducir payload/churn y preparar el terreno para polling selectivo o live scope más fino.
-- Siguiente expansión natural: profundizar la workstation con realtime más fino (polling selectivo más inteligente o SSE/WebSocket), acciones operativas y mayor densidad contextual por operación.
+- Carril inmediato (`PR-102`): scope live inteligente por sección visible — mantener posiciones abiertas en scope constante y sumar tape/operaciones solo cuando `desk`, `operations` o `drilldown` estén realmente en foco.
+- Siguiente expansión natural: profundizar la workstation con realtime más fino (polling selectivo todavía más inteligente o SSE/WebSocket), acciones operativas y mayor densidad contextual por operación.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.
