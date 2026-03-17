@@ -139,6 +139,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
 
     setReconcileLoading(true);
     setReconcileError(null);
+    setReconcileReport(null);
 
     try {
       const response = await fetch(requestUrl, { cache: "no-store" });
@@ -231,7 +232,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
                   </span>
                 )}
               </div>
-              {reconcileError && <p className="muted">{reconcileError}</p>}
+              {reconcileError && <p className="negative">{reconcileError}</p>}
               {reconcileReport && (
                 <div className="compact-list" style={{ marginTop: "0.9rem" }}>
                   <article className="compact-item">
