@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext } from "../lib/formatters";
+import { formatRelativeAge } from "../lib/time-format";
 import { getActualEntryPrice, type ActualEntryOperation, type LivePriceEntry } from "../lib/trade-utils";
 
 type RiskContext = Record<string, string | number | boolean | null> | null | undefined;
@@ -112,31 +113,6 @@ type OperationDrillDownProps = {
 function buildReconcileUrl(tradePlanId: number) {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
   return apiBaseUrl ? `${apiBaseUrl}/execution/reconcile/${tradePlanId}` : null;
-}
-
-function formatRelativeAge(value: string) {
-  const timestampMs = Date.parse(value);
-  if (Number.isNaN(timestampMs)) {
-    return null;
-  }
-
-  const diffSeconds = Math.max(0, Math.floor((Date.now() - timestampMs) / 1000));
-  if (diffSeconds < 60) {
-    return `hace ${diffSeconds}s`;
-  }
-
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  if (diffMinutes < 60) {
-    return `hace ${diffMinutes}m`;
-  }
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) {
-    return `hace ${diffHours}h`;
-  }
-
-  const diffDays = Math.floor(diffHours / 24);
-  return `hace ${diffDays}d`;
 }
 
 export function OperationDrillDown({ operation, index, livePrice, liveState, onToggleOpen, snapshotGeneratedAt }: OperationDrillDownProps) {
