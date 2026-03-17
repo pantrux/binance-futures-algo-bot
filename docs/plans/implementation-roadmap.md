@@ -160,7 +160,7 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 
 ### PR-54 — Smoke Synology del command center enriquecido ✅
 - smoke script endurecido para validar `GET /dashboard/command-center` y el payload enriquecido por operación
-- smoke UI endurecido para exigir marcadores reales del dashboard (`Historial de órdenes`, `Historial de posiciones`, `Historial de riesgo`, `Reconcile actual`)
+- smoke UI endurecido inicialmente con marcadores del dashboard histórico; desde `PR-101` el contrato del smoke queda alineado a la trading workstation (`Trading workstation del bot`, `Posiciones abiertas`, `Órdenes recientes`, `Eventos recientes`, `Drill-down por operación`, `Live freshness`, `Live coverage`)
 - validación real ejecutada con éxito contra NAS local (`192.168.0.8:8010` / `192.168.0.8:3012`)
 - mergeado en `eefaa74`
 
@@ -310,16 +310,16 @@ El levantamiento de infraestructura recurrente ya arrancó con `PR-20` (estabili
 - mergeado en `533d884` con checks verdes y reviews resueltas
 
 ### PR-78 — Marcadores adicionales de `WEB /` en el shell smoke ✅
-- cubrir el caso donde la home responde `200` pero falta `Detalle por trade plan`
-- cubrir el caso donde la home responde `200` pero falta `Reconcile actual`
-- mantener el harness reproducible y el diagnóstico claro para fallos adicionales de `check_body_contains()`
+- cubrió el contrato histórico del dashboard para `Detalle por trade plan` y `Reconcile actual`
+- mantuvo el harness reproducible y el diagnóstico claro para fallos adicionales de `check_body_contains()`
 - mergeado en `26eaacc` con checks verdes y reviews resueltas
+- **Nota histórica:** reemplazado por marcadores de la trading workstation en `PR-101`
 
 ### PR-79 — Marcadores restantes de órdenes y posiciones en el shell smoke ✅
-- cubrir el caso donde la home responde `200` pero falta `Historial de órdenes`
-- cubrir el caso donde la home responde `200` pero falta `Historial de posiciones`
-- cerrar la cobertura explícita pendiente de `check_body_contains()` sobre los marcadores base del command center
+- cubrió el contrato histórico del dashboard para `Historial de órdenes` y `Historial de posiciones`
+- cerró la cobertura explícita pendiente de `check_body_contains()` sobre los marcadores base del command center histórico
 - mergeado en `6968007` con checks verdes y reviews resueltas
+- **Nota histórica:** reemplazado por marcadores de la trading workstation en `PR-101`
 
 ### PR-80 — Cierre formal de Fase 15 ✅
 - consolidar documentalmente que el harness operacional quedó endurecido y reproducible

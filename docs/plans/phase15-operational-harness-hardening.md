@@ -64,16 +64,16 @@ Dejar el carril de smoke/release con pruebas reproducibles, limpias y fáciles d
 - mergeado en `533d884`
 
 ### PR-78 — Marcadores adicionales de `WEB /` en el shell smoke ✅
-- cubrir el caso donde la home responde `200` pero falta `Detalle por trade plan`
-- cubrir el caso donde la home responde `200` pero falta `Reconcile actual`
-- mantener el harness reproducible y el diagnóstico claro para fallos adicionales de `check_body_contains()`
+- cubrió el contrato histórico del dashboard cuando la home aún exponía `Detalle por trade plan` y `Reconcile actual`
+- mantuvo el harness reproducible y el diagnóstico claro para fallos adicionales de `check_body_contains()`
 - mergeado en `26eaacc`
+- **Nota histórica:** este contrato fue reemplazado por los marcadores de la trading workstation en `PR-101`
 
 ### PR-79 — Marcadores restantes de órdenes y posiciones en el shell smoke ✅
-- cubrir el caso donde la home responde `200` pero falta `Historial de órdenes`
-- cubrir el caso donde la home responde `200` pero falta `Historial de posiciones`
-- cerrar la cobertura explícita pendiente de `check_body_contains()` sobre los marcadores base del command center
+- cubrió el contrato histórico del dashboard cuando la home aún exponía `Historial de órdenes` y `Historial de posiciones`
+- cerró la cobertura explícita pendiente de `check_body_contains()` sobre los marcadores base del command center histórico
 - mergeado en `6968007`
+- **Nota histórica:** este contrato fue reemplazado por los marcadores de la trading workstation en `PR-101`
 
 ### PR-80 — Cierre formal de Fase 15 ✅
 - consolidar documentalmente que el harness operacional quedó endurecido y reproducible

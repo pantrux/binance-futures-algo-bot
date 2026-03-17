@@ -149,11 +149,13 @@ def build_html(*, include_context_markers: bool) -> str:
     return (
         "<html><body>"
         "bot "
-        "Detalle por trade plan "
-        "Historial de órdenes "
-        "Historial de posiciones "
-        "Historial de riesgo "
-        "Reconcile actual "
+        "Trading workstation del bot "
+        "Posiciones abiertas "
+        "Órdenes recientes "
+        "Eventos recientes "
+        "Drill-down por operación "
+        "Live freshness "
+        "Live coverage "
         f"{markers}"
         "</body></html>"
     )
@@ -380,12 +382,12 @@ def test_synology_smoke_script_fails_when_web_root_is_missing_bot_marker() -> No
     assert "WEB / no contiene 'bot'" in result.stderr
 
 
-def test_synology_smoke_script_fails_when_web_root_is_missing_command_center_marker() -> None:
+def test_synology_smoke_script_fails_when_web_root_is_missing_events_marker() -> None:
     payload = build_payload(
         latest_risk_context={"symbol": "BTCUSDT"},
         recent_risk_events=[],
     )
-    html = build_html(include_context_markers=True).replace("Historial de riesgo ", "")
+    html = build_html(include_context_markers=True).replace("Eventos recientes ", "")
 
     server, thread, base_url = run_fixture_server(payload, html)
     try:
@@ -394,15 +396,15 @@ def test_synology_smoke_script_fails_when_web_root_is_missing_command_center_mar
         stop_fixture_server(server, thread)
 
     assert result.returncode != 0
-    assert "WEB command center no contiene 'Historial de riesgo'" in result.stderr
+    assert "WEB command center no contiene 'Eventos recientes'" in result.stderr
 
 
-def test_synology_smoke_script_fails_when_web_root_is_missing_trade_plan_marker() -> None:
+def test_synology_smoke_script_fails_when_web_root_is_missing_workstation_marker() -> None:
     payload = build_payload(
         latest_risk_context={"symbol": "BTCUSDT"},
         recent_risk_events=[],
     )
-    html = build_html(include_context_markers=True).replace("Detalle por trade plan ", "")
+    html = build_html(include_context_markers=True).replace("Trading workstation del bot ", "")
 
     server, thread, base_url = run_fixture_server(payload, html)
     try:
@@ -411,15 +413,15 @@ def test_synology_smoke_script_fails_when_web_root_is_missing_trade_plan_marker(
         stop_fixture_server(server, thread)
 
     assert result.returncode != 0
-    assert "WEB command center no contiene 'Detalle por trade plan'" in result.stderr
+    assert "WEB command center no contiene 'Trading workstation del bot'" in result.stderr
 
 
-def test_synology_smoke_script_fails_when_web_root_is_missing_reconcile_marker() -> None:
+def test_synology_smoke_script_fails_when_web_root_is_missing_drilldown_marker() -> None:
     payload = build_payload(
         latest_risk_context={"symbol": "BTCUSDT"},
         recent_risk_events=[],
     )
-    html = build_html(include_context_markers=True).replace("Reconcile actual ", "")
+    html = build_html(include_context_markers=True).replace("Drill-down por operación ", "")
 
     server, thread, base_url = run_fixture_server(payload, html)
     try:
@@ -428,7 +430,7 @@ def test_synology_smoke_script_fails_when_web_root_is_missing_reconcile_marker()
         stop_fixture_server(server, thread)
 
     assert result.returncode != 0
-    assert "WEB command center no contiene 'Reconcile actual'" in result.stderr
+    assert "WEB command center no contiene 'Drill-down por operación'" in result.stderr
 
 
 def test_synology_smoke_script_fails_when_web_root_is_missing_orders_marker() -> None:
@@ -436,7 +438,7 @@ def test_synology_smoke_script_fails_when_web_root_is_missing_orders_marker() ->
         latest_risk_context={"symbol": "BTCUSDT"},
         recent_risk_events=[],
     )
-    html = build_html(include_context_markers=True).replace("Historial de órdenes ", "")
+    html = build_html(include_context_markers=True).replace("Órdenes recientes ", "")
 
     server, thread, base_url = run_fixture_server(payload, html)
     try:
@@ -445,7 +447,7 @@ def test_synology_smoke_script_fails_when_web_root_is_missing_orders_marker() ->
         stop_fixture_server(server, thread)
 
     assert result.returncode != 0
-    assert "WEB command center no contiene 'Historial de órdenes'" in result.stderr
+    assert "WEB command center no contiene 'Órdenes recientes'" in result.stderr
 
 
 def test_synology_smoke_script_fails_when_web_root_is_missing_positions_marker() -> None:
@@ -453,7 +455,7 @@ def test_synology_smoke_script_fails_when_web_root_is_missing_positions_marker()
         latest_risk_context={"symbol": "BTCUSDT"},
         recent_risk_events=[],
     )
-    html = build_html(include_context_markers=True).replace("Historial de posiciones ", "")
+    html = build_html(include_context_markers=True).replace("Posiciones abiertas ", "")
 
     server, thread, base_url = run_fixture_server(payload, html)
     try:
@@ -462,7 +464,41 @@ def test_synology_smoke_script_fails_when_web_root_is_missing_positions_marker()
         stop_fixture_server(server, thread)
 
     assert result.returncode != 0
-    assert "WEB command center no contiene 'Historial de posiciones'" in result.stderr
+    assert "WEB command center no contiene 'Posiciones abiertas'" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_web_root_is_missing_live_freshness_marker() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    html = build_html(include_context_markers=True).replace("Live freshness ", "")
+
+    server, thread, base_url = run_fixture_server(payload, html)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "WEB command center no contiene 'Live freshness'" in result.stderr
+
+
+def test_synology_smoke_script_fails_when_web_root_is_missing_live_coverage_marker() -> None:
+    payload = build_payload(
+        latest_risk_context={"symbol": "BTCUSDT"},
+        recent_risk_events=[],
+    )
+    html = build_html(include_context_markers=True).replace("Live coverage ", "")
+
+    server, thread, base_url = run_fixture_server(payload, html)
+    try:
+        result = run_smoke(base_url)
+    finally:
+        stop_fixture_server(server, thread)
+
+    assert result.returncode != 0
+    assert "WEB command center no contiene 'Live coverage'" in result.stderr
 
 
 def test_synology_smoke_script_passes_when_metrics_returns_200_with_expected_auth() -> None:

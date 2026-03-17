@@ -94,12 +94,17 @@ services:
     build:
       context: ../../../
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        SYNOLOGY_API_BASE_URL: ${SYNOLOGY_API_BASE_URL:-http://api:8000}
     container_name: trading-bot-web
     restart: unless-stopped
     env_file:
       - .env
     environment:
       API_BASE_URL: http://api:8000
+      SYNOLOGY_API_BASE_URL: ${SYNOLOGY_API_BASE_URL:-http://api:8000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     depends_on:
       api:
         condition: service_healthy
