@@ -95,7 +95,7 @@ services:
       context: ../../../
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:?Variable NEXT_PUBLIC_API_URL requerida: URL publica de la API accesible desde el navegador (ej: http://IP_NAS:8010)}"
         SYNOLOGY_API_BASE_URL: ${SYNOLOGY_API_BASE_URL:-http://api:8000}
     container_name: trading-bot-web
     restart: unless-stopped
@@ -104,7 +104,7 @@ services:
     environment:
       API_BASE_URL: http://api:8000
       SYNOLOGY_API_BASE_URL: ${SYNOLOGY_API_BASE_URL:-http://api:8000}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Variable NEXT_PUBLIC_API_URL requerida: URL publica de la API accesible desde el navegador (ej: http://IP_NAS:8010)}
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:?Variable NEXT_PUBLIC_API_URL requerida: URL publica de la API accesible desde el navegador (ej: http://IP_NAS:8010)}"
     depends_on:
       api:
         condition: service_healthy
