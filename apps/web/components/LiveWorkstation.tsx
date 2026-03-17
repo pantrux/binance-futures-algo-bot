@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
@@ -40,6 +40,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [isPolling, setIsPolling] = useState(true);
   const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
+  const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
+  const [liveRefreshNote, setLiveRefreshNote] = useState<string | null>(null);
   const [liveClockMs, setLiveClockMs] = useState(() => Date.now());
   const [visibleSectionIds, setVisibleSectionIds] = useState<LiveScopeSectionId[]>([...LIVE_SCOPE_SECTION_IDS]);
   const livePricingUrl = buildLivePricingUrl();
@@ -113,14 +115,20 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     livePricingRequestUrlRef.current = livePricingRequestUrl;
   }, [livePricingRequestUrl]);
 
-  useEffect(() => {
-    if (!isPolling || !livePricingUrl) return;
-
-    const pollLivePricing = async () => {
+  const refreshLivePricing = useCallback(
+    async (mode: "interval" | "manual" = "interval") => {
       const requestUrl = livePricingRequestUrlRef.current;
       if (!requestUrl) {
         setLivePollingError(null);
+        if (mode === "manual") {
+          setLiveRefreshNote("scope idle: no hay símbolos activos para refrescar");
+        }
         return;
+      }
+
+      if (mode === "manual") {
+        setIsLiveRefreshing(true);
+        setLiveRefreshNote(null);
       }
 
       try {
@@ -142,19 +150,35 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         setLivePrices(pricesMap);
         setLastLiveUpdateAt(new Date().toISOString());
         setLivePollingError(null);
+        if (mode === "manual") {
+          setLiveRefreshNote(`refresh manual OK · ${Object.keys(pricesMap).length} símbolos live`);
+        }
       } catch (err) {
-        setLivePollingError(err instanceof Error ? err.message : "Live pricing poll failed");
+        const message = err instanceof Error ? err.message : "Live pricing poll failed";
+        setLivePollingError(message);
+        if (mode === "manual") {
+          setLiveRefreshNote(`refresh manual falló · ${message}`);
+        }
         console.error("Live pricing poll failed:", err);
+      } finally {
+        if (mode === "manual") {
+          setIsLiveRefreshing(false);
+        }
       }
-    };
+    },
+    [],
+  );
 
-    void pollLivePricing();
+  useEffect(() => {
+    if (!isPolling || !livePricingUrl) return;
+
+    void refreshLivePricing("interval");
     const interval = setInterval(() => {
-      void pollLivePricing();
+      void refreshLivePricing("interval");
     }, LIVE_POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [isPolling, livePricingUrl]);
+  }, [isPolling, livePricingUrl, refreshLivePricing]);
 
   useEffect(() => {
     if (!lastLiveUpdateAt || !isPolling) {
