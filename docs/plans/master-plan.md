@@ -88,10 +88,10 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 
 ### Etapa O — Trading workstation UX del command center
 - PR-91 en adelante.
-- Estado actual: baseline UX ya aterrizada con `PR-91` (shell modular), `PR-92` (drill-down por tabs), `PR-93` (live data backend + polling UI), `PR-94` (polish visual + order blotter interactivo), `PR-96` (scope fino del blotter + sync documental), `PR-97` (hardening residual post-auditoría), `PR-98` (freshness/reliability UX global del live polling) y `PR-99` (cobertura/freshness live por operación).
-- Entrega lograda: command center más navegable, moderno y orientado a operación real, con navegación explícita, polling vivo y señales de frescura tanto globales como por operación.
-- Carril inmediato (`PR-104`): hardening del feedback de reconcile manual — que el diagnóstico del drill-down degrade bien ante retries fallidos, payloads parciales y errores visibles para el operador.
-- Siguiente expansión natural: profundizar la workstation con realtime más fino (polling selectivo todavía más inteligente o SSE/WebSocket), acciones operativas y mayor densidad contextual por operación.
+- Estado actual: baseline UX ya aterrizada con `PR-91` (shell modular), `PR-92` (drill-down por tabs), `PR-93` (live data backend + polling UI), `PR-94` (polish visual + order blotter interactivo), `PR-96` (scope fino del blotter + sync documental), `PR-97` (hardening residual post-auditoría), `PR-98` (freshness/reliability UX global del live polling), `PR-99` (cobertura/freshness live por operación), `PR-100` (scope selectivo por símbolos visibles), `PR-102` (scope por sección visible), `PR-103`/`PR-104` (acción + feedback seguro de reconcile), `PR-105` (refresh manual), `PR-106` (hotfix de deploy Synology) y `PR-107` (scope del drill-down según drawers abiertos).
+- Entrega lograda: command center más navegable, moderno y orientado a operación real, con navegación explícita, polling vivo, acciones operativas básicas y scoping progresivamente más fino del feed live.
+- Carril inmediato (`PR-108`): visibilidad explícita de los símbolos en scope live, cerrando además el wiring residual del drill-down para que el refinamiento de `PR-107` quede sólido en builds futuras.
+- Siguiente expansión natural: profundizar la workstation con realtime aún más fino (polling selectivo más granular o SSE/WebSocket), acciones operativas y mayor densidad contextual por operación.
 
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.

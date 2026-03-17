@@ -44,6 +44,9 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [liveRefreshNote, setLiveRefreshNote] = useState<string | null>(null);
   const [liveClockMs, setLiveClockMs] = useState(() => Date.now());
   const [visibleSectionIds, setVisibleSectionIds] = useState<LiveScopeSectionId[]>([...LIVE_SCOPE_SECTION_IDS]);
+  const [openDrilldownTradePlanIds, setOpenDrilldownTradePlanIds] = useState<number[]>(() =>
+    initialData?.operation_snapshots?.[0]?.trade_plan_id ? [initialData.operation_snapshots[0].trade_plan_id] : [],
+  );
   const livePricingUrl = buildLivePricingUrl();
   const livePricingRequestUrlRef = useRef<string | null>(null);
   const visibleSymbols = useMemo(() => {
@@ -56,12 +59,19 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         .forEach((item: any) => scopedSymbols.add(item.symbol));
     }
 
-    if (visibleSectionSet.has("operations") || visibleSectionSet.has("drilldown")) {
+    if (visibleSectionSet.has("operations")) {
       data.operation_snapshots.forEach((operation: any) => scopedSymbols.add(operation.symbol));
     }
 
+    if (visibleSectionSet.has("drilldown")) {
+      const scopedDrilldownOperations = openDrilldownTradePlanIds.length > 0
+        ? data.operation_snapshots.filter((operation: any) => openDrilldownTradePlanIds.includes(operation.trade_plan_id))
+        : data.operation_snapshots;
+      scopedDrilldownOperations.forEach((operation: any) => scopedSymbols.add(operation.symbol));
+    }
+
     return Array.from(scopedSymbols).sort();
-  }, [data.open_positions, data.operation_snapshots, initialTape, visibleSectionIds]);
+  }, [data.open_positions, data.operation_snapshots, initialTape, openDrilldownTradePlanIds, visibleSectionIds]);
   const livePricingRequestUrl = useMemo(() => {
     if (!livePricingUrl) {
       return null;
@@ -270,6 +280,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           ? "live envejeciendo"
           : hasLivePrices ? "live pricing" : livePricingUrl ? "snapshot data" : "snapshot only";
   const liveScopeLabel = visibleSectionIds.length === 0 ? "idle" : visibleSectionIds.join("+");
+  const liveScopeSymbolsLabel = visibleSymbols.length === 0 ? "sin símbolos en scope" : `scope symbols: ${visibleSymbols.join(", ")}`;
   const liveStatusCopy = isLivePaused
     ? lastLiveUpdateAt
       ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`

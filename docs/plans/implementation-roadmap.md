@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-103` ya quedó mergeado en `main`, dejando disponible la acción segura `reconcile now` dentro del drill-down.
-- **PR activo:** `PR-104` — hardening del feedback de reconcile manual.
-- **Siguiente carril sugerido:** dejar esa acción realmente robusta para operadores (errores visibles, reporte stale limpiado, payload parcial tolerado) antes de volver a expandir acciones operativas o refinar el realtime.
+- **Estado global actual:** `PR-107` ya quedó mergeado en `main`, dejando el polling live del drill-down acotado a drawers abiertos cuando aplica, con `PR-105`/`PR-106` ya visibles en Synology tras redeploy y smoke real exitoso.
+- **PR activo:** `PR-108` — visibilidad explícita de los símbolos en scope live + hardening residual del wiring `onToggleOpen` del drill-down.
+- **Siguiente carril sugerido:** cerrar esta capa de observabilidad del polling antes de evaluar una mejora adicional de UX operacional o un salto a realtime más fino.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
