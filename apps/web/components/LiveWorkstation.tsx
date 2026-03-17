@@ -45,9 +45,12 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         new Set<string>([
           ...data.open_positions.map((position: any) => position.symbol),
           ...data.operation_snapshots.map((operation: any) => operation.symbol),
+          ...initialTape
+            .filter((item: any) => ["open", "testnet_executed", "partially_filled"].includes(String(item.status ?? "").toLowerCase()))
+            .map((item: any) => item.symbol),
         ]),
       ).sort(),
-    [data.open_positions, data.operation_snapshots],
+    [data.open_positions, data.operation_snapshots, initialTape],
   );
   const livePricingRequestUrl = useMemo(() => {
     if (!livePricingUrl) {
@@ -55,7 +58,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     }
 
     if (visibleSymbols.length === 0) {
-      return livePricingUrl;
+      return null;
     }
 
     const params = new URLSearchParams();
