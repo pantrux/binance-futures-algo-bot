@@ -39,13 +39,39 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
   const [liveClockMs, setLiveClockMs] = useState(() => Date.now());
   const livePricingUrl = buildLivePricingUrl();
+  const visibleSymbols = useMemo(
+    () =>
+      Array.from(
+        new Set<string>([
+          ...data.open_positions.map((position: any) => position.symbol),
+          ...data.operation_snapshots.map((operation: any) => operation.symbol),
+          ...initialTape
+            .filter((item: any) => ["open", "testnet_executed", "partially_filled"].includes(String(item.status ?? "").toLowerCase()))
+            .map((item: any) => item.symbol),
+        ]),
+      ).sort(),
+    [data.open_positions, data.operation_snapshots, initialTape],
+  );
+  const livePricingRequestUrl = useMemo(() => {
+    if (!livePricingUrl) {
+      return null;
+    }
+
+    if (visibleSymbols.length === 0) {
+      return null;
+    }
+
+    const params = new URLSearchParams();
+    visibleSymbols.forEach((symbol) => params.append("symbols", symbol));
+    return `${livePricingUrl}?${params.toString()}`;
+  }, [livePricingUrl, visibleSymbols]);
 
   useEffect(() => {
-    if (!isPolling || !livePricingUrl) return;
+    if (!isPolling || !livePricingRequestUrl) return;
 
     const pollLivePricing = async () => {
       try {
-        const res = await fetch(livePricingUrl, { cache: "no-store" });
+        const res = await fetch(livePricingRequestUrl, { cache: "no-store" });
         if (!res.ok) {
           throw new Error(`Live pricing poll failed (${res.status})`);
         }
@@ -75,7 +101,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     }, LIVE_POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [isPolling, livePricingUrl]);
+  }, [isPolling, livePricingRequestUrl]);
 
   useEffect(() => {
     if (!lastLiveUpdateAt || !isPolling) {
@@ -270,7 +296,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
             {isPolling ? "pausar live" : "reanudar live"}
           </button>
-          <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
+          <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length || "idle"} · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
         </div>
       </header>
 

@@ -267,10 +267,12 @@ def reporting_shadow_run_summary(
 
 
 @router.get("/dashboard/live-pricing", response_model=DashboardLivePricingResponse)
-async def dashboard_live_pricing() -> DashboardLivePricingResponse:
+async def dashboard_live_pricing(
+    symbols: list[str] | None = Query(default=None),
+) -> DashboardLivePricingResponse:
     try:
         service = LivePricingService()
-        return await service.get_live_pricing()
+        return await service.get_live_pricing(symbols=symbols)
     except Exception as exc:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Failed to fetch live pricing") from exc

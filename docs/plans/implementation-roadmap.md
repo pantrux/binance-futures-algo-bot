@@ -5,9 +5,9 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-98` ya quedó mergeado en `main`, dejando resuelta la freshness/reliability UX del live polling a nivel global de la workstation.
-- **PR activo:** `PR-99` — cobertura/freshness live por operación.
-- **Siguiente carril sugerido:** propagar la salud del feed al cockpit real: mostrar qué operaciones/símbolos están usando datos live frescos vs snapshot/cacheado, y medir cobertura live efectiva sobre posiciones y operaciones antes de saltar a acciones operativas mayores.
+- **Estado global actual:** `PR-99` ya quedó mergeado en `main`, dejando la salud del live visible a nivel de operación/símbolo dentro del cockpit.
+- **PR activo:** `PR-100` — scope selectivo del live polling por símbolos visibles.
+- **Siguiente carril sugerido:** reducir payload y churn del live sin tocar ejecución: que el frontend pida solo los símbolos visibles del cockpit y que la API devuelva el subconjunto correspondiente, como base para un futuro polling selectivo o live scope más fino.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 
