@@ -672,6 +672,17 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
               index={index}
               livePrice={livePrices[operation.symbol]}
               liveState={symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState}
+              onToggleOpen={(tradePlanId, isOpen) => {
+                setOpenDrilldownTradePlanIds((current) => {
+                  const next = new Set(current);
+                  if (isOpen) {
+                    next.add(tradePlanId);
+                  } else {
+                    next.delete(tradePlanId);
+                  }
+                  return Array.from(next).sort((a, b) => a - b);
+                });
+              }}
             />
           ))}
         </div>

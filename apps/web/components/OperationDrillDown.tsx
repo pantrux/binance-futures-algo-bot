@@ -157,7 +157,12 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
   };
 
   return (
-    <details className="operation-drawer" id={`drawer-${operation.trade_plan_id}`} open={index === 0}>
+    <details
+      className="operation-drawer"
+      id={`drawer-${operation.trade_plan_id}`}
+      open={index === 0}
+      onToggle={(event) => onToggleOpen?.(operation.trade_plan_id, (event.currentTarget as HTMLDetailsElement).open)}
+    >
       <summary>
         <div className="drawer-summary-main">
           <strong>#{operation.trade_plan_id} · {operation.symbol}</strong>
