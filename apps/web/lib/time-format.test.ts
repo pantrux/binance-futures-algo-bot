@@ -44,11 +44,25 @@ test("buildLiveLagStatus ignores fresh or invalid data", () => {
 });
 
 test("buildLiveLagStatus flags warn and danger thresholds", () => {
+  assert.deepEqual(buildLiveLagStatus("2026-03-17T19:59:48.000Z", "2026-03-17T20:00:00.000Z"), {
+    tone: "warn",
+    label: "envejeciendo vs live · 12s detrás del último tick live",
+    detail: "12s detrás del último tick live",
+    deltaMs: 12_000,
+  });
+
   assert.deepEqual(buildLiveLagStatus("2026-03-17T19:59:45.000Z", "2026-03-17T20:00:00.000Z"), {
     tone: "warn",
     label: "envejeciendo vs live · 15s detrás del último tick live",
     detail: "15s detrás del último tick live",
     deltaMs: 15_000,
+  });
+
+  assert.deepEqual(buildLiveLagStatus("2026-03-17T19:59:28.000Z", "2026-03-17T20:00:00.000Z"), {
+    tone: "danger",
+    label: "stale vs live · 32s detrás del último tick live",
+    detail: "32s detrás del último tick live",
+    deltaMs: 32_000,
   });
 
   assert.deepEqual(buildLiveLagStatus("2026-03-17T19:59:20.000Z", "2026-03-17T20:00:00.000Z"), {

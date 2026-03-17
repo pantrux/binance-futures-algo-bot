@@ -1,6 +1,13 @@
 export const LIVE_STALE_WARN_MS = 12_000;
 export const LIVE_STALE_DANGER_MS = 32_000;
 
+export type LiveLagStatus = {
+  tone: "warn" | "danger";
+  label: string;
+  detail: string;
+  deltaMs: number;
+};
+
 export function formatRelativeAge(value: string, nowMs = Date.now()) {
   const timestampMs = Date.parse(value);
   if (Number.isNaN(timestampMs)) return null;
@@ -32,13 +39,6 @@ export function formatElapsedMs(value: number) {
   const seconds = totalSeconds % 60;
   return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
 }
-
-type LiveLagStatus = {
-  tone: "warn" | "danger";
-  label: string;
-  detail: string;
-  deltaMs: number;
-};
 
 export function buildLiveLagStatus(snapshotValue: string | null | undefined, liveValue: string | null | undefined): LiveLagStatus | null {
   if (!snapshotValue || !liveValue) return null;

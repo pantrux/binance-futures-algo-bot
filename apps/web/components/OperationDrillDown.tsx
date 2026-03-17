@@ -111,6 +111,49 @@ type OperationDrillDownProps = {
   lastLiveUpdateAt?: string | null;
 };
 
+function buildReconcileSummaryLabel({
+  reconcileLoading,
+  reconcileError,
+  reconcileReport,
+  operation,
+  reconcileTimestampLabel,
+  reconcileRelativeAgeLabel,
+  snapshotTimestampLabel,
+  snapshotRelativeAgeLabel,
+  liveLagLabel,
+}: {
+  reconcileLoading: boolean;
+  reconcileError: string | null;
+  reconcileReport: ReconciliationReport | null;
+  operation: OperationSnapshot;
+  reconcileTimestampLabel: string | null;
+  reconcileRelativeAgeLabel: string | null;
+  snapshotTimestampLabel: string | null;
+  snapshotRelativeAgeLabel: string | null;
+  liveLagLabel: string | null;
+}) {
+  if (reconcileLoading) return "reconcile en progreso";
+  if (reconcileError) return `último reconcile falló: ${reconcileError}`;
+
+  const liveLagSuffix = liveLagLabel ? ` · ${liveLagLabel}` : "";
+
+  if (reconcileReport) {
+    const baseLabel = reconcileReport.healthy
+      ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)`
+      : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)`;
+    const timestampSuffix = reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : "";
+    const relativeSuffix = reconcileRelativeAgeLabel ? ` (${reconcileRelativeAgeLabel})` : "";
+    return `${baseLabel}${timestampSuffix}${relativeSuffix}${liveLagSuffix}`;
+  }
+
+  const baseLabel = operation.reconciliation_healthy
+    ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)`
+    : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)`;
+  const timestampSuffix = snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : "";
+  const relativeSuffix = snapshotRelativeAgeLabel ? ` (${snapshotRelativeAgeLabel})` : "";
+  return `${baseLabel}${timestampSuffix}${relativeSuffix}${liveLagSuffix}`;
+}
+
 function buildReconcileUrl(tradePlanId: number) {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
   return apiBaseUrl ? `${apiBaseUrl}/execution/reconcile/${tradePlanId}` : null;
@@ -142,18 +185,18 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
   const snapshotRelativeAgeLabel = snapshotTimestamp ? formatRelativeAge(snapshotTimestamp) : null;
   const freshnessReferenceTimestamp = reconcileCompletedAt ?? snapshotTimestamp ?? null;
   const freshnessSourceLabel = reconcileCompletedAt ? "reconcile" : "snapshot";
-  const liveLagStatus = buildLiveLagStatus(freshnessReferenceTimestamp, lastLiveUpdateAt);
-  const reconcileSummaryLabel = reconcileLoading
-    ? "reconcile en progreso"
-    : reconcileError
-      ? `último reconcile falló: ${reconcileError}`
-      : reconcileReport
-        ? reconcileReport.healthy
-          ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}${reconcileRelativeAgeLabel ? ` (${reconcileRelativeAgeLabel})` : ""}${liveLagStatus ? ` · ${liveLagStatus.label}` : ""}`
-          : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)${reconcileTimestampLabel ? ` · ${reconcileTimestampLabel}` : ""}${reconcileRelativeAgeLabel ? ` (${reconcileRelativeAgeLabel})` : ""}${liveLagStatus ? ` · ${liveLagStatus.label}` : ""}`
-        : operation.reconciliation_healthy
-          ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}${snapshotRelativeAgeLabel ? ` (${snapshotRelativeAgeLabel})` : ""}${liveLagStatus ? ` · ${liveLagStatus.label}` : ""}`
-          : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)${snapshotTimestampLabel ? ` · ${snapshotTimestampLabel}` : ""}${snapshotRelativeAgeLabel ? ` (${snapshotRelativeAgeLabel})` : ""}${liveLagStatus ? ` · ${liveLagStatus.label}` : ""}`;
+  const liveLagStatus = livePrice ? buildLiveLagStatus(freshnessReferenceTimestamp, lastLiveUpdateAt) : null;
+  const reconcileSummaryLabel = buildReconcileSummaryLabel({
+    reconcileLoading,
+    reconcileError,
+    reconcileReport,
+    operation,
+    reconcileTimestampLabel,
+    reconcileRelativeAgeLabel,
+    snapshotTimestampLabel,
+    snapshotRelativeAgeLabel,
+    liveLagLabel: liveLagStatus?.label ?? null,
+  });
 
   const runReconcile = async () => {
     const requestUrl = buildReconcileUrl(operation.trade_plan_id);

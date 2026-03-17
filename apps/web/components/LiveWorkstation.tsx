@@ -2,15 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
-import { formatElapsedMs } from "../lib/time-format";
+import { formatElapsedMs, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
 
 import { OrderBlotter } from "./OrderBlotter";
 
 const LIVE_POLL_INTERVAL_MS = 4000;
-const LIVE_STALE_WARN_MS = LIVE_POLL_INTERVAL_MS * 3;
-const LIVE_STALE_DANGER_MS = LIVE_POLL_INTERVAL_MS * 8;
 const LIVE_SCOPE_SECTION_IDS = ["desk", "operations", "drilldown"] as const;
 
 type LiveScopeSectionId = (typeof LIVE_SCOPE_SECTION_IDS)[number];

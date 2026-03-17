@@ -38,6 +38,7 @@ button, input, textarea, select { font: inherit; }
 strong { font-weight: 700; }
 small, .muted { color: var(--muted); }
 .positive { color: var(--accent); }
+.warn { color: var(--warn); }
 .negative { color: var(--danger); }
 
 .terminal-shell {
