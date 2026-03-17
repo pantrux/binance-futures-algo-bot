@@ -130,6 +130,17 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
   const positionHistory = operation.position_history ?? [];
   const riskEventHistory = operation.risk_event_history ?? [];
   const timelineHistory = (operation.timeline_history ?? []).slice(0, 12);
+  const reconcileSummaryLabel = reconcileLoading
+    ? "reconcile en progreso"
+    : reconcileError
+      ? `último reconcile falló: ${reconcileError}`
+      : reconcileReport
+        ? reconcileReport.healthy
+          ? `último reconcile healthy · ${reconcileReport.drift_events?.length ?? 0} drift(s)`
+          : `último reconcile con drift · ${reconcileReport.drift_events?.length ?? 0} evento(s)`
+        : operation.reconciliation_healthy
+          ? `snapshot healthy · ${operation.reconciliation_drift_events?.length || 0} drift(s)`
+          : `snapshot con drift · ${operation.reconciliation_drift_events?.length || 0} evento(s)`;
 
   const runReconcile = async () => {
     const requestUrl = buildReconcileUrl(operation.trade_plan_id);
@@ -168,6 +179,19 @@ export function OperationDrillDown({ operation, index, livePrice, liveState, onT
         <div className="drawer-summary-main">
           <strong>#{operation.trade_plan_id} · {operation.symbol}</strong>
           <small>{operation.timeframe} · {operation.side} · {operation.market_regime}</small>
+          <small className={
+            reconcileError
+              ? "negative"
+              : reconcileLoading
+                ? "muted"
+                : reconcileReport
+                  ? reconcileReport.healthy
+                    ? "positive"
+                    : "warn"
+                  : operation.reconciliation_healthy
+                    ? "muted"
+                    : "warn"
+          }>{reconcileSummaryLabel}</small>
         </div>
         <div className="drawer-summary-stats">
           <span>{formatNumber(actualEntry, 2)}</span>

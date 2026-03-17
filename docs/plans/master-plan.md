@@ -90,7 +90,7 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - PR-91 en adelante.
 - Estado actual: baseline UX ya aterrizada con `PR-91` (shell modular), `PR-92` (drill-down por tabs), `PR-93` (live data backend + polling UI), `PR-94` (polish visual + order blotter interactivo), `PR-96` (scope fino del blotter + sync documental), `PR-97` (hardening residual post-auditoría), `PR-98` (freshness/reliability UX global del live polling), `PR-99` (cobertura/freshness live por operación), `PR-100` (scope selectivo por símbolos visibles), `PR-102` (scope por sección visible), `PR-103`/`PR-104` (acción + feedback seguro de reconcile), `PR-105` (refresh manual), `PR-106` (hotfix de deploy Synology) y `PR-107` (scope del drill-down según drawers abiertos).
 - Entrega lograda: command center más navegable, moderno y orientado a operación real, con navegación explícita, polling vivo, acciones operativas básicas y scoping progresivamente más fino del feed live.
-- Carril inmediato (`PR-109`): hacer visible cuándo el drill-down está gobernando el scope live y qué drawers abiertos están aportando símbolos al polling, para que el operador entienda por qué cambió el universo live sin inspeccionar el DOM.
+- Carril inmediato (`PR-110`): acercar al summary del drill-down el último estado/error de `reconcile now`, para que el operador vea de un vistazo si el plan quedó healthy, con drift o con fallo sin volver a entrar al bloque completo de riesgo.
 - Siguiente expansión natural: profundizar la workstation con realtime aún más fino (polling selectivo más granular o SSE/WebSocket), acciones operativas y mayor densidad contextual por operación.
 
 ## Reglas inmutables del plan
