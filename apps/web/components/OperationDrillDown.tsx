@@ -242,7 +242,7 @@ export function OperationDrillDown({ operation, index, livePrice, liveState }: O
                     <p>
                       órdenes: {reconcileReport.order_count} · fills: {reconcileReport.filled_order_count} · open positions: {reconcileReport.open_position_count}
                     </p>
-                    {reconcileReport.drift_events.length === 0 ? (
+                    {(reconcileReport.drift_events?.length ?? 0) === 0 ? (
                       <small className="muted">Sin drift events.</small>
                     ) : (
                       <div className="compact-list" style={{ marginTop: "0.75rem" }}>
