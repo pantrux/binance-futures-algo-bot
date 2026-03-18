@@ -2,14 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
+import { formatElapsedMs, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
 
 import { OrderBlotter } from "./OrderBlotter";
 
 const LIVE_POLL_INTERVAL_MS = 4000;
-const LIVE_STALE_WARN_MS = LIVE_POLL_INTERVAL_MS * 3;
-const LIVE_STALE_DANGER_MS = LIVE_POLL_INTERVAL_MS * 8;
 const LIVE_SCOPE_SECTION_IDS = ["desk", "operations", "drilldown"] as const;
 
 type LiveScopeSectionId = (typeof LIVE_SCOPE_SECTION_IDS)[number];
@@ -41,21 +40,6 @@ function collectVisibleSymbols(data: any, initialTape: any[], visibleSectionIds:
 function buildLivePricingUrl() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
   return apiBaseUrl ? `${apiBaseUrl}/dashboard/live-pricing` : null;
-}
-
-function formatElapsedMs(value: number) {
-  if (value < 1_000) {
-    return "ahora";
-  }
-
-  const totalSeconds = Math.floor(value / 1_000);
-  if (totalSeconds < 60) {
-    return `${totalSeconds}s`;
-  }
-
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
 }
 
 export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: any) {
@@ -714,6 +698,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
               livePrice={livePrices[operation.symbol]}
               liveState={symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState}
               snapshotGeneratedAt={data.generated_at}
+              lastLiveUpdateAt={lastLiveUpdateAt}
               onToggleOpen={(tradePlanId, isOpen) => {
                 const previousIds = openDrilldownTradePlanIds;
                 const next = new Set(previousIds);

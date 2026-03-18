@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatRelativeAge } from "./time-format.ts";
+import { buildLiveLagStatus, formatElapsedMs, formatRelativeAge } from "./time-format.ts";
 
 const NOW = Date.parse("2026-03-17T20:00:00.000Z");
 
@@ -28,4 +28,47 @@ test("formatRelativeAge handles days", () => {
 
 test("formatRelativeAge returns null for invalid timestamps", () => {
   assert.equal(formatRelativeAge("not-a-date", NOW), null);
+});
+
+test("formatElapsedMs handles seconds and minutes", () => {
+  assert.equal(formatElapsedMs(800), "ahora");
+  assert.equal(formatElapsedMs(12_000), "12s");
+  assert.equal(formatElapsedMs(65_000), "1m 5s");
+  assert.equal(formatElapsedMs(120_000), "2m");
+});
+
+test("buildLiveLagStatus ignores fresh or invalid data", () => {
+  assert.equal(buildLiveLagStatus("2026-03-17T19:59:58.000Z", "2026-03-17T20:00:00.000Z"), null);
+  assert.equal(buildLiveLagStatus("not-a-date", "2026-03-17T20:00:00.000Z"), null);
+  assert.equal(buildLiveLagStatus("2026-03-17T19:59:00.000Z", null), null);
+});
+
+test("buildLiveLagStatus flags warn and danger thresholds", () => {
+  assert.deepEqual(buildLiveLagStatus("2026-03-17T19:59:48.000Z", "2026-03-17T20:00:00.000Z"), {
+    tone: "warn",
+    label: "envejeciendo vs live · 12s detrás del último tick live",
+    detail: "12s detrás del último tick live",
+    deltaMs: 12_000,
+  });
+
+  assert.deepEqual(buildLiveLagStatus("2026-03-17T19:59:45.000Z", "2026-03-17T20:00:00.000Z"), {
+    tone: "warn",
+    label: "envejeciendo vs live · 15s detrás del último tick live",
+    detail: "15s detrás del último tick live",
+    deltaMs: 15_000,
+  });
+
+  assert.deepEqual(buildLiveLagStatus("2026-03-17T19:59:28.000Z", "2026-03-17T20:00:00.000Z"), {
+    tone: "danger",
+    label: "stale vs live · 32s detrás del último tick live",
+    detail: "32s detrás del último tick live",
+    deltaMs: 32_000,
+  });
+
+  assert.deepEqual(buildLiveLagStatus("2026-03-17T19:59:20.000Z", "2026-03-17T20:00:00.000Z"), {
+    tone: "danger",
+    label: "stale vs live · 40s detrás del último tick live",
+    detail: "40s detrás del último tick live",
+    deltaMs: 40_000,
+  });
 });
