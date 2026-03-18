@@ -5,8 +5,8 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-116` ya quedó mergeado en `main`, con latencia visible en las pills live por operación y redeploy validado en Synology mediante smoke real.
-- **PR activo:** `PR-117` — llevar la misma latencia/frescura al badge global live del header y al timestamp principal del snapshot.
+- **Estado global actual:** `PR-117` ya quedó mergeado en `main`, con latencia/frescura visible también en el header global y redeploy validado en Synology mediante smoke real.
+- **PR activo:** `PR-118` — exponer `último live tick` como métrica explícita en el overview superior con timestamp absoluto + edad relativa.
 - **Siguiente carril sugerido:** seguir endureciendo la microcapa de feedback operativo antes de saltar a realtime más fino o SSE/WebSocket.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?

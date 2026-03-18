@@ -148,7 +148,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         });
 
         setLivePrices(pricesMap);
-        setLastLiveUpdateAt(new Date().toISOString());
+        setLastLiveUpdateAt(typeof result.timestamp === "string" && !Number.isNaN(Date.parse(result.timestamp)) ? result.timestamp : new Date().toISOString());
         setLivePollingError(null);
         if (mode === "manual") {
           setLiveRefreshNote(`refresh manual OK · ${Object.keys(pricesMap).length} símbolos live`);
@@ -306,6 +306,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const liveCoveredPositions = positions.filter((position: any) => livePrices[position.symbol]).length;
   const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => livePrices[operation.symbol]).length;
   const snapshotRelativeAgeLabel = formatRelativeAge(data.generated_at, liveClockMs);
+  const lastLiveTickLabel = lastLiveUpdateAt ? formatDate(lastLiveUpdateAt) : "—";
+  const lastLiveTickAgeLabel = lastLiveUpdateAt ? formatRelativeAge(lastLiveUpdateAt, liveClockMs) : null;
 
   const defaultSnapshotLiveState = useMemo(
     () => ({
@@ -384,6 +386,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     { title: "Pairs parity", value: String(shadowRun.compared_pairs), hint: "paper ↔ testnet comparados", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
     { title: "Risk 7d", value: `${shadowRun.critical_risk_events_7d}/${shadowRun.warning_risk_events_7d}`, hint: "critical / warning", tone: shadowRun.critical_risk_events_7d > 0 ? "danger" : shadowRun.warning_risk_events_7d > 0 ? "warn" : "ok" },
     { title: "Live freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || !!livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
+    { title: "Último live tick", value: lastLiveTickLabel, hint: lastLiveTickAgeLabel ? `${lastLiveTickAgeLabel} · feed ${liveFreshnessHint}` : liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || !!livePollingError ? "warn" : lastLiveUpdateAt ? "ok" : "neutral" },
     { title: "Live coverage", value: `${liveCoveredPositions}/${positions.length}`, hint: `posiciones con mark live · ${liveCoveredOperations}/${data.operation_snapshots.length} operaciones`, tone: liveCoveredPositions === positions.length && positions.length > 0 ? "ok" : liveCoveredPositions > 0 ? "warn" : "neutral" },
     { title: "Trade plans", value: String(summary.trade_plans_total), hint: "universo persistido", tone: "neutral" },
   ];
