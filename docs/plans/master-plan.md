@@ -92,7 +92,8 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Entrega lograda: command center más navegable, moderno y orientado a operación real, con navegación explícita, polling vivo, acciones operativas básicas y scoping progresivamente más fino del feed live.
 - Carril inmediato completado: `PR-114` ya dejó visible la edad relativa del snapshot/reconcile en el summary del drawer y quedó desplegado en Synology.
 - Carril completado: `PR-115` ya marca explícitamente cuando el snapshot/reconcile quedó desfasado respecto del último tick live y quedó desplegado en Synology.
-- Carril activo (`PR-116`): añadir latencia visible (`· 4s / 18s / 1m`) dentro de las pills live por operación, para que la frescura no dependa solo del color o del tooltip.
+- Carril completado: `PR-116` ya añadió latencia visible (`· 4s / 18s / 1m`) dentro de las pills live por operación y quedó desplegado en Synology.
+- Carril activo (`PR-117`): exponer la misma latencia/frescura también en el badge global del header y junto al timestamp del snapshot principal, para que el overview superior hable el mismo idioma temporal que las pills operativas.
 - Siguiente expansión natural: profundizar la workstation con realtime aún más fino (polling selectivo más granular o SSE/WebSocket), acciones operativas y mayor densidad contextual por operación.
 
 ## Reglas inmutables del plan
