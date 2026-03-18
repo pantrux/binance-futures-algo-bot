@@ -5,8 +5,8 @@
 
 ## Resumen ejecutivo
 
-- **Estado global actual:** `PR-117` ya quedó mergeado en `main`, con latencia/frescura visible también en el header global y redeploy validado en Synology mediante smoke real.
-- **PR activo:** `PR-118` — exponer `último live tick` como métrica explícita en el overview superior con timestamp absoluto + edad relativa.
+- **Estado global actual:** `PR-118` ya quedó mergeado en `main`, con `último live tick` explícito en el overview superior y redeploy validado en Synology mediante smoke real.
+- **PR activo:** `PR-119` — aclarar en la UI que `Último live tick` proviene del timestamp backend de `/dashboard/live-pricing`.
 - **Siguiente carril sugerido:** seguir endureciendo la microcapa de feedback operativo antes de saltar a realtime más fino o SSE/WebSocket.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?

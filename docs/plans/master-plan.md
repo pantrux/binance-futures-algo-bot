@@ -94,7 +94,8 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Carril completado: `PR-115` ya marca explícitamente cuando el snapshot/reconcile quedó desfasado respecto del último tick live y quedó desplegado en Synology.
 - Carril completado: `PR-116` ya añadió latencia visible (`· 4s / 18s / 1m`) dentro de las pills live por operación y quedó desplegado en Synology.
 - Carril completado: `PR-117` ya llevó la misma latencia/frescura al badge global live del header y al timestamp principal del snapshot, y quedó desplegado en Synology.
-- Carril activo (`PR-118`): exponer `último live tick` como métrica explícita en el overview superior, con timestamp absoluto + edad relativa, para no depender solo del copy del header.
+- Carril completado: `PR-118` ya expone `último live tick` como métrica explícita del overview superior y quedó desplegado en Synology.
+- Carril activo (`PR-119`): aclarar la procedencia del `último live tick` como timestamp backend de `/dashboard/live-pricing`, para que no se confunda con la hora de render/fetch del cliente.
 - Siguiente expansión natural: profundizar la workstation con realtime aún más fino (polling selectivo más granular o SSE/WebSocket), acciones operativas y mayor densidad contextual por operación.
 
 ## Reglas inmutables del plan
