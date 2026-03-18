@@ -40,6 +40,11 @@ export function formatElapsedMs(value: number) {
   return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
 }
 
+export function buildLiveStateLabel(baseLabel: string, ageMs: number | null) {
+  if (ageMs == null) return baseLabel;
+  return `${baseLabel} · ${formatElapsedMs(ageMs)}`;
+}
+
 export function buildLiveLagStatus(snapshotValue: string | null | undefined, liveValue: string | null | undefined): LiveLagStatus | null {
   if (!snapshotValue || !liveValue) return null;
 

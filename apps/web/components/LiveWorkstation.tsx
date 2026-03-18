@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
-import { formatElapsedMs, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
+import { buildLiveStateLabel, formatElapsedMs, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
 
@@ -336,7 +336,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
 
       if (isLivePaused) {
         states[symbol] = {
-          label: "live pausado",
+          label: buildLiveStateLabel("live pausado", liveAgeMs),
           tone: "warn",
           hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "polling pausado",
         };
@@ -345,7 +345,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
 
       if (livePollingError) {
         states[symbol] = {
-          label: isLiveStaleDanger ? "live crítico" : "live degradado",
+          label: buildLiveStateLabel(isLiveStaleDanger ? "live crítico" : "live degradado", liveAgeMs),
           tone: isLiveStaleDanger ? "danger" : "warn",
           hint: "error activo con último tick cacheado",
         };
@@ -354,7 +354,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
 
       if (isLiveStaleDanger) {
         states[symbol] = {
-          label: "live vencido",
+          label: buildLiveStateLabel("live vencido", liveAgeMs),
           tone: "danger",
           hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
         };
@@ -363,7 +363,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
 
       if (isLiveStaleWarn) {
         states[symbol] = {
-          label: "live envejeciendo",
+          label: buildLiveStateLabel("live envejeciendo", liveAgeMs),
           tone: "warn",
           hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
         };
@@ -371,7 +371,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
       }
 
       states[symbol] = {
-        label: "live fresco",
+        label: buildLiveStateLabel("live fresco", liveAgeMs),
         tone: "ok",
         hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "live pricing activo",
       };
