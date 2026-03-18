@@ -138,7 +138,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-113 | Timestamp también para el estado snapshot de reconcile | ✅ Mergeado | mostrar la referencia temporal del snapshot cuando aún no hubo reconcile manual para evitar summaries sin contexto temporal |
 | PR-114 | Edad relativa visible del snapshot/reconcile | ✅ Mergeado | mostrar `hace 12s / 3m / 1h` junto al timestamp absoluto para convertir el summary en una señal de frescura inmediata |
 | PR-115 | Señal explícita de stale vs live en drill-down | ✅ Mergeado | marcar cuando el snapshot/reconcile queda desfasado respecto del último tick live del símbolo |
-| PR-116 | Latencia visible en pills live por operación | 🟡 En progreso | anexar `· 4s / 18s / 1m` a las pills live para hacer visible la frescura exacta sin depender solo del tooltip |
+| PR-116 | Latencia visible en pills live por operación | ✅ Mergeado | anexar `· 4s / 18s / 1m` a las pills live para hacer visible la frescura exacta sin depender solo del tooltip |
+| PR-117 | Latencia visible en header live + snapshot principal | 🟡 En progreso | reflejar la misma frescura exacta en el badge global live del header y junto al timestamp principal del snapshot |
 
 
 ## Secuencia de PRs actualizada

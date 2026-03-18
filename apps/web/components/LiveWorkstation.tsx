@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
-import { buildLiveStateLabel, formatElapsedMs, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
+import { buildLiveStateLabel, formatElapsedMs, formatRelativeAge, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
 
@@ -205,16 +205,12 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   }, [liveScopeNote]);
 
   useEffect(() => {
-    if (!lastLiveUpdateAt || !isPolling) {
-      return;
-    }
-
     const interval = setInterval(() => {
       setLiveClockMs(Date.now());
     }, 1_000);
 
     return () => clearInterval(interval);
-  }, [lastLiveUpdateAt, isPolling]);
+  }, []);
 
   const positions = useMemo(
     () =>
@@ -273,14 +269,14 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           ? "badge warn"
           : hasLivePrices ? "badge ok pulse" : livePricingUrl ? "badge warn" : "badge neutral";
   const liveBadgeLabel = isLivePaused
-    ? "live pausado"
+    ? buildLiveStateLabel("live pausado", liveAgeMs)
     : livePollingError
-      ? isLiveStaleDanger ? "live crítico" : "live degradado"
+      ? buildLiveStateLabel(isLiveStaleDanger ? "live crítico" : "live degradado", liveAgeMs)
       : isLiveStaleDanger
-        ? "live vencido"
+        ? buildLiveStateLabel("live vencido", liveAgeMs)
         : isLiveStaleWarn
-          ? "live envejeciendo"
-          : hasLivePrices ? "live pricing" : livePricingUrl ? "snapshot data" : "snapshot only";
+          ? buildLiveStateLabel("live envejeciendo", liveAgeMs)
+          : hasLivePrices ? buildLiveStateLabel("live pricing", liveAgeMs) : livePricingUrl ? "snapshot data" : "snapshot only";
   const liveScopeLabel = visibleSectionIds.length === 0 ? "idle" : visibleSectionIds.join("+");
   const liveScopeSymbolsLabel = visibleSymbols.length === 0 ? "sin símbolos en scope" : `scope symbols: ${visibleSymbols.join(", ")}`;
   const openDrilldownOperations = useMemo(
@@ -309,6 +305,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
   const liveCoveredPositions = positions.filter((position: any) => livePrices[position.symbol]).length;
   const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => livePrices[operation.symbol]).length;
+  const snapshotRelativeAgeLabel = formatRelativeAge(data.generated_at, liveClockMs);
 
   const defaultSnapshotLiveState = useMemo(
     () => ({
@@ -403,7 +400,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         </div>
         <div className="header-status-panel">
           <span className={liveBadgeClassName}>{liveBadgeLabel}</span>
-          <strong>{formatDate(data.generated_at)}</strong>
+          <strong>{formatDate(data.generated_at)}{snapshotRelativeAgeLabel ? ` · ${snapshotRelativeAgeLabel}` : ""}</strong>
           <p>{liveStatusCopy}</p>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             <button type="button" className="action-link" onClick={() => void refreshLivePricing("manual")} disabled={isLiveRefreshing}>
