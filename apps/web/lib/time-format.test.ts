@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildLiveLagStatus, formatElapsedMs, formatRelativeAge } from "./time-format.ts";
+import { buildLiveLagStatus, buildLiveStateLabel, formatElapsedMs, formatRelativeAge } from "./time-format.ts";
 
 const NOW = Date.parse("2026-03-17T20:00:00.000Z");
 
@@ -35,6 +35,12 @@ test("formatElapsedMs handles seconds and minutes", () => {
   assert.equal(formatElapsedMs(12_000), "12s");
   assert.equal(formatElapsedMs(65_000), "1m 5s");
   assert.equal(formatElapsedMs(120_000), "2m");
+});
+
+test("buildLiveStateLabel appends age when available", () => {
+  assert.equal(buildLiveStateLabel("live fresco", null), "live fresco");
+  assert.equal(buildLiveStateLabel("live fresco", 4_000), "live fresco · 4s");
+  assert.equal(buildLiveStateLabel("live pausado", 65_000), "live pausado · 1m 5s");
 });
 
 test("buildLiveLagStatus ignores fresh or invalid data", () => {
