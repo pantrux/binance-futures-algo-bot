@@ -140,7 +140,8 @@ Las fases fundacionales iniciales fueron empujadas directamente a `main` para bo
 | PR-115 | Señal explícita de stale vs live en drill-down | ✅ Mergeado | marcar cuando el snapshot/reconcile queda desfasado respecto del último tick live del símbolo |
 | PR-116 | Latencia visible en pills live por operación | ✅ Mergeado | anexar `· 4s / 18s / 1m` a las pills live para hacer visible la frescura exacta sin depender solo del tooltip |
 | PR-117 | Latencia visible en header live + snapshot principal | ✅ Mergeado | reflejar la misma frescura exacta en el badge global live del header y junto al timestamp principal del snapshot |
-| PR-118 | Último live tick como métrica explícita | 🟡 En progreso | mostrar timestamp absoluto + edad relativa del último tick live en el overview superior |
+| PR-118 | Último live tick como métrica explícita | ✅ Mergeado | mostrar timestamp absoluto + edad relativa del último tick live en el overview superior |
+| PR-119 | Aclarar origen backend del último live tick | 🟡 En progreso | explicar en el hint de la métrica que proviene del timestamp backend de `/dashboard/live-pricing` |
 
 
 ## Secuencia de PRs actualizada
