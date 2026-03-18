@@ -148,7 +148,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         });
 
         setLivePrices(pricesMap);
-        setLastLiveUpdateAt(new Date().toISOString());
+        setLastLiveUpdateAt(typeof result.timestamp === "string" && !Number.isNaN(Date.parse(result.timestamp)) ? result.timestamp : new Date().toISOString());
         setLivePollingError(null);
         if (mode === "manual") {
           setLiveRefreshNote(`refresh manual OK · ${Object.keys(pricesMap).length} símbolos live`);
