@@ -205,16 +205,12 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   }, [liveScopeNote]);
 
   useEffect(() => {
-    if (!lastLiveUpdateAt || !isPolling) {
-      return;
-    }
-
     const interval = setInterval(() => {
       setLiveClockMs(Date.now());
     }, 1_000);
 
     return () => clearInterval(interval);
-  }, [lastLiveUpdateAt, isPolling]);
+  }, []);
 
   const positions = useMemo(
     () =>
@@ -309,7 +305,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
   const liveCoveredPositions = positions.filter((position: any) => livePrices[position.symbol]).length;
   const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => livePrices[operation.symbol]).length;
-  const snapshotRelativeAgeLabel = formatRelativeAge(data.generated_at);
+  const snapshotRelativeAgeLabel = formatRelativeAge(data.generated_at, liveClockMs);
 
   const defaultSnapshotLiveState = useMemo(
     () => ({
