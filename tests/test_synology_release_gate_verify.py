@@ -71,6 +71,19 @@ def test_verify_payload_fails_when_first_failing_step_is_inconsistent(verify_mod
     assert verify_module.verify_payload(payload, ["Preflight", "Smoke"]) == 1
 
 
+def test_verify_payload_fails_when_first_failing_step_status_is_not_fail(verify_module):
+    payload = {
+        "overall": "FAIL",
+        "step_count": 2,
+        "steps": [
+            {"name": "Preflight", "status": "PASS"},
+            {"name": "Smoke", "status": "FAIL"},
+        ],
+        "first_failing_step": {"name": "Smoke", "status": "PASS"},
+    }
+    assert verify_module.verify_payload(payload, ["Preflight", "Smoke"]) == 1
+
+
 def test_verify_payload_fails_when_inputs_used_has_non_string_value(verify_module):
     payload = {
         "overall": "PASS",

@@ -76,13 +76,11 @@ def verify_payload(payload: object, expected_steps: list[str]) -> int:
     if first_failing_step is not None:
         if not isinstance(first_failing_step, dict):
             return error("first_failing_step debe ser objeto o null")
-        if first_failing_step.get("status") not in ALLOWED_STEP_STATUS:
-            return error(f"first_failing_step.status inválido: {first_failing_step.get('status')}")
         first_failing_name = first_failing_step.get("name")
         if not isinstance(first_failing_name, str) or not first_failing_name.strip():
             return error("first_failing_step.name inválido")
-        if first_failing_step["status"] != "FAIL":
-            return error("first_failing_step.status debe ser FAIL")
+        if first_failing_step.get("status") != "FAIL":
+            return error(f"first_failing_step.status inválido: esperado FAIL, recibido {first_failing_step.get('status')}")
         if first_failing_step not in parsed_steps:
             return error("first_failing_step no coincide con steps")
     elif overall == "FAIL" and not any(step["status"] == "FAIL" for step in parsed_steps):
