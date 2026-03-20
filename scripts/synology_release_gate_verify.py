@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 ALLOWED_OVERALL = {"PASS", "FAIL"}
+ALLOWED_STEP_STATUS = {"PASS", "FAIL"}
 
 
 def error(msg: str) -> int:
@@ -37,15 +38,55 @@ def verify_payload(payload: object, expected_steps: list[str]) -> int:
         return error(f"step_count inconsistente: {step_count} != {len(steps)}")
 
     names: list[str] = []
+    parsed_steps: list[dict[str, str]] = []
     for idx, step in enumerate(steps):
         if not isinstance(step, dict):
             return error(f"steps[{idx}] debe ser objeto")
-        if step.get("status") not in {"PASS", "FAIL"}:
+        if step.get("status") not in ALLOWED_STEP_STATUS:
             return error(f"steps[{idx}].status inválido: {step.get('status')}")
         name = step.get("name")
         if not isinstance(name, str) or not name.strip():
             return error(f"steps[{idx}].name inválido")
         names.append(name)
+        parsed_steps.append({"name": name, "status": step["status"]})
+
+    generated_at_utc = payload.get("generated_at_utc")
+    if generated_at_utc is not None and not isinstance(generated_at_utc, str):
+        return error("generated_at_utc debe ser string o null")
+
+    inputs_used = payload.get("inputs_used")
+    if inputs_used is not None:
+        if not isinstance(inputs_used, dict):
+            return error("inputs_used debe ser objeto")
+        for key, value in inputs_used.items():
+            if not isinstance(key, str) or not key.strip():
+                return error("inputs_used contiene clave inválida")
+            if not isinstance(value, str):
+                return error(f"inputs_used[{key}] debe ser string")
+
+    warnings = payload.get("warnings")
+    if warnings is not None:
+        if not isinstance(warnings, list):
+            return error("warnings debe ser lista")
+        for idx, warning in enumerate(warnings):
+            if not isinstance(warning, str) or not warning.strip():
+                return error(f"warnings[{idx}] debe ser string no vacío")
+
+    first_failing_step = payload.get("first_failing_step")
+    if first_failing_step is not None:
+        if not isinstance(first_failing_step, dict):
+            return error("first_failing_step debe ser objeto o null")
+        if first_failing_step.get("status") not in ALLOWED_STEP_STATUS:
+            return error(f"first_failing_step.status inválido: {first_failing_step.get('status')}")
+        first_failing_name = first_failing_step.get("name")
+        if not isinstance(first_failing_name, str) or not first_failing_name.strip():
+            return error("first_failing_step.name inválido")
+        if first_failing_step["status"] != "FAIL":
+            return error("first_failing_step.status debe ser FAIL")
+        if first_failing_step not in parsed_steps:
+            return error("first_failing_step no coincide con steps")
+    elif overall == "FAIL" and not any(step["status"] == "FAIL" for step in parsed_steps):
+        return error("overall=FAIL requiere al menos un paso FAIL o first_failing_step consistente")
 
     if expected_steps:
         if names != expected_steps:

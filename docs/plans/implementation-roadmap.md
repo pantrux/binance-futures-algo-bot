@@ -6,8 +6,8 @@
 ## Resumen ejecutivo
 
 - **Estado global actual:** `PR-118` ya quedó mergeado en `main`, con `último live tick` explícito en el overview superior y redeploy validado en Synology mediante smoke real.
-- **PR activo:** `PR-119` — aclarar en la UI que `Último live tick` proviene del timestamp backend de `/dashboard/live-pricing`.
-- **Siguiente carril sugerido:** seguir endureciendo la microcapa de feedback operativo antes de saltar a realtime más fino o SSE/WebSocket.
+- **PR activo:** `PR-P1` — endurecer el flujo de evidencia/sign-off Synology para que el paquete final sea un artefacto de decisión operativo.
+- **Siguiente carril sugerido:** cerrar `PR-P1` y seguir endureciendo la microcapa de feedback operativo antes de saltar a realtime más fino o SSE/WebSocket.
 
 ## ¿Cuándo comienza a levantarse la infraestructura del bot?
 

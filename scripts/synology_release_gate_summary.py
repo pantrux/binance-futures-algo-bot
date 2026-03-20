@@ -8,11 +8,16 @@ from pathlib import Path
 
 STEP_PATTERN = re.compile(r"^##\s+(.+?):\s+(PASS|FAIL)\s*$")
 RESULT_PATTERN = re.compile(r"^\*\*(PASS|FAIL)\*\*\s*$")
+HEADER_ITEM_PATTERN = re.compile(r"^- ([A-Za-z_][A-Za-z0-9_ ()/-]*?):\s*(.+?)\s*$")
+WARNING_PATTERN = re.compile(r"^(?:⚠️|Warning:)\s*(.+?)\s*$")
 
 
 def parse_report(text: str) -> dict:
     steps: list[dict[str, str]] = []
     overall = "UNKNOWN"
+    generated_at_utc: str | None = None
+    inputs_used: dict[str, str] = {}
+    warnings: list[str] = []
     in_fence = False
 
     for line in text.splitlines():
@@ -23,6 +28,21 @@ def parse_report(text: str) -> dict:
             continue
 
         if in_fence:
+            continue
+
+        header_item_match = HEADER_ITEM_PATTERN.match(stripped)
+        if header_item_match:
+            key = header_item_match.group(1)
+            value = header_item_match.group(2)
+            if key == "Generated at (UTC)":
+                generated_at_utc = value
+            else:
+                inputs_used[key] = value
+            continue
+
+        warning_match = WARNING_PATTERN.match(stripped)
+        if warning_match:
+            warnings.append(warning_match.group(1))
             continue
 
         step_match = STEP_PATTERN.match(stripped)
@@ -37,10 +57,16 @@ def parse_report(text: str) -> dict:
     if in_fence:
         print("Warning: unclosed code fence detected in report; results may be incomplete.", file=sys.stderr)
 
+    first_failing_step = next((step for step in steps if step["status"] == "FAIL"), None)
+
     return {
         "overall": overall,
         "steps": steps,
         "step_count": len(steps),
+        "generated_at_utc": generated_at_utc,
+        "inputs_used": inputs_used,
+        "warnings": warnings,
+        "first_failing_step": first_failing_step,
     }
 
 

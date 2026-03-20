@@ -23,6 +23,10 @@ def parser_module():
 def test_parse_report_pass_with_two_steps(parser_module):
     text = """# Synology Release Gate Report
 
+ - Generated at (UTC): 2025-01-02 03:04:05
+ - API_BASE_URL: http://nas/api
+ - WEB_BASE_URL: http://nas/web
+
 ## Preflight: PASS
 
 ```text
@@ -42,6 +46,13 @@ ok
     parsed = parser_module.parse_report(text)
     assert parsed["overall"] == "PASS"
     assert parsed["step_count"] == 2
+    assert parsed["generated_at_utc"] == "2025-01-02 03:04:05"
+    assert parsed["inputs_used"] == {
+        "API_BASE_URL": "http://nas/api",
+        "WEB_BASE_URL": "http://nas/web",
+    }
+    assert parsed["warnings"] == []
+    assert parsed["first_failing_step"] is None
     assert parsed["steps"] == [
         {"name": "Preflight", "status": "PASS"},
         {"name": "Smoke", "status": "PASS"},
@@ -49,8 +60,11 @@ ok
 
 
 def test_parse_report_fail_with_failed_step(parser_module):
-    text = """## Preflight: PASS
+    text = """- Generated at (UTC): 2025-01-02 03:04:05
+## Preflight: PASS
 ## Smoke: FAIL
+
+⚠️ Preflight fallido - smoke omitido para evitar ruido diagnóstico.
 
 ## Resultado global
 
@@ -59,6 +73,8 @@ def test_parse_report_fail_with_failed_step(parser_module):
     parsed = parser_module.parse_report(text)
     assert parsed["overall"] == "FAIL"
     assert parsed["step_count"] == 2
+    assert parsed["warnings"] == ["Preflight fallido - smoke omitido para evitar ruido diagnóstico."]
+    assert parsed["first_failing_step"] == {"name": "Smoke", "status": "FAIL"}
     assert parsed["steps"][0] == {"name": "Preflight", "status": "PASS"}
     assert parsed["steps"][1] == {"name": "Smoke", "status": "FAIL"}
 
@@ -104,7 +120,7 @@ def test_main_report_not_found_returns_1(parser_module, monkeypatch, tmp_path):
 
 def test_main_writes_json_output(parser_module, monkeypatch, tmp_path):
     report = tmp_path / "report.md"
-    report.write_text("## Preflight: PASS\n\n**PASS**\n", encoding="utf-8")
+    report.write_text("- API_BASE_URL: http://nas/api\n## Preflight: PASS\n\n**PASS**\n", encoding="utf-8")
     output = tmp_path / "summary.json"
 
     monkeypatch.setattr(sys, "argv", ["script.py", str(report), str(output)])
@@ -113,4 +129,7 @@ def test_main_writes_json_output(parser_module, monkeypatch, tmp_path):
     data = json.loads(output.read_text(encoding="utf-8"))
     assert data["overall"] == "PASS"
     assert data["step_count"] == 1
+    assert data["inputs_used"] == {"API_BASE_URL": "http://nas/api"}
+    assert data["warnings"] == []
+    assert data["first_failing_step"] is None
     assert data["steps"][0] == {"name": "Preflight", "status": "PASS"}

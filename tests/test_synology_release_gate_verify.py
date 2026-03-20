@@ -26,6 +26,10 @@ def test_verify_payload_pass(verify_module):
             {"name": "Preflight", "status": "PASS"},
             {"name": "Smoke", "status": "PASS"},
         ],
+        "generated_at_utc": "2025-01-02 03:04:05",
+        "inputs_used": {"API_BASE_URL": "http://nas/api"},
+        "warnings": [],
+        "first_failing_step": None,
     }
     assert verify_module.verify_payload(payload, ["Preflight", "Smoke"]) == 0
 
@@ -52,6 +56,43 @@ def test_verify_payload_fails_when_expected_steps_differ(verify_module):
         ],
     }
     assert verify_module.verify_payload(payload, ["Preflight", "Smoke"]) == 1
+
+
+def test_verify_payload_fails_when_first_failing_step_is_inconsistent(verify_module):
+    payload = {
+        "overall": "FAIL",
+        "step_count": 2,
+        "steps": [
+            {"name": "Preflight", "status": "PASS"},
+            {"name": "Smoke", "status": "FAIL"},
+        ],
+        "first_failing_step": {"name": "Preflight", "status": "FAIL"},
+    }
+    assert verify_module.verify_payload(payload, ["Preflight", "Smoke"]) == 1
+
+
+def test_verify_payload_fails_when_inputs_used_has_non_string_value(verify_module):
+    payload = {
+        "overall": "PASS",
+        "step_count": 1,
+        "steps": [
+            {"name": "Preflight", "status": "PASS"},
+        ],
+        "inputs_used": {"STRICT_EXTERNAL_CHECKS": False},
+    }
+    assert verify_module.verify_payload(payload, ["Preflight"]) == 1
+
+
+def test_verify_payload_fails_when_warnings_are_invalid(verify_module):
+    payload = {
+        "overall": "PASS",
+        "step_count": 1,
+        "steps": [
+            {"name": "Preflight", "status": "PASS"},
+        ],
+        "warnings": [""],
+    }
+    assert verify_module.verify_payload(payload, ["Preflight"]) == 1
 
 
 def test_main_returns_1_for_missing_file(verify_module, monkeypatch, tmp_path):
@@ -146,7 +187,7 @@ def test_main_returns_0_for_valid_json(verify_module, monkeypatch, tmp_path):
 
     good_json = tmp_path / "good.json"
     good_json.write_text(
-        '{"overall":"PASS","step_count":2,"steps":[{"name":"Preflight","status":"PASS"},{"name":"Smoke","status":"PASS"}]}',
+        '{"overall":"PASS","step_count":2,"steps":[{"name":"Preflight","status":"PASS"},{"name":"Smoke","status":"PASS"}],"inputs_used":{"API_BASE_URL":"http://nas/api"},"warnings":[],"first_failing_step":null}',
         encoding="utf-8",
     )
     monkeypatch.setattr(sys, "argv", ["script.py", str(good_json), "Preflight,Smoke"])
