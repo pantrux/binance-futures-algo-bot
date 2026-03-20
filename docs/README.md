@@ -6,7 +6,7 @@ Estructura oficial de documentación para mantener navegación simple y consiste
 
 - `adr/` — decisiones de arquitectura activas (ADRs)
   - `adr/archive/` — ADRs históricos o reemplazados
-- `plans/` — planes, roadmap, runbooks y documentos de operación
+- `plans/` — planes, roadmap, piloto G-Stack, scoreboards, runbooks y documentos de operación
   - `plans/archive/` — planes históricos absorbidos por roadmaps más recientes
 - `diagrams/` — diagramas y flujos Mermaid
 - `pr-plan/` — gobernanza del flujo por Pull Requests

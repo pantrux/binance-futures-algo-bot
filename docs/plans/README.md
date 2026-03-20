@@ -4,6 +4,9 @@
 
 - `master-plan.md`
 - `implementation-roadmap.md`
+- `gstack-pilot.md`
+- `gstack-scoreboard.md`
+- `gstack-decision-log.md`
 - `phase5-operational-closure.md`
 - `transition-checklist-and-capital-ramp.md`
 - `cutover-and-post-cutover-monitoring.md`

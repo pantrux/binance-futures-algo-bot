@@ -188,6 +188,7 @@ La respuesta incluye métricas del periodo completo y un resumen walk-forward co
 Toda la documentación del proyecto está en español dentro de `docs/` y debe sincronizarse también en Outline.
 
 - Índice local de estructura: `docs/README.md`
+- Piloto metodológico activo: `docs/plans/gstack-pilot.md` + `docs/plans/gstack-scoreboard.md`
 - Sync idempotente a Outline (evita duplicados por título y reescribe links locales a URLs navegables de Outline/GitHub):
 
 ```bash
