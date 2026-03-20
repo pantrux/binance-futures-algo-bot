@@ -83,13 +83,19 @@ make synology-release-gate \
 
 Genera reporte Markdown en `artifacts/synology-release-gate.md`.
 
-Para resumen máquina-legible:
+Para resumen máquina-legible orientado a decisión:
 
 ```bash
 python3 scripts/synology_release_gate_summary.py \
   artifacts/synology-release-gate.md \
   artifacts/synology-release-gate.json
 ```
+
+Campos operativos derivados que ahora conviene revisar en el JSON:
+- `generated_at_utc`
+- `inputs_used`
+- `warnings`
+- `first_failing_step`
 
 Para validar consistencia estructural del JSON:
 
@@ -116,6 +122,12 @@ make synology-signoff-all \
   WEB_BASE_URL="http://IP_NAS:WEB_PORT" \
   SIGNOFF_OWNER="<responsable>"
 ```
+
+El paquete `artifacts/synology-signoff-package.md` debe leerse como artefacto de decisión operacional, no solo como inventario de archivos:
+- resume si el gate habilita o bloquea el sign-off
+- muestra inputs usados para la corrida
+- enumera estado por paso, warnings y primer fallo
+- propone la siguiente acción recomendada para cerrar o corregir
 
 ## Cierre formal de fase 5
 

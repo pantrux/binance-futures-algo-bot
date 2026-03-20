@@ -150,6 +150,12 @@ jobs:
             artifacts/synology-release-checklist.md \
             artifacts/synology-signoff-package.md
 
+          {
+            echo "## Synology Sign-off Package"
+            echo
+            cat artifacts/synology-signoff-package.md
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Upload gate artifacts
         if: always()
         uses: actions/upload-artifact@v4
