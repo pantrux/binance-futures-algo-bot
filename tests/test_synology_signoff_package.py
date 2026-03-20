@@ -50,6 +50,8 @@ def test_main_generates_package(tmp_path, monkeypatch):
     assert "Synology Sign-off Package" in body
     assert "Gate aprobado; el paquete soporta sign-off operacional." in body
     assert "API_BASE_URL: `http://nas/api`" in body
+    assert "WEB_BASE_URL: `http://nas/web`" in body
+    assert body.index("API_BASE_URL: `http://nas/api`") < body.index("WEB_BASE_URL: `http://nas/web`")
     assert "overall: **PASS**" in body
     assert "Sin warnings derivados del reporte." in body
     assert "Registrar aprobación final en el checklist" in body
@@ -166,6 +168,31 @@ def test_main_returns_1_on_invalid_optional_json_fields(tmp_path, monkeypatch):
                 "step_count": 1,
                 "steps": [{"name": "Preflight", "status": "FAIL"}],
                 "warnings": [""],
+            }
+        ),
+        encoding="utf-8",
+    )
+    checklist.write_text("# checklist", encoding="utf-8")
+
+    monkeypatch.setattr(sys, "argv", ["script.py", str(gate_md), str(gate_json), str(checklist), str(out)])
+    assert module.main() == 1
+
+
+def test_main_returns_1_when_steps_contains_non_dict(tmp_path, monkeypatch):
+    module = load_module()
+
+    gate_md = tmp_path / "gate.md"
+    gate_json = tmp_path / "gate.json"
+    checklist = tmp_path / "checklist.md"
+    out = tmp_path / "package.md"
+
+    gate_md.write_text("# gate", encoding="utf-8")
+    gate_json.write_text(
+        json.dumps(
+            {
+                "overall": "PASS",
+                "step_count": 1,
+                "steps": ["bad-step"],
             }
         ),
         encoding="utf-8",

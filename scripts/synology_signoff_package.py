@@ -21,6 +21,9 @@ def load_json(path: Path) -> dict:
 
     if not isinstance(data["steps"], list):
         raise ValueError("steps debe ser una lista")
+    for idx, step in enumerate(data["steps"]):
+        if not isinstance(step, dict):
+            raise ValueError(f"steps[{idx}] debe ser objeto")
 
     if not isinstance(data["step_count"], int) or isinstance(data["step_count"], bool):
         raise ValueError("step_count debe ser entero")
@@ -58,7 +61,11 @@ def load_json(path: Path) -> dict:
 def build_executive_summary(summary: dict) -> list[str]:
     overall = summary.get("overall")
     step_count = summary.get("step_count", 0)
-    failed_steps = [step["name"] for step in summary.get("steps", []) if step.get("status") == "FAIL"]
+    failed_steps = [
+        step.get("name", "unknown")
+        for step in summary.get("steps", [])
+        if isinstance(step, dict) and step.get("status") == "FAIL"
+    ]
     warning_count = len(summary.get("warnings") or [])
 
     if overall == "PASS":
@@ -125,11 +132,11 @@ def main() -> int:
         status = step.get("status", "unknown")
         steps_lines.append(f"- {name}: {status}")
 
-    input_lines = [f"- {key}: `{value}`" for key, value in inputs_used.items()]
+    input_lines = [f"- {key}: `{inputs_used[key]}`" for key in sorted(inputs_used)]
     if not input_lines:
         input_lines.append("- Sin metadatos de entrada parseables en el reporte actual.")
 
-    warning_lines = [f"- {warning}" for warning in warnings]
+    warning_lines = [f"- {warning}" for warning in sorted(warnings)]
     if not warning_lines:
         warning_lines.append("- Sin warnings derivados del reporte.")
 
