@@ -1130,6 +1130,16 @@ Cubrir con fixture local los fallos HTTP base más importantes del smoke (`/heal
 - mergeado en `43c1c1c`
 
 
+## Piloto metodológico activo
+Desde 2026-03-20, además del roadmap principal, el proyecto opera un piloto metodológico G-Stack documentado en:
+
+- `docs/plans/gstack-pilot.md`
+- `docs/plans/gstack-scoreboard.md`
+- `docs/plans/gstack-decision-log.md`
+- `docs/pr-plan/GSTACK_PR_PILOT_ROADMAP.md`
+
+El piloto no reemplaza este roadmap; lo complementa con una apuesta principal por ciclo, métricas explícitas y cierre corto de aprendizaje.
+
 ## Criterio de avance
 No abrir el siguiente PR como “en progreso” hasta dejar el anterior con:
 - checks terminados

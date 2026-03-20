@@ -98,6 +98,16 @@ Un sistema de trading algorítmico **auditable, resiliente y operable** en Synol
 - Carril activo (`PR-119`): aclarar la procedencia del `último live tick` como timestamp backend de `/dashboard/live-pricing`, para que no se confunda con la hora de render/fetch del cliente.
 - Siguiente expansión natural: profundizar la workstation con realtime aún más fino (polling selectivo más granular o SSE/WebSocket), acciones operativas y mayor densidad contextual por operación.
 
+## Piloto metodológico activo
+- Desde 2026-03-20 el proyecto adopta un **piloto G-Stack** como capa de ejecución encima del flujo actual por PR.
+- Documentos activos del piloto:
+  - `docs/plans/gstack-pilot.md`
+  - `docs/plans/gstack-scoreboard.md`
+  - `docs/plans/gstack-decision-log.md`
+  - `docs/pr-plan/GSTACK_PR_PILOT_ROADMAP.md`
+- La primera apuesta del piloto es reforzar la confiabilidad del loop operativo en Synology sin degradar guardrails de riesgo.
+- El piloto no reemplaza ADRs ni el roadmap principal; añade foco, cadencia y medición.
+
 ## Reglas inmutables del plan
 - `PAPER_TRADING=true` hasta completar criterios de transición de Etapa G y aprobar ensayos operativos de Etapa H.
 - Ningún PR se cierra con comentarios/reviews abiertos.
