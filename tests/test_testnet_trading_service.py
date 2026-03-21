@@ -343,6 +343,55 @@ class FakeBinanceClientProtectionReprice(FakeBinanceClient):
         return {"orderId": 222222, "clientOrderId": client_order_id, "status": "NEW"}
 
 
+class FakeBinanceClientAlgoProtectionReprice(FakeBinanceClientProtectionReprice):
+    async def place_stop_market_algo_order(self, *, symbol: str, side: str, trigger_price: float, client_algo_id: str, close_position: bool = True, recv_window: int = 5000, working_type: str = "MARK_PRICE") -> dict:
+        assert working_type == "MARK_PRICE"
+        self.stop_prices.append(trigger_price)
+        return {"algoId": 911111, "clientAlgoId": client_algo_id, "algoStatus": "NEW"}
+
+    async def place_take_profit_market_algo_order(self, *, symbol: str, side: str, trigger_price: float, client_algo_id: str, close_position: bool = True, recv_window: int = 5000, working_type: str = "MARK_PRICE") -> dict:
+        assert working_type == "MARK_PRICE"
+        self.take_profit_prices.append(trigger_price)
+        return {"algoId": 922222, "clientAlgoId": client_algo_id, "algoStatus": "NEW"}
+
+
+class FakeBinanceClientAlgoProtectionFallback(FakeBinanceClientProtectionReprice):
+    async def place_stop_market_algo_order(self, *, symbol: str, side: str, trigger_price: float, client_algo_id: str, close_position: bool = True, recv_window: int = 5000, working_type: str = "MARK_PRICE") -> dict:
+        raise RuntimeError("algo_stop_unavailable")
+
+    async def place_take_profit_market_algo_order(self, *, symbol: str, side: str, trigger_price: float, client_algo_id: str, close_position: bool = True, recv_window: int = 5000, working_type: str = "MARK_PRICE") -> dict:
+        raise RuntimeError("algo_tp_unavailable")
+
+
+class FakeBinanceClientAlgoProtectionPartialFailure(FakeBinanceClientProtectionReprice):
+    def __init__(self) -> None:
+        super().__init__()
+        self.canceled_algo_refs: list[int | str] = []
+
+    async def place_stop_market_algo_order(self, *, symbol: str, side: str, trigger_price: float, client_algo_id: str, close_position: bool = True, recv_window: int = 5000, working_type: str = "MARK_PRICE") -> dict:
+        self.stop_prices.append(trigger_price)
+        return {"algoId": 911111, "clientAlgoId": client_algo_id, "algoStatus": "NEW"}
+
+    async def place_take_profit_market_algo_order(self, *, symbol: str, side: str, trigger_price: float, client_algo_id: str, close_position: bool = True, recv_window: int = 5000, working_type: str = "MARK_PRICE") -> dict:
+        raise RuntimeError("algo_tp_unavailable")
+
+    async def cancel_algo_order(self, *, algo_id: int | None = None, client_algo_id: str | None = None, recv_window: int = 5000) -> dict:
+        self.canceled_algo_refs.append(algo_id if algo_id is not None else str(client_algo_id))
+        return {"algoId": algo_id, "clientAlgoId": client_algo_id, "code": "200", "msg": "success"}
+
+
+class FakeBinanceClientAlgoAndLegacyDoubleFailure(FakeBinanceClientAlgoProtectionPartialFailure):
+    async def place_stop_market_order(self, *, symbol: str, side: str, stop_price: float, client_order_id: str, close_position: bool = True, recv_window: int = 5000) -> dict:
+        return {"orderId": 711111, "clientOrderId": client_order_id, "status": "NEW"}
+
+    async def place_take_profit_market_order(self, *, symbol: str, side: str, stop_price: float, client_order_id: str, close_position: bool = True, recv_window: int = 5000) -> dict:
+        raise RuntimeError("legacy_tp_unavailable")
+
+    async def cancel_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        self.canceled_algo_refs.append(order_id if order_id is not None else str(client_order_id))
+        return {"orderId": order_id, "clientOrderId": client_order_id, "status": "CANCELED"}
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -840,6 +889,108 @@ def test_testnet_trading_reprices_protection_orders_from_fill_and_mark():
     assert len(protection_orders) == 2
     assert protection_orders[0].price == client.stop_prices[0]
     assert protection_orders[1].price == client.take_profit_prices[0]
+
+
+def test_testnet_trading_uses_algo_orders_for_native_protection_when_supported():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    client = FakeBinanceClientAlgoProtectionReprice()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=client,
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    protection_orders = (
+        db.query(Order)
+        .filter(Order.trade_plan_id == plan.id, Order.order_type.in_(["stop_market", "take_profit_market"]))
+        .order_by(Order.id.asc())
+        .all()
+    )
+    assert len(protection_orders) == 2
+    assert protection_orders[0].external_order_id == "algo:911111"
+    assert protection_orders[1].external_order_id == "algo:922222"
+    assert protection_orders[0].status == "new"
+    assert protection_orders[1].status == "new"
+
+
+def test_testnet_trading_falls_back_to_legacy_orders_when_algo_submit_fails():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    client = FakeBinanceClientAlgoProtectionFallback()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=client,
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    assert len(client.stop_prices) == 1
+    assert len(client.take_profit_prices) == 1
+    protection_orders = (
+        db.query(Order)
+        .filter(Order.trade_plan_id == plan.id, Order.order_type.in_(["stop_market", "take_profit_market"]))
+        .order_by(Order.id.asc())
+        .all()
+    )
+    assert len(protection_orders) == 2
+    assert protection_orders[0].external_order_id == "111111"
+    assert protection_orders[1].external_order_id == "222222"
+
+
+def test_testnet_trading_cleans_up_partial_algo_submission_before_legacy_fallback():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    client = FakeBinanceClientAlgoProtectionPartialFailure()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=client,
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    assert client.canceled_algo_refs == [911111]
+    protection_orders = (
+        db.query(Order)
+        .filter(Order.trade_plan_id == plan.id, Order.order_type.in_(["stop_market", "take_profit_market"]))
+        .order_by(Order.id.asc())
+        .all()
+    )
+    assert len(protection_orders) == 2
+    assert protection_orders[0].external_order_id == "111111"
+    assert protection_orders[1].external_order_id == "222222"
+
+
+def test_testnet_trading_logs_failure_cleanly_when_algo_and_legacy_protection_both_fail():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    client = FakeBinanceClientAlgoAndLegacyDoubleFailure()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=client,
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    assert result["reason"] == "protection_orders_failed"
+    event = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_protection_orders_failed")
+        .order_by(RiskEvent.id.desc())
+        .first()
+    )
+    assert event is not None
+    assert event.context_json["algo_cleanup_results"] == [{"external_order_id": "algo:911111", "canceled": True}]
+    assert event.context_json["legacy_cleanup_results"] == [{"external_order_id": "711111", "canceled": True}]
 
 
 def test_testnet_trading_blocks_new_entry_when_same_symbol_side_position_is_open():

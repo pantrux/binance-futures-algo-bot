@@ -1,3 +1,4 @@
+import asyncio
 import math
 
 import pytest
@@ -38,3 +39,21 @@ def test_serialize_quantity_rejects_nan():
 def test_serialize_quantity_rejects_inf():
     with pytest.raises(ValueError, match="número finito y mayor a cero"):
         BinanceFuturesClient._serialize_quantity(math.inf)
+
+
+def test_get_algo_order_requires_at_least_one_exchange_identifier():
+    client = BinanceFuturesClient()
+    client.api_key = "test-key"
+    client.api_secret = "test-secret"
+
+    with pytest.raises(ValueError, match="get_algo_order requiere"):
+        asyncio.run(client.get_algo_order(algo_id=None, client_algo_id=None))
+
+
+def test_cancel_algo_order_requires_at_least_one_exchange_identifier():
+    client = BinanceFuturesClient()
+    client.api_key = "test-key"
+    client.api_secret = "test-secret"
+
+    with pytest.raises(ValueError, match="cancel_algo_order requiere"):
+        asyncio.run(client.cancel_algo_order(algo_id=None, client_algo_id=None))
