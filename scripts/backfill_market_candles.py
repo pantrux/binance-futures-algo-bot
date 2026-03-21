@@ -39,7 +39,7 @@ def main() -> int:
                         "snapshot_saved": payload.get("snapshot_saved", False),
                     })
             except urllib.error.HTTPError as exc:
-                body = exc.read().decode()
+                body = exc.read().decode("utf-8", errors="replace")
                 results.append({
                     "symbol": symbol,
                     "timeframe": timeframe,
@@ -48,6 +48,21 @@ def main() -> int:
                 })
                 exit_code = 1
             except Exception as exc:  # noqa: BLE001
+                results.append({
+                    "symbol": symbol,
+                    "timeframe": timeframe,
+                    "status": "error",
+                    "error": repr(exc),
+                })
+                exit_code = 1
+
+    print(json.dumps(results, indent=2))
+    return exit_code
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
                 results.append({
                     "symbol": symbol,
                     "timeframe": timeframe,
