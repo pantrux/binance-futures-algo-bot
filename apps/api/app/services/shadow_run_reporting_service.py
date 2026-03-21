@@ -176,6 +176,8 @@ class ShadowRunReportingService:
         if shadow_run_start_at is not None and shadow_run_end_at is not None:
             shadow_run_duration_days = round((shadow_run_end_at - shadow_run_start_at).total_seconds() / 86400, 4)
 
+        effective_risk_window_days_30d = max((now - risk_cutoff_30d).total_seconds() / 86400, 1 / 86400)
+
         return ShadowRunSummary(
             evaluated_at=now,
             window_days=window_days,
