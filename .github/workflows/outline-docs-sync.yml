@@ -36,6 +36,10 @@ jobs:
             echo "❌ Falta secret OUTLINE_API_TOKEN" >&2
             exit 1
           fi
+          if [[ -z "${OUTLINE_API_URL:-}" ]]; then
+            echo "❌ Falta secret OUTLINE_API_URL" >&2
+            exit 1
+          fi
           EXTRA_ARGS=()
           if [[ "${ARCHIVE_UNKNOWN:-false}" == "true" ]]; then
             EXTRA_ARGS+=(--archive-unknown)

@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from apps.api.app.db.base import Base
 from apps.api.app.db.models import TradePlan
 from apps.api.app.services.execution_parity_service import ExecutionParityService
+from apps.api.app.services.shadow_run_reporting_service import MAX_PAIRING_DELTA_SECONDS
 
 
 def build_db():
@@ -243,7 +244,7 @@ def test_execution_parity_does_not_pair_candidates_beyond_max_temporal_delta():
         entry_price=50010,
         risk_pct=1.0,
         notional=200,
-        created_at=base + timedelta(days=2),
+        created_at=base + timedelta(seconds=MAX_PAIRING_DELTA_SECONDS + 1),
     )
 
     report = ExecutionParityService(db).build_report(symbol="BTCUSDT", limit=50)
