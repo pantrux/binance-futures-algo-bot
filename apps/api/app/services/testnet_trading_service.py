@@ -196,6 +196,87 @@ class BinanceTestnetTradingService:
             )
         )
 
+    async def _place_protection_orders(
+        self,
+        *,
+        trade_plan: TradePlan,
+        exit_side: str,
+        external_order_id: str,
+    ) -> tuple[Order | None, Order | None, str | None]:
+        stop_client_order_id = f"sl-{trade_plan.id}-{int(time.time() * 1000)}"
+        take_profit_client_order_id = f"tpx-{trade_plan.id}-{int(time.time() * 1000)}"
+
+        try:
+            stop_payload = await self.binance_client.place_stop_market_order(
+                symbol=trade_plan.symbol,
+                side=exit_side,
+                stop_price=trade_plan.stop_loss,
+                client_order_id=stop_client_order_id,
+            )
+            take_profit_payload = await self.binance_client.place_take_profit_market_order(
+                symbol=trade_plan.symbol,
+                side=exit_side,
+                stop_price=trade_plan.take_profit,
+                client_order_id=take_profit_client_order_id,
+            )
+        except Exception as exc:  # noqa: BLE001
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_protection_orders_failed",
+                severity="critical",
+                message=f"No fue posible crear órdenes de protección testnet: {exc}",
+                context={
+                    "symbol": trade_plan.symbol,
+                    "external_order_id": external_order_id,
+                    "exception_type": type(exc).__name__,
+                    "stop_loss": trade_plan.stop_loss,
+                    "take_profit": trade_plan.take_profit,
+                },
+            )
+            return None, None, "protection_orders_failed"
+
+        stop_order = Order(
+            trade_plan_id=trade_plan.id,
+            venue="binance_futures_testnet",
+            external_order_id=str(stop_payload.get("orderId") or stop_payload.get("clientOrderId") or stop_client_order_id),
+            symbol=trade_plan.symbol,
+            side=trade_plan.side,
+            order_type="stop_market",
+            status=str(stop_payload.get("status") or "new").strip().lower(),
+            price=trade_plan.stop_loss,
+            quantity=0.0,
+            executed_quantity=0.0,
+            is_testnet=True,
+        )
+        take_profit_order = Order(
+            trade_plan_id=trade_plan.id,
+            venue="binance_futures_testnet",
+            external_order_id=str(
+                take_profit_payload.get("orderId") or take_profit_payload.get("clientOrderId") or take_profit_client_order_id
+            ),
+            symbol=trade_plan.symbol,
+            side=trade_plan.side,
+            order_type="take_profit_market",
+            status=str(take_profit_payload.get("status") or "new").strip().lower(),
+            price=trade_plan.take_profit,
+            quantity=0.0,
+            executed_quantity=0.0,
+            is_testnet=True,
+        )
+        self._log_risk_event(
+            trade_plan_id=trade_plan.id,
+            event_type="testnet_protection_orders_submitted",
+            severity="info",
+            message="Órdenes de protección testnet enviadas",
+            context={
+                "symbol": trade_plan.symbol,
+                "external_order_id": external_order_id,
+                "stop_order_id": stop_order.external_order_id,
+                "take_profit_order_id": take_profit_order.external_order_id,
+            },
+        )
+        return stop_order, take_profit_order, None
+
     async def execute_trade_plan(self, trade_plan_id: int) -> dict:
         trade_plan = self.db.get(TradePlan, trade_plan_id)
         if not trade_plan:
@@ -222,6 +303,29 @@ class BinanceTestnetTradingService:
             )
             self.db.commit()
             return {"executed": False, "reason": "trade_plan_not_approved"}
+
+        existing_open_position = (
+            self.db.query(Position)
+            .filter(Position.symbol == trade_plan.symbol)
+            .filter(Position.side == trade_plan.side)
+            .filter(Position.status == "open")
+            .filter(Position.is_testnet.is_(True))
+            .first()
+        )
+        if existing_open_position:
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_execution_blocked_existing_open_position",
+                severity="warning",
+                message="Existe una posición testnet abierta para el mismo símbolo/lado; se bloquea una nueva entrada",
+                context={
+                    "symbol": trade_plan.symbol,
+                    "side": trade_plan.side,
+                    "existing_position_id": existing_open_position.id,
+                },
+            )
+            self.db.commit()
+            return {"executed": False, "reason": "existing_open_position"}
 
         stop_distance = abs(trade_plan.entry_price - trade_plan.stop_loss)
         raw_quantity = 0.0 if stop_distance == 0 else (trade_plan.capital_usdt * (trade_plan.applied_risk_pct / 100)) / stop_distance
@@ -271,6 +375,7 @@ class BinanceTestnetTradingService:
             return {"executed": False, "reason": "invalid_side"}
 
         side = "BUY" if trade_plan.side == "long" else "SELL"
+        exit_side = "SELL" if trade_plan.side == "long" else "BUY"
         client_order_id = f"tp-{trade_plan.id}-{int(time.time() * 1000)}"
 
         try:
@@ -448,6 +553,12 @@ class BinanceTestnetTradingService:
             is_testnet=True,
         )
 
+        stop_order, take_profit_order, protection_reason = await self._place_protection_orders(
+            trade_plan=trade_plan,
+            exit_side=exit_side,
+            external_order_id=external_order_id,
+        )
+
         trade_plan.status = "testnet_executed"
         self._log_risk_event(
             trade_plan_id=trade_plan.id,
@@ -465,15 +576,26 @@ class BinanceTestnetTradingService:
             },
         )
 
-        self.db.add_all([order, position, trade_plan])
+        objects_to_add = [order, position, trade_plan]
+        if stop_order is not None:
+            objects_to_add.append(stop_order)
+        if take_profit_order is not None:
+            objects_to_add.append(take_profit_order)
+        self.db.add_all(objects_to_add)
         self.db.commit()
         self.db.refresh(order)
         self.db.refresh(position)
+        if stop_order is not None:
+            self.db.refresh(stop_order)
+        if take_profit_order is not None:
+            self.db.refresh(take_profit_order)
 
         return {
             "executed": True,
             "order_id": order.id,
             "position_id": position.id,
             "external_order_id": external_order_id,
-            "reason": None,
+            "stop_order_id": stop_order.id if stop_order is not None else None,
+            "take_profit_order_id": take_profit_order.id if take_profit_order is not None else None,
+            "reason": protection_reason,
         }

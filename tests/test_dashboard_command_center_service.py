@@ -84,6 +84,38 @@ def test_dashboard_command_center_builds_operational_snapshot():
     order.created_at = now - timedelta(hours=1)
     db.add(order)
 
+    stop_order = Order(
+        trade_plan_id=testnet.id,
+        venue="binance_futures_testnet",
+        external_order_id="sl-1",
+        symbol="BTCUSDT",
+        side="long",
+        order_type="stop_market",
+        status="new",
+        price=49750,
+        quantity=0.0,
+        executed_quantity=0.0,
+        is_testnet=True,
+    )
+    stop_order.created_at = now - timedelta(minutes=59)
+    db.add(stop_order)
+
+    take_profit_order = Order(
+        trade_plan_id=testnet.id,
+        venue="binance_futures_testnet",
+        external_order_id="tp-1",
+        symbol="BTCUSDT",
+        side="long",
+        order_type="take_profit_market",
+        status="new",
+        price=50600,
+        quantity=0.0,
+        executed_quantity=0.0,
+        is_testnet=True,
+    )
+    take_profit_order.created_at = now - timedelta(minutes=58)
+    db.add(take_profit_order)
+
     old_position = Position(
         trade_plan_id=testnet.id,
         symbol="BTCUSDT",
@@ -137,21 +169,21 @@ def test_dashboard_command_center_builds_operational_snapshot():
     assert payload.summary.testnet_executed_trade_plans == 1
     assert payload.summary.open_positions == 1
     assert payload.summary.risk_events_total == 2
-    assert payload.shadow_run.testnet_orders_total == 2
+    assert payload.shadow_run.testnet_orders_total == 4
     assert payload.shadow_run.testnet_orders_filled == 1
-    assert payload.shadow_run.testnet_fill_rate_pct == 50.0
+    assert payload.shadow_run.testnet_fill_rate_pct == 25.0
     assert payload.operation_snapshots[0].trade_plan_id == approved.id
     assert payload.operation_snapshots[1].trade_plan_id == testnet.id
-    assert payload.operation_snapshots[1].latest_order_status == "filled"
+    assert payload.operation_snapshots[1].latest_order_status == "new"
     assert payload.operation_snapshots[1].latest_position_status == "open"
     assert payload.operation_snapshots[1].reconciliation_healthy is True
     assert payload.operation_snapshots[1].technical_score == 80
     assert payload.operation_snapshots[1].timeframe == "15m"
     assert payload.operation_snapshots[1].thesis == "dashboard command center"
-    assert payload.operation_snapshots[1].reconciliation_order_count == 2
+    assert payload.operation_snapshots[1].reconciliation_order_count == 4
     assert payload.operation_snapshots[1].reconciliation_filled_order_count == 1
-    assert len(payload.operation_snapshots[1].order_history) == 2
-    assert payload.operation_snapshots[1].order_history[0].status == "filled"
+    assert len(payload.operation_snapshots[1].order_history) == 4
+    assert payload.operation_snapshots[1].order_history[0].status == "new"
     assert len(payload.operation_snapshots[1].position_history) == 2
     assert payload.operation_snapshots[1].position_history[0].status == "open"
     assert len(payload.operation_snapshots[1].risk_event_history) == 1

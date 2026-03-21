@@ -58,20 +58,48 @@ def test_reconcile_execution_route_returns_report():
     db = SessionLocal()
 
     plan = seed_trade_plan(db, symbol="BTCUSDT", status="testnet_executed")
-    db.add(
-        Order(
-            trade_plan_id=plan.id,
-            venue="binance_futures_testnet",
-            external_order_id="ord-1",
-            symbol=plan.symbol,
-            side=plan.side,
-            order_type="market",
-            status="filled",
-            price=50000,
-            quantity=0.1,
-            executed_quantity=0.1,
-            is_testnet=True,
-        )
+    db.add_all(
+        [
+            Order(
+                trade_plan_id=plan.id,
+                venue="binance_futures_testnet",
+                external_order_id="ord-1",
+                symbol=plan.symbol,
+                side=plan.side,
+                order_type="market",
+                status="filled",
+                price=50000,
+                quantity=0.1,
+                executed_quantity=0.1,
+                is_testnet=True,
+            ),
+            Order(
+                trade_plan_id=plan.id,
+                venue="binance_futures_testnet",
+                external_order_id="sl-1",
+                symbol=plan.symbol,
+                side=plan.side,
+                order_type="stop_market",
+                status="new",
+                price=49750,
+                quantity=0.0,
+                executed_quantity=0.0,
+                is_testnet=True,
+            ),
+            Order(
+                trade_plan_id=plan.id,
+                venue="binance_futures_testnet",
+                external_order_id="tp-1",
+                symbol=plan.symbol,
+                side=plan.side,
+                order_type="take_profit_market",
+                status="new",
+                price=50600,
+                quantity=0.0,
+                executed_quantity=0.0,
+                is_testnet=True,
+            ),
+        ]
     )
     db.add(
         Position(

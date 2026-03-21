@@ -9,6 +9,7 @@ ExecutionDriftType = Literal[
     "position_closed_but_plan_still_executed",
     "multiple_open_positions",
     "executed_with_rejected_orders",
+    "missing_exit_protection",
 ]
 ExecutionSeverity = Literal["critical", "warning", "info"]
 

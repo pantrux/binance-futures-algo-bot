@@ -44,20 +44,48 @@ def test_reconcile_reports_healthy_when_order_and_position_match():
     db = build_db()
     plan = seed_trade_plan(db)
 
-    db.add(
-        Order(
-            trade_plan_id=plan.id,
-            venue="binance_futures_testnet",
-            external_order_id="abc",
-            symbol=plan.symbol,
-            side=plan.side,
-            order_type="market",
-            status="filled",
-            price=50000,
-            quantity=0.1,
-            executed_quantity=0.1,
-            is_testnet=True,
-        )
+    db.add_all(
+        [
+            Order(
+                trade_plan_id=plan.id,
+                venue="binance_futures_testnet",
+                external_order_id="abc",
+                symbol=plan.symbol,
+                side=plan.side,
+                order_type="market",
+                status="filled",
+                price=50000,
+                quantity=0.1,
+                executed_quantity=0.1,
+                is_testnet=True,
+            ),
+            Order(
+                trade_plan_id=plan.id,
+                venue="binance_futures_testnet",
+                external_order_id="sl-1",
+                symbol=plan.symbol,
+                side=plan.side,
+                order_type="stop_market",
+                status="new",
+                price=49750,
+                quantity=0.0,
+                executed_quantity=0.0,
+                is_testnet=True,
+            ),
+            Order(
+                trade_plan_id=plan.id,
+                venue="binance_futures_testnet",
+                external_order_id="tp-1",
+                symbol=plan.symbol,
+                side=plan.side,
+                order_type="take_profit_market",
+                status="new",
+                price=50600,
+                quantity=0.0,
+                executed_quantity=0.0,
+                is_testnet=True,
+            ),
+        ]
     )
     db.add(
         Position(
@@ -101,20 +129,48 @@ def test_reconcile_treats_executed_quantity_as_fill_even_if_status_is_new():
     db = build_db()
     plan = seed_trade_plan(db)
 
-    db.add(
-        Order(
-            trade_plan_id=plan.id,
-            venue="binance_futures_testnet",
-            external_order_id="ord-new",
-            symbol=plan.symbol,
-            side=plan.side,
-            order_type="market",
-            status="new",
-            price=50000,
-            quantity=0.1,
-            executed_quantity=0.1,
-            is_testnet=True,
-        )
+    db.add_all(
+        [
+            Order(
+                trade_plan_id=plan.id,
+                venue="binance_futures_testnet",
+                external_order_id="ord-new",
+                symbol=plan.symbol,
+                side=plan.side,
+                order_type="market",
+                status="new",
+                price=50000,
+                quantity=0.1,
+                executed_quantity=0.1,
+                is_testnet=True,
+            ),
+            Order(
+                trade_plan_id=plan.id,
+                venue="binance_futures_testnet",
+                external_order_id="sl-new",
+                symbol=plan.symbol,
+                side=plan.side,
+                order_type="stop_market",
+                status="new",
+                price=49750,
+                quantity=0.0,
+                executed_quantity=0.0,
+                is_testnet=True,
+            ),
+            Order(
+                trade_plan_id=plan.id,
+                venue="binance_futures_testnet",
+                external_order_id="tp-new",
+                symbol=plan.symbol,
+                side=plan.side,
+                order_type="take_profit_market",
+                status="new",
+                price=50600,
+                quantity=0.0,
+                executed_quantity=0.0,
+                is_testnet=True,
+            ),
+        ]
     )
     db.add(
         Position(
@@ -392,3 +448,44 @@ def test_reconcile_warns_when_position_was_closed_but_plan_stays_executed():
     assert report.healthy is False
     assert any(event.event_type == "position_closed_but_plan_still_executed" for event in report.drift_events)
     assert "sync_trade_plan_terminal_status" in report.recommended_actions
+
+
+def test_reconcile_detects_missing_exit_protection_for_open_testnet_position():
+    db = build_db()
+    plan = seed_trade_plan(db)
+    db.add(
+        Order(
+            trade_plan_id=plan.id,
+            venue="binance_futures_testnet",
+            external_order_id="ord-fill",
+            symbol=plan.symbol,
+            side=plan.side,
+            order_type="market",
+            status="filled",
+            price=50000,
+            quantity=0.1,
+            executed_quantity=0.1,
+            is_testnet=True,
+        )
+    )
+    db.add(
+        Position(
+            trade_plan_id=plan.id,
+            symbol=plan.symbol,
+            side=plan.side,
+            quantity=0.1,
+            entry_price=50000,
+            mark_price=50000,
+            unrealized_pnl=0,
+            leverage=3,
+            status="open",
+            is_testnet=True,
+        )
+    )
+    db.commit()
+
+    report = ExecutionStateMachineService(db).reconcile_trade_plan(plan.id)
+
+    assert report.healthy is False
+    assert any(event.event_type == "missing_exit_protection" for event in report.drift_events)
+    assert "rebuild_exit_protection" in report.recommended_actions

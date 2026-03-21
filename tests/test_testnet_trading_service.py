@@ -293,6 +293,11 @@ class FakeBinanceClientMissingStepSize:
         raise AssertionError("No debería llamar place_market_order cuando falta step size")
 
 
+class FakeBinanceClientProtectionFails(FakeBinanceClient):
+    async def place_stop_market_order(self, *, symbol: str, side: str, stop_price: float, client_order_id: str, close_position: bool = True, recv_window: int = 5000) -> dict:
+        raise RuntimeError("stop_order_failed")
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -734,3 +739,65 @@ def test_testnet_trading_returns_explicit_reason_when_step_size_is_unavailable()
 
     assert result["executed"] is False
     assert result["reason"] == "symbol_step_size_unavailable"
+
+
+def test_testnet_trading_marks_degraded_execution_when_protection_orders_fail():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClientProtectionFails(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    assert result["reason"] == "protection_orders_failed"
+    orders = db.query(Order).filter(Order.trade_plan_id == plan.id).order_by(Order.id.asc()).all()
+    assert len(orders) == 1
+    assert orders[0].order_type == "market"
+    critical_event = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_protection_orders_failed")
+        .one()
+    )
+    assert critical_event.severity == "critical"
+
+
+def test_testnet_trading_blocks_new_entry_when_same_symbol_side_position_is_open():
+    db = build_db()
+    existing_plan = _seed_trade_plan(db, status="testnet_executed")
+    db.add(
+        Position(
+            trade_plan_id=existing_plan.id,
+            symbol=existing_plan.symbol,
+            side=existing_plan.side,
+            quantity=0.1,
+            entry_price=50000,
+            mark_price=50010,
+            unrealized_pnl=1.0,
+            leverage=5,
+            status="open",
+            is_testnet=True,
+        )
+    )
+    db.commit()
+
+    new_plan = _seed_trade_plan(db, status="approved")
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=FakeBinanceClient(),
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(new_plan.id))
+
+    assert result["executed"] is False
+    assert result["reason"] == "existing_open_position"
+    warning = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == new_plan.id, RiskEvent.event_type == "testnet_execution_blocked_existing_open_position")
+        .one()
+    )
+    assert warning.severity == "warning"
