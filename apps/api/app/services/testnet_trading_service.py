@@ -46,6 +46,14 @@ class BinanceTestnetTradingService:
 
         return fallback
 
+    def _resolve_exchange_order_ref(self, external_order_id: str | None) -> dict[str, int | str]:
+        ref = str(external_order_id or "").strip()
+        if not ref:
+            raise ValueError("order external_order_id vacío para reconciliación")
+        if ref.isdigit():
+            return {"order_id": int(ref)}
+        return {"client_order_id": ref}
+
     def _extract_fill_price_from_trades(self, trades: list[dict], *, fallback: float) -> float:
         total_qty = 0.0
         total_quote = 0.0
@@ -280,6 +288,9 @@ class BinanceTestnetTradingService:
         return stop_order, take_profit_order, None
 
     async def sync_exit_orders(self, trade_plan_id: int) -> dict:
+        if not self.execution_enabled:
+            return {"synced": False, "reason": "testnet_execution_disabled"}
+
         trade_plan = self.db.get(TradePlan, trade_plan_id)
         if not trade_plan:
             raise ValueError("Trade plan no encontrado")
@@ -307,19 +318,22 @@ class BinanceTestnetTradingService:
             return {"synced": False, "reason": "no_protection_orders"}
 
         triggered_order = None
-        sibling_order = None
+        sibling_orders = []
         get_order = getattr(self.binance_client, "get_order", None)
         if not callable(get_order):
             return {"synced": False, "reason": "binance_get_order_unavailable"}
 
         for order in protection_orders:
-            refreshed = await get_order(symbol=trade_plan.symbol, client_order_id=order.external_order_id)
+            refreshed = await get_order(
+                symbol=trade_plan.symbol,
+                **self._resolve_exchange_order_ref(order.external_order_id),
+            )
             refreshed_status = str(refreshed.get("status") or order.status).strip().lower()
             order.status = refreshed_status
             if refreshed_status == "filled" and triggered_order is None:
                 triggered_order = order
-            elif order.id != (triggered_order.id if triggered_order else None):
-                sibling_order = order
+            else:
+                sibling_orders.append(order)
 
         if triggered_order is None:
             self.db.commit()
@@ -340,25 +354,29 @@ class BinanceTestnetTradingService:
         )
 
         canceled_sibling = None
-        if sibling_order and sibling_order.status not in self.TERMINAL_ORDER_STATUSES:
-            cancel_order = getattr(self.binance_client, "cancel_order", None)
-            if callable(cancel_order):
-                try:
-                    await cancel_order(symbol=trade_plan.symbol, client_order_id=sibling_order.external_order_id)
-                    sibling_order.status = "canceled"
-                    canceled_sibling = sibling_order.external_order_id
-                except Exception as exc:  # noqa: BLE001
-                    self._log_risk_event(
-                        trade_plan_id=trade_plan.id,
-                        event_type="testnet_exit_sibling_cancel_failed",
-                        severity="warning",
-                        message=f"No fue posible cancelar la orden hermana: {exc}",
-                        context={
-                            "symbol": trade_plan.symbol,
-                            "sibling_order_id": sibling_order.external_order_id,
-                            "exception_type": type(exc).__name__,
-                        },
-                    )
+        cancel_order = getattr(self.binance_client, "cancel_order", None)
+        for sibling_order in sibling_orders:
+            if sibling_order.status in self.TERMINAL_ORDER_STATUSES or not callable(cancel_order):
+                continue
+            try:
+                await cancel_order(
+                    symbol=trade_plan.symbol,
+                    **self._resolve_exchange_order_ref(sibling_order.external_order_id),
+                )
+                sibling_order.status = "canceled"
+                canceled_sibling = sibling_order.external_order_id
+            except Exception as exc:  # noqa: BLE001
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_exit_sibling_cancel_failed",
+                    severity="warning",
+                    message=f"No fue posible cancelar la orden hermana: {exc}",
+                    context={
+                        "symbol": trade_plan.symbol,
+                        "sibling_order_id": sibling_order.external_order_id,
+                        "exception_type": type(exc).__name__,
+                    },
+                )
 
         self.db.commit()
         return {

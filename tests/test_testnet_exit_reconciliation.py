@@ -4,18 +4,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from apps.api.app.db.base import Base
-from apps.api.app.db.models import Order, Position, TradePlan
+from apps.api.app.db.models import Order, Position, RiskEvent, TradePlan
 from apps.api.app.services.testnet_trading_service import BinanceTestnetTradingService
 
 
 class FakeBinanceClientExitTriggered:
     async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
-        if client_order_id == "sl-1":
-            return {"clientOrderId": client_order_id, "status": "FILLED"}
-        return {"clientOrderId": client_order_id, "status": "NEW"}
+        if order_id == 111111 or client_order_id == "sl-1":
+            return {"orderId": order_id, "clientOrderId": client_order_id, "status": "FILLED"}
+        return {"orderId": order_id, "clientOrderId": client_order_id, "status": "NEW"}
 
     async def cancel_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
-        return {"origClientOrderId": client_order_id, "status": "CANCELED"}
+        return {"orderId": order_id, "origClientOrderId": client_order_id, "status": "CANCELED"}
 
 
 class FakeBinanceClientCancelFails(FakeBinanceClientExitTriggered):
@@ -25,7 +25,7 @@ class FakeBinanceClientCancelFails(FakeBinanceClientExitTriggered):
 
 class FakeBinanceClientNoExitTriggered(FakeBinanceClientExitTriggered):
     async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
-        return {"clientOrderId": client_order_id, "status": "NEW"}
+        return {"orderId": order_id, "clientOrderId": client_order_id, "status": "NEW"}
 
 
 def build_db():
@@ -76,7 +76,7 @@ def seed_trade_plan_with_open_position(db):
             Order(
                 trade_plan_id=plan.id,
                 venue="binance_futures_testnet",
-                external_order_id="sl-1",
+                external_order_id="111111",
                 symbol=plan.symbol,
                 side=plan.side,
                 order_type="stop_market",
@@ -89,7 +89,7 @@ def seed_trade_plan_with_open_position(db):
             Order(
                 trade_plan_id=plan.id,
                 venue="binance_futures_testnet",
-                external_order_id="tp-1",
+                external_order_id="222222",
                 symbol=plan.symbol,
                 side=plan.side,
                 order_type="take_profit_market",
@@ -114,16 +114,15 @@ def test_sync_exit_orders_closes_position_and_cancels_sibling():
 
     assert result["synced"] is True
     assert result["triggered_order_type"] == "stop_market"
-    assert result["canceled_sibling_order_id"] == "tp-1"
+    assert result["canceled_sibling_order_id"] == "222222"
 
     position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
-    plan = db.get(TradePlan, plan.id)
+    refreshed_plan = db.get(TradePlan, plan.id)
     orders = db.query(Order).filter(Order.trade_plan_id == plan.id).order_by(Order.id.asc()).all()
     assert position.status == "closed"
-    assert plan.status == "testnet_closed"
+    assert refreshed_plan.status == "testnet_closed"
     assert orders[0].status == "filled"
     assert orders[1].status == "canceled"
-
 
 
 def test_sync_exit_orders_returns_without_changes_when_no_exit_triggered():
@@ -138,7 +137,6 @@ def test_sync_exit_orders_returns_without_changes_when_no_exit_triggered():
     assert position.status == "open"
 
 
-
 def test_sync_exit_orders_logs_warning_when_cancel_sibling_fails():
     db = build_db()
     plan = seed_trade_plan_with_open_position(db)
@@ -150,3 +148,20 @@ def test_sync_exit_orders_logs_warning_when_cancel_sibling_fails():
     assert result["canceled_sibling_order_id"] is None
     sibling = db.query(Order).filter(Order.trade_plan_id == plan.id, Order.order_type == "take_profit_market").one()
     assert sibling.status == "new"
+    warning = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_exit_sibling_cancel_failed")
+        .one()
+    )
+    assert warning.severity == "warning"
+    assert warning.context_json["sibling_order_id"] == "222222"
+
+
+def test_sync_exit_orders_respects_execution_disabled_flag():
+    db = build_db()
+    plan = seed_trade_plan_with_open_position(db)
+    service = BinanceTestnetTradingService(db, binance_client=FakeBinanceClientExitTriggered(), execution_enabled=False)
+
+    result = asyncio.run(service.sync_exit_orders(plan.id))
+
+    assert result == {"synced": False, "reason": "testnet_execution_disabled"}
