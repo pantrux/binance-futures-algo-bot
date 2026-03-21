@@ -187,6 +187,44 @@ class BinanceTestnetTradingService:
         precision = max(0, min(12, int(round(-math.log10(step_size)))))
         return round(rounded, precision)
 
+    @staticmethod
+    def _derive_protection_prices(
+        *,
+        side: str,
+        planned_entry: float,
+        planned_stop_loss: float,
+        planned_take_profit: float,
+        exchange_price: float,
+        mark_price: float,
+    ) -> tuple[float, float]:
+        reference_mark = mark_price if mark_price > 0 else exchange_price
+        stop_distance = abs(planned_entry - planned_stop_loss)
+        take_profit_distance = abs(planned_take_profit - planned_entry)
+        safety_buffer = max(abs(reference_mark) * 0.001, 1e-8)
+
+        if side == "long":
+            stop_price = min(exchange_price, reference_mark) - max(stop_distance, safety_buffer)
+            take_profit_price = max(exchange_price, reference_mark) + max(take_profit_distance, safety_buffer)
+        else:
+            stop_price = max(exchange_price, reference_mark) + max(stop_distance, safety_buffer)
+            take_profit_price = min(exchange_price, reference_mark) - max(take_profit_distance, safety_buffer)
+
+        return stop_price, take_profit_price
+
+    @staticmethod
+    def _round_price_to_tick(price: float, tick_size: float, *, mode: str) -> float:
+        if tick_size <= 0:
+            return price
+        scaled = price / tick_size
+        if mode == "down":
+            rounded = math.floor(scaled) * tick_size
+        elif mode == "up":
+            rounded = math.ceil(scaled) * tick_size
+        else:
+            rounded = round(scaled) * tick_size
+        precision = max(0, min(12, int(round(-math.log10(tick_size)))))
+        return round(rounded, precision)
+
     def _log_risk_event(
         self,
         *,
@@ -206,27 +244,71 @@ class BinanceTestnetTradingService:
             )
         )
 
+    @staticmethod
+    def _get_exit_side(position_side: str) -> str:
+        return "SELL" if position_side == "long" else "BUY"
+
+    @staticmethod
+    def _detect_local_exit_trigger(*, trade_plan: TradePlan, mark_price: float) -> str | None:
+        if mark_price <= 0:
+            return None
+        if trade_plan.side == "long":
+            if mark_price <= trade_plan.stop_loss:
+                return "stop_market"
+            if mark_price >= trade_plan.take_profit:
+                return "take_profit_market"
+            return None
+        if mark_price >= trade_plan.stop_loss:
+            return "stop_market"
+        if mark_price <= trade_plan.take_profit:
+            return "take_profit_market"
+        return None
+
     async def _place_protection_orders(
         self,
         *,
         trade_plan: TradePlan,
         exit_side: str,
         external_order_id: str,
+        exchange_price: float,
+        mark_price: float,
     ) -> tuple[Order | None, Order | None, str | None]:
         stop_client_order_id = f"sl-{trade_plan.id}-{int(time.time() * 1000)}"
         take_profit_client_order_id = f"tpx-{trade_plan.id}-{int(time.time() * 1000)}"
+        stop_price, take_profit_price = self._derive_protection_prices(
+            side=trade_plan.side,
+            planned_entry=trade_plan.entry_price,
+            planned_stop_loss=trade_plan.stop_loss,
+            planned_take_profit=trade_plan.take_profit,
+            exchange_price=exchange_price,
+            mark_price=mark_price,
+        )
+        tick_size = 0.0
+        get_symbol_tick_size = getattr(self.binance_client, "get_symbol_tick_size", None)
+        if callable(get_symbol_tick_size):
+            try:
+                tick_size = await get_symbol_tick_size(trade_plan.symbol)
+            except Exception:
+                tick_size = 0.0
+
+        if trade_plan.side == "long":
+            stop_price = self._round_price_to_tick(stop_price, tick_size, mode="down")
+            take_profit_price = self._round_price_to_tick(take_profit_price, tick_size, mode="up")
+        else:
+            stop_price = self._round_price_to_tick(stop_price, tick_size, mode="up")
+            take_profit_price = self._round_price_to_tick(take_profit_price, tick_size, mode="down")
 
         try:
             stop_payload = await self.binance_client.place_stop_market_order(
                 symbol=trade_plan.symbol,
                 side=exit_side,
-                stop_price=trade_plan.stop_loss,
+                stop_price=stop_price,
                 client_order_id=stop_client_order_id,
             )
             take_profit_payload = await self.binance_client.place_take_profit_market_order(
                 symbol=trade_plan.symbol,
                 side=exit_side,
-                stop_price=trade_plan.take_profit,
+                stop_price=take_profit_price,
                 client_order_id=take_profit_client_order_id,
             )
         except Exception as exc:  # noqa: BLE001
@@ -239,8 +321,12 @@ class BinanceTestnetTradingService:
                     "symbol": trade_plan.symbol,
                     "external_order_id": external_order_id,
                     "exception_type": type(exc).__name__,
-                    "stop_loss": trade_plan.stop_loss,
-                    "take_profit": trade_plan.take_profit,
+                    "planned_stop_loss": trade_plan.stop_loss,
+                    "planned_take_profit": trade_plan.take_profit,
+                    "effective_stop_loss": stop_price,
+                    "effective_take_profit": take_profit_price,
+                    "exchange_price": exchange_price,
+                    "mark_price": mark_price,
                 },
             )
             return None, None, "protection_orders_failed"
@@ -253,7 +339,7 @@ class BinanceTestnetTradingService:
             side=trade_plan.side,
             order_type="stop_market",
             status=str(stop_payload.get("status") or "new").strip().lower(),
-            price=trade_plan.stop_loss,
+            price=stop_price,
             quantity=0.0,
             executed_quantity=0.0,
             is_testnet=True,
@@ -268,7 +354,7 @@ class BinanceTestnetTradingService:
             side=trade_plan.side,
             order_type="take_profit_market",
             status=str(take_profit_payload.get("status") or "new").strip().lower(),
-            price=trade_plan.take_profit,
+            price=take_profit_price,
             quantity=0.0,
             executed_quantity=0.0,
             is_testnet=True,
@@ -317,7 +403,104 @@ class BinanceTestnetTradingService:
             .all()
         )
         if not protection_orders:
-            return {"synced": False, "reason": "no_protection_orders"}
+            get_position_risk = getattr(self.binance_client, "get_position_risk", None)
+            if not callable(get_position_risk):
+                return {"synced": False, "reason": "no_protection_orders"}
+            try:
+                position_risk = await get_position_risk(trade_plan.symbol)
+            except Exception as exc:  # noqa: BLE001
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_local_exit_mark_price_unavailable",
+                    severity="warning",
+                    message=f"No fue posible evaluar salida local sin órdenes nativas: {exc}",
+                    context={"symbol": trade_plan.symbol, "exception_type": type(exc).__name__},
+                )
+                self.db.commit()
+                return {"synced": False, "reason": "local_exit_mark_price_unavailable"}
+
+            mark_price = self._to_float((position_risk or {}).get("markPrice"), fallback=position.mark_price)
+            if mark_price > 0:
+                position.mark_price = mark_price
+            local_trigger = self._detect_local_exit_trigger(trade_plan=trade_plan, mark_price=position.mark_price)
+            if local_trigger is None:
+                self.db.commit()
+                return {"synced": True, "reason": "no_triggered_exit"}
+
+            close_position_market = getattr(self.binance_client, "close_position_market", None)
+            if not callable(close_position_market):
+                return {"synced": False, "reason": "local_exit_close_unavailable"}
+
+            client_order_id = f"lex-{trade_plan.id}-{int(time.time() * 1000)}"
+            try:
+                close_payload = await close_position_market(
+                    symbol=trade_plan.symbol,
+                    side=self._get_exit_side(position.side),
+                    quantity=position.quantity,
+                    client_order_id=client_order_id,
+                )
+            except Exception as exc:  # noqa: BLE001
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_local_exit_execution_failed",
+                    severity="critical",
+                    message=f"No fue posible ejecutar salida local sintética: {exc}",
+                    context={
+                        "symbol": trade_plan.symbol,
+                        "triggered_order_type": local_trigger,
+                        "mark_price": position.mark_price,
+                        "exception_type": type(exc).__name__,
+                    },
+                )
+                self.db.commit()
+                return {"synced": False, "reason": "local_exit_execution_failed"}
+
+            close_price = self._extract_fill_price(close_payload, fallback=position.mark_price)
+            close_qty = self._to_float(close_payload.get("executedQty"), fallback=position.quantity)
+            close_status = self._normalize_order_status(
+                close_payload.get("status"),
+                executed_qty=close_qty,
+                requested_qty=position.quantity,
+            )
+            position.status = "closed"
+            position.mark_price = close_price
+            position.unrealized_pnl = 0.0
+            trade_plan.status = "testnet_closed"
+            close_order = Order(
+                trade_plan_id=trade_plan.id,
+                venue="binance_futures_testnet",
+                external_order_id=str(close_payload.get("orderId") or close_payload.get("clientOrderId") or client_order_id),
+                symbol=trade_plan.symbol,
+                side=trade_plan.side,
+                order_type=local_trigger,
+                status=close_status,
+                price=close_price,
+                quantity=position.quantity,
+                executed_quantity=close_qty,
+                is_testnet=True,
+            )
+            self.db.add(close_order)
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_local_exit_triggered",
+                severity="warning",
+                message=f"Salida local sintética ejecutada por {local_trigger} sin protección nativa disponible",
+                context={
+                    "symbol": trade_plan.symbol,
+                    "triggered_order_type": local_trigger,
+                    "mark_price": position.mark_price,
+                    "external_order_id": close_order.external_order_id,
+                },
+            )
+            self.db.commit()
+            self.db.refresh(close_order)
+            return {
+                "synced": True,
+                "reason": None,
+                "triggered_order_type": local_trigger,
+                "local_exit": True,
+                "close_order_id": close_order.id,
+            }
 
         triggered_order = None
         sibling_orders = []
@@ -419,6 +602,55 @@ class BinanceTestnetTradingService:
             "reason": None,
             "triggered_order_type": triggered_order.order_type,
             "canceled_sibling_order_id": canceled_sibling,
+        }
+
+    async def sync_open_testnet_exits(self) -> dict:
+        open_trade_plan_ids = [
+            trade_plan_id
+            for trade_plan_id, in (
+                self.db.query(Position.trade_plan_id)
+                .filter(Position.status == "open")
+                .filter(Position.is_testnet.is_(True))
+                .filter(Position.trade_plan_id.is_not(None))
+                .distinct()
+                .all()
+            )
+            if trade_plan_id is not None
+        ]
+
+        results: list[dict] = []
+        for trade_plan_id in open_trade_plan_ids:
+            try:
+                result = await self.sync_exit_orders(int(trade_plan_id))
+            except ValueError:
+                continue
+            except Exception as exc:  # noqa: BLE001
+                self._log_risk_event(
+                    trade_plan_id=int(trade_plan_id),
+                    event_type="testnet_open_exits_sync_item_failed",
+                    severity="warning",
+                    message=f"Falló la sincronización de exits para trade plan {trade_plan_id}: {exc}",
+                    context={
+                        "trade_plan_id": int(trade_plan_id),
+                        "exception_type": type(exc).__name__,
+                    },
+                )
+                self.db.commit()
+                results.append({
+                    "trade_plan_id": int(trade_plan_id),
+                    "synced": False,
+                    "reason": "sync_item_failed",
+                })
+                continue
+            results.append({"trade_plan_id": int(trade_plan_id), **result})
+
+        triggered = sum(1 for item in results if item.get("triggered_order_type"))
+        return {
+            "synced": True,
+            "open_trade_plan_count": len(open_trade_plan_ids),
+            "checked_count": len(results),
+            "triggered_count": triggered,
+            "results": results,
         }
 
     async def execute_trade_plan(self, trade_plan_id: int) -> dict:
@@ -701,6 +933,8 @@ class BinanceTestnetTradingService:
             trade_plan=trade_plan,
             exit_side=exit_side,
             external_order_id=external_order_id,
+            exchange_price=exchange_price,
+            mark_price=mark_price,
         )
 
         trade_plan.status = "testnet_executed"

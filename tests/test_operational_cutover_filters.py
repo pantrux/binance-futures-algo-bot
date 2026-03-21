@@ -82,10 +82,10 @@ def seed_position(db, plan: TradePlan, *, status: str, opened_at: datetime):
     db.commit()
 
 
-def seed_risk_event(db, plan: TradePlan, *, created_at: datetime):
+def seed_risk_event(db, plan: TradePlan, *, created_at: datetime, event_type: str = "shadow_run_check"):
     event = RiskEvent(
         trade_plan_id=plan.id,
-        event_type="shadow_run_check",
+        event_type=event_type,
         severity="warning",
         message="evt",
     )
@@ -150,3 +150,26 @@ def test_command_center_respects_operational_cutover(monkeypatch):
     assert payload.summary.risk_events_total == 1
     assert payload.recent_trade_plans[0].symbol == "ETHUSDT"
     assert all(plan.symbol != "BTCUSDT" for plan in payload.recent_trade_plans)
+
+
+def test_command_center_excludes_mitigation_noise_from_operational_risk_counts():
+    db = build_db()
+    now = datetime.now(timezone.utc)
+    fresh = seed_trade_plan(db, status="testnet_executed", created_at=now - timedelta(hours=2), symbol="ETHUSDT")
+    seed_order(db, fresh, status="filled", created_at=now - timedelta(hours=2) + timedelta(minutes=1))
+    seed_position(db, fresh, status="open", opened_at=now - timedelta(hours=2) + timedelta(minutes=2))
+    seed_risk_event(db, fresh, created_at=now - timedelta(hours=2) + timedelta(minutes=3), event_type="testnet_protection_orders_failed")
+    seed_risk_event(db, fresh, created_at=now - timedelta(hours=2) + timedelta(minutes=4), event_type="testnet_local_exit_triggered")
+    seed_risk_event(db, fresh, created_at=now - timedelta(hours=2) + timedelta(minutes=5), event_type="shadow_run_check")
+
+    old_cutover = settings.operational_cutover_at
+    settings.operational_cutover_at = now - timedelta(days=1)
+    try:
+        payload = DashboardCommandCenterService(db).build()
+    finally:
+        settings.operational_cutover_at = old_cutover
+
+    assert payload.summary.risk_events_total == 1
+    assert len(payload.recent_risk_events) == 1
+    assert payload.recent_risk_events[0].event_type == "shadow_run_check"
+    assert payload.operation_snapshots[0].risk_event_count == 1

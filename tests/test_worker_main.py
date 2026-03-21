@@ -36,6 +36,7 @@ class FakeApiClient:
     def __init__(self) -> None:
         self.paper_trade_calls: list[int] = []
         self.created_payloads: list[dict] = []
+        self.sync_open_testnet_exits_calls = 0
 
     async def create_trade_plan(self, payload: dict) -> dict:
         self.created_payloads.append(payload)
@@ -44,6 +45,10 @@ class FakeApiClient:
     async def execute_paper_trade(self, trade_plan_id: int) -> dict:
         self.paper_trade_calls.append(trade_plan_id)
         return {"executed": True, "trade_plan_id": trade_plan_id}
+
+    async def sync_open_testnet_exits(self) -> dict:
+        self.sync_open_testnet_exits_calls += 1
+        return {"synced": True, "triggered_count": 0}
 
 
 class FakeTestnetRouter:
@@ -196,3 +201,27 @@ def test_run_worker_cycle_processes_distinct_timeframes_independently():
     assert (successes, failures, duplicates) == (2, 0, 0)
     assert len(api_client.created_payloads) == 2
     assert api_client.created_payloads[0]["market_state"]["timeframe"] != api_client.created_payloads[1]["market_state"]["timeframe"]
+    assert api_client.sync_open_testnet_exits_calls == 0
+
+
+def test_run_worker_cycle_syncs_open_testnet_exits_before_new_entries():
+    settings = build_settings(paper_trading=False)
+    settings.symbols = ("BTCUSDT",)
+    signal_services = {
+        "15m": FakeSignalService(source="market", timeframe="15m", last_candle_close_ms=123),
+    }
+    api_client = FakeApiClient()
+    router = FakeTestnetRouter()
+
+    successes, failures, duplicates = asyncio.run(
+        run_worker_cycle(
+            settings=settings,
+            signal_services=signal_services,
+            api_client=api_client,
+            testnet_router=router,
+            processed_candles={},
+        )
+    )
+
+    assert (successes, failures, duplicates) == (1, 0, 0)
+    assert api_client.sync_open_testnet_exits_calls == 1

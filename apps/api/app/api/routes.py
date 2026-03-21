@@ -228,6 +228,14 @@ async def testnet_execute(trade_plan_id: int, db: Session = Depends(get_db)) -> 
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.post("/testnet-trading/sync-open-exits")
+async def testnet_sync_open_exits(db: Session = Depends(get_db)) -> dict:
+    return await BinanceTestnetTradingService(
+        db=db,
+        execution_enabled=settings.testnet_execution_enabled,
+    ).sync_open_testnet_exits()
+
+
 @router.get("/execution/reconcile/{trade_plan_id}", response_model=ReconciliationReport)
 def reconcile_execution(trade_plan_id: int, db: Session = Depends(get_db)) -> ReconciliationReport:
     try:

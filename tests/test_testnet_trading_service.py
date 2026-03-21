@@ -310,6 +310,39 @@ class FakeBinanceClientProtectionFails(FakeBinanceClient):
         raise RuntimeError("stop_order_failed")
 
 
+class FakeBinanceClientProtectionReprice(FakeBinanceClient):
+    def __init__(self) -> None:
+        self.stop_prices: list[float] = []
+        self.take_profit_prices: list[float] = []
+
+    async def get_symbol_tick_size(self, symbol: str) -> float:
+        return 0.1
+
+    async def place_market_order(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": 444444,
+            "clientOrderId": client_order_id,
+            "avgPrice": "70249.9195",
+            "executedQty": f"{quantity}",
+            "status": "FILLED",
+        }
+
+    async def get_position_risk(self, symbol: str | None = None, recv_window: int = 5000) -> dict:
+        return {
+            "symbol": symbol or "BTCUSDT",
+            "markPrice": "70275.63219203",
+            "leverage": "20",
+        }
+
+    async def place_stop_market_order(self, *, symbol: str, side: str, stop_price: float, client_order_id: str, close_position: bool = True, recv_window: int = 5000) -> dict:
+        self.stop_prices.append(stop_price)
+        return {"orderId": 111111, "clientOrderId": client_order_id, "status": "NEW"}
+
+    async def place_take_profit_market_order(self, *, symbol: str, side: str, stop_price: float, client_order_id: str, close_position: bool = True, recv_window: int = 5000) -> dict:
+        self.take_profit_prices.append(stop_price)
+        return {"orderId": 222222, "clientOrderId": client_order_id, "status": "NEW"}
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -775,6 +808,38 @@ def test_testnet_trading_marks_degraded_execution_when_protection_orders_fail():
         .one()
     )
     assert critical_event.severity == "critical"
+
+
+def test_testnet_trading_reprices_protection_orders_from_fill_and_mark():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    client = FakeBinanceClientProtectionReprice()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=client,
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    assert result["reason"] is None
+    assert len(client.stop_prices) == 1
+    assert len(client.take_profit_prices) == 1
+    assert client.stop_prices[0] < 70275.63219203
+    assert client.take_profit_prices[0] > 70275.63219203
+    assert client.stop_prices[0] == 69999.9
+    assert client.take_profit_prices[0] == 70875.7
+
+    protection_orders = (
+        db.query(Order)
+        .filter(Order.trade_plan_id == plan.id, Order.order_type.in_(["stop_market", "take_profit_market"]))
+        .order_by(Order.id.asc())
+        .all()
+    )
+    assert len(protection_orders) == 2
+    assert protection_orders[0].price == client.stop_prices[0]
+    assert protection_orders[1].price == client.take_profit_prices[0]
 
 
 def test_testnet_trading_blocks_new_entry_when_same_symbol_side_position_is_open():

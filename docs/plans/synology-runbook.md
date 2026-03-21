@@ -48,8 +48,23 @@ Levantar el stack completo en el NAS y poblar un conjunto mínimo de trade plans
 - Config útil inicial en Synology:
   - `RUNTIME_MODE=loop`
   - `POLL_INTERVAL_SECONDS=30`
-  - `TIMEFRAMES=5m,15m,1h`
+  - `TIMEFRAMES=["15m"]` para activación conservadora inicial
+- Importante: en este stack el parseo de `TIMEFRAMES` debe quedar en formato JSON válido (`["15m"]`), no como string CSV suelto (`15m`), para evitar fallos de arranque del worker.
 - `MAX_CYCLES=0` deja el loop corriendo sin límite; usar valores >0 solo para pruebas controladas.
+
+## Mitigación activa de exits testnet (post cutover 2026-03-21)
+- En este entorno de Binance Futures testnet, las órdenes de protección nativas (`STOP*` / `TAKE_PROFIT*`) enviadas a `/fapi/v1/order` están siendo rechazadas con:
+  - `code=-4120`
+  - `Order type not supported for this endpoint. Please use the Algo Order API endpoints instead.`
+- Mientras no se implemente el endpoint correcto de Algo Orders, el bot opera con mitigación local:
+  - al inicio de cada ciclo, el worker llama sincronización de exits abiertos (`sync_open_testnet_exits`)
+  - revisa `markPrice` de posiciones testnet abiertas
+  - si el precio toca `stop_loss` o `take_profit`, ejecuta salida `MARKET reduceOnly`
+  - persiste cierre local de posición y registra `testnet_local_exit_triggered`
+- Resultado operativo esperado:
+  - el worker puede seguir mostrando `protection_orders_failed` al abrir la entrada
+  - pero en el siguiente ciclo debe aparecer `testnet_open_exits_sync_result` con `local_exit=true` cuando corresponda
+  - el inventario (`summary.open_positions`) no debería quedar acumulándose indefinidamente si la mitigación está actuando bien
 
 ## Cutover limpio de métricas / command center
 - `OPERATIONAL_CUTOVER_AT` permite inaugurar una nueva etapa operativa sin borrar histórico legacy.
