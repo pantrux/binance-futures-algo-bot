@@ -30,13 +30,18 @@ def main() -> int:
 
     symbols = [item.strip().upper() for item in args.symbols.split(",") if item.strip()]
     timeframes = [item.strip() for item in args.timeframes.split(",") if item.strip()]
+    if not symbols:
+        raise SystemExit(f"--symbols no produjo símbolos válidos: {args.symbols!r}")
+    if not timeframes:
+        raise SystemExit(f"--timeframes no produjo timeframes válidos: {args.timeframes!r}")
 
     results: list[dict] = []
     exit_code = 0
     for symbol in symbols:
         for timeframe in timeframes:
             query = urllib.parse.urlencode({"timeframe": timeframe, "limit": args.limit})
-            url = f"{base_url}/market/ingest/{symbol}?{query}"
+            encoded_symbol = urllib.parse.quote(symbol, safe="")
+            url = f"{base_url}/market/ingest/{encoded_symbol}?{query}"
             req = urllib.request.Request(url, method="POST")
             try:
                 with urllib.request.urlopen(req, timeout=60) as response:
