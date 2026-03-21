@@ -77,16 +77,6 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
 - `docker compose images`
 - resultado de preflight/smoke/release gate
 - evidencia de sync a Outline si hubo cambios documentales u operativos relevantes
-
-## Prohibiciones
-- No desplegar API/worker/web en OpenClaw.
-- No almacenar claves de Binance en el repositorio.
-- No activar live trading hasta completar paper trading y testnet.
-AD`
-- `docker compose ps`
-- `docker compose images`
-- resultado de preflight/smoke/release gate
-- evidencia de sync a Outline si hubo cambios documentales u operativos relevantes
 - `OPERATIONAL_CUTOVER_AT` aplicado si el despliegue inaugura nueva era operativa
 
 ## Prohibiciones
