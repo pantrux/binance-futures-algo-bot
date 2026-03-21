@@ -68,7 +68,7 @@ class FakeBinanceClientAlgoSiblingWithoutCancel(FakeBinanceClientAlgoExitTrigger
 class FakeBinanceClientAlgoTriggeredWithoutChild(FakeBinanceClientAlgoExitTriggered):
     async def get_algo_order(self, *, algo_id: int | None = None, client_algo_id: str | None = None, recv_window: int = 5000) -> dict:
         if algo_id == 111111 or client_algo_id == "sl-1":
-            return {"algoId": algo_id or 111111, "clientAlgoId": client_algo_id, "algoStatus": "TRIGGERED", "actualOrderId": ""}
+            return {"algoId": algo_id or 111111, "clientAlgoId": client_algo_id, "algoStatus": "TRIGGERED", "actualOrderId": 0}
         return {"algoId": algo_id or 222222, "clientAlgoId": client_algo_id, "algoStatus": "NEW", "actualOrderId": ""}
 
 

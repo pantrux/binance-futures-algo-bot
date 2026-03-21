@@ -482,6 +482,7 @@ class BinanceTestnetTradingService:
                             "mark_price": mark_price,
                             "attempted_algo_orders": True,
                             "algo_cleanup_results": algo_cleanup_results,
+                            "legacy_cleanup_results": legacy_cleanup_results,
                         },
                     )
                     return None, None, "protection_orders_failed"
