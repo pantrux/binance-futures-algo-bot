@@ -88,6 +88,11 @@ class FakeBinanceClientLocalExitAck(FakeBinanceClientLocalExit):
         }
 
 
+class FakeBinanceClientLocalExitSaferLevel(FakeBinanceClientLocalExit):
+    async def get_position_risk(self, symbol: str, recv_window: int = 5000) -> dict:
+        return {"symbol": symbol, "markPrice": "49740", "leverage": "10"}
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -246,10 +251,44 @@ def test_sync_exit_orders_logs_warning_when_cancel_sibling_fails():
     assert warning.context_json["sibling_order_id"] == "222222"
 
 
+def test_sync_exit_orders_uses_effective_levels_to_avoid_false_local_exit():
+    db = build_db()
+    plan = seed_trade_plan_with_open_position(db)
+    db.query(Order).filter(Order.trade_plan_id == plan.id).delete()
+    db.add(
+        RiskEvent(
+            trade_plan_id=plan.id,
+            event_type="testnet_protection_orders_failed",
+            severity="critical",
+            message="fallback levels",
+            context_json={"effective_stop_loss": 49500.0, "effective_take_profit": 50800.0},
+        )
+    )
+    db.commit()
+    service = BinanceTestnetTradingService(db, binance_client=FakeBinanceClientLocalExitSaferLevel(), execution_enabled=True)
+
+    result = asyncio.run(service.sync_exit_orders(plan.id))
+
+    assert result == {"synced": True, "reason": "no_triggered_exit"}
+    position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
+    refreshed_plan = db.get(TradePlan, plan.id)
+    assert position.status == "open"
+    assert refreshed_plan.status == "testnet_executed"
+
+
 def test_sync_exit_orders_does_not_close_local_position_when_local_exit_is_unconfirmed():
     db = build_db()
     plan = seed_trade_plan_with_open_position(db)
     db.query(Order).filter(Order.trade_plan_id == plan.id).delete()
+    db.add(
+        RiskEvent(
+            trade_plan_id=plan.id,
+            event_type="testnet_protection_orders_failed",
+            severity="critical",
+            message="fallback levels",
+            context_json={"effective_stop_loss": 49725.0, "effective_take_profit": 50650.0},
+        )
+    )
     db.commit()
     service = BinanceTestnetTradingService(db, binance_client=FakeBinanceClientLocalExitAck(), execution_enabled=True)
 
