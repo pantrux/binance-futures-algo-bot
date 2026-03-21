@@ -22,6 +22,11 @@ class ExecutionStateMachineService:
             if order.status in {"filled", "partially_filled"}
             or (order.status not in {"rejected"} and (order.executed_quantity or 0) > 0)
         ]
+        protection_orders = [
+            order
+            for order in orders
+            if order.order_type in {"stop_market", "take_profit_market"}
+        ]
 
         drift_events: list[ExecutionDriftEvent] = []
         recommended_actions: list[str] = []
@@ -55,6 +60,15 @@ class ExecutionStateMachineService:
                     )
                 )
                 recommended_actions.append("sync_trade_plan_terminal_status")
+            elif open_positions and len(protection_orders) < 2:
+                drift_events.append(
+                    ExecutionDriftEvent(
+                        event_type="missing_exit_protection",
+                        severity="critical",
+                        message="La posición sigue abierta sin órdenes de protección completas (SL/TP)",
+                    )
+                )
+                recommended_actions.append("rebuild_exit_protection")
 
         if len(open_positions) > 1:
             drift_events.append(

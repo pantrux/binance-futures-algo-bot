@@ -193,6 +193,55 @@ class BinanceFuturesClient:
             "recvWindow": str(recv_window),
             "timestamp": str(int(time.time() * 1000)),
         }
+        return await self._post_order(params)
+
+    async def place_stop_market_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        stop_price: float,
+        client_order_id: str,
+        close_position: bool = True,
+        recv_window: int = 5000,
+    ) -> dict:
+        params: dict[str, str] = {
+            "symbol": symbol,
+            "side": side,
+            "type": "STOP_MARKET",
+            "stopPrice": str(stop_price),
+            "newClientOrderId": client_order_id,
+            "recvWindow": str(recv_window),
+            "timestamp": str(int(time.time() * 1000)),
+        }
+        if close_position:
+            params["closePosition"] = "true"
+        return await self._post_order(params)
+
+    async def place_take_profit_market_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        stop_price: float,
+        client_order_id: str,
+        close_position: bool = True,
+        recv_window: int = 5000,
+    ) -> dict:
+        params: dict[str, str] = {
+            "symbol": symbol,
+            "side": side,
+            "type": "TAKE_PROFIT_MARKET",
+            "stopPrice": str(stop_price),
+            "newClientOrderId": client_order_id,
+            "recvWindow": str(recv_window),
+            "timestamp": str(int(time.time() * 1000)),
+        }
+        if close_position:
+            params["closePosition"] = "true"
+        return await self._post_order(params)
+
+    async def _post_order(self, params: dict[str, str]) -> dict:
         params["signature"] = self._sign(params)
 
         async with httpx.AsyncClient(timeout=20.0) as client:
