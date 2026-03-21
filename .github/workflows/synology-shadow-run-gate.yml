@@ -11,6 +11,10 @@ on:
         description: "Ventana de análisis en días"
         required: false
         default: "30"
+      timeframe:
+        description: "Timeframe opcional para evaluar el gate (ej: 15m, 1h)"
+        required: false
+        default: ""
       min_shadow_days:
         description: "Días mínimos de shadow run"
         required: false
@@ -56,6 +60,7 @@ jobs:
           API_BASE_URL: ${{ inputs.api_base_url || vars.SYNOLOGY_API_BASE_URL }}
           METRICS_API_KEY: ${{ secrets.METRICS_API_KEY }}
           WINDOW_DAYS: ${{ inputs.window_days || '30' }}
+          TIMEFRAME: ${{ inputs.timeframe || '' }}
           MIN_SHADOW_DAYS: ${{ inputs.min_shadow_days || '7' }}
           MIN_TRADES: ${{ inputs.min_trades || '200' }}
           MIN_FILL_RATE_PCT: ${{ inputs.min_fill_rate_pct || '98' }}
@@ -74,6 +79,11 @@ jobs:
           fi
 
           set +e
+          EXTRA_ARGS=()
+          if [[ -n "${TIMEFRAME}" ]]; then
+            EXTRA_ARGS+=(--timeframe "${TIMEFRAME}")
+          fi
+
           python3 scripts/synology_shadow_run_gate.py \
             --api-base-url "${API_BASE_URL}" \
             --metrics-api-key "${METRICS_API_KEY}" \
@@ -86,7 +96,8 @@ jobs:
             --max-critical-risk-events-7d "${MAX_CRITICAL_RISK_EVENTS_7D}" \
             --max-avg-risk-events-per-day-30d "${MAX_AVG_RISK_EVENTS_PER_DAY_30D}" \
             --output-json artifacts/synology-shadow-run-gate.json \
-            --output-md artifacts/synology-shadow-run-gate.md
+            --output-md artifacts/synology-shadow-run-gate.md \
+            "${EXTRA_ARGS[@]}"
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
           exit 0
