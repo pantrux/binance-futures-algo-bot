@@ -51,9 +51,16 @@ Levantar el stack completo en el NAS y poblar un conjunto mínimo de trade plans
   - `TIMEFRAMES=5m,15m,1h`
 - `MAX_CYCLES=0` deja el loop corriendo sin límite; usar valores >0 solo para pruebas controladas.
 
+## Cutover limpio de métricas / command center
+- `OPERATIONAL_CUTOVER_AT` permite inaugurar una nueva etapa operativa sin borrar histórico legacy.
+- Debe declararse con timezone explícito (ej. `2026-03-21T16:00:00Z`).
+- Una vez aplicado, dashboard + shadow run ignoran trade plans, órdenes, posiciones y risk events previos al cutover.
+- Úsalo cuando quieras reiniciar la lectura operativa después de cambios estructurales relevantes (por ejemplo: lifecycle de protección y salida ya corregido).
+
 ## Verificaciones clave
 - `/health`
 - `/dashboard/summary`
+- `/dashboard/command-center` (debe exponer `operational_cutover_at` cuando aplique)
 - `/trade-plans`
 - `/integrations/binance/testnet/ping`
 - `/metrics` (con o sin `x-metrics-key`, según configuración)

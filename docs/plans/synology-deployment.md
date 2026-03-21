@@ -22,6 +22,7 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
 - `BINANCE_API_SECRET`
 - `MAX_ACCOUNT_RISK_PCT=5`
 - `PAPER_TRADING=true`
+- `OPERATIONAL_CUTOVER_AT=<ISO-8601 con timezone>` cuando quieras iniciar una nueva era operativa limpia en dashboard/shadow run
 
 > Validación real post `PR-41`: si `BINANCE_API_KEY` / `BINANCE_API_SECRET` están vacíos, Synology solo producirá `paper_executed` y el Gate C de shadow run fallará por ausencia total de ejecuciones testnet.
 
@@ -76,6 +77,17 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
 - `docker compose images`
 - resultado de preflight/smoke/release gate
 - evidencia de sync a Outline si hubo cambios documentales u operativos relevantes
+
+## Prohibiciones
+- No desplegar API/worker/web en OpenClaw.
+- No almacenar claves de Binance en el repositorio.
+- No activar live trading hasta completar paper trading y testnet.
+AD`
+- `docker compose ps`
+- `docker compose images`
+- resultado de preflight/smoke/release gate
+- evidencia de sync a Outline si hubo cambios documentales u operativos relevantes
+- `OPERATIONAL_CUTOVER_AT` aplicado si el despliegue inaugura nueva era operativa
 
 ## Prohibiciones
 - No desplegar API/worker/web en OpenClaw.
