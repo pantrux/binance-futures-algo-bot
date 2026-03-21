@@ -96,10 +96,10 @@ class BinanceTestnetTradingService:
         external_order_id: str | None,
         reason_event_type: str,
     ) -> bool:
-        exchange_ref = self._resolve_exchange_order_ref(external_order_id)
         cancel_order = getattr(self.binance_client, "cancel_order", None)
         cancel_algo_order = getattr(self.binance_client, "cancel_algo_order", None)
         try:
+            exchange_ref = self._resolve_exchange_order_ref(external_order_id)
             if self._is_algo_order_ref(exchange_ref):
                 if not callable(cancel_algo_order):
                     self._log_risk_event(
