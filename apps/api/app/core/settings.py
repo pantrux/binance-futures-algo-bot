@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +21,15 @@ class Settings(BaseSettings):
     testnet_execution_enabled: bool = False
     metrics_api_key: SecretStr = SecretStr("")
     operational_cutover_at: datetime | None = None
+
+    @field_validator("operational_cutover_at")
+    @classmethod
+    def normalize_operational_cutover_at(cls, value: datetime | None) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("operational_cutover_at debe incluir timezone explícito")
+        return value.astimezone(timezone.utc)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

@@ -116,6 +116,7 @@ def test_shadow_run_summary_respects_operational_cutover():
     assert summary.paper_executed_trade_plans == 1
     assert summary.testnet_executed_trade_plans == 1
     assert summary.compared_pairs == 1
+    assert summary.avg_risk_events_per_day_30d == 0.0
     assert all(symbol.symbol == "ETHUSDT" for symbol in summary.symbols)
 
 

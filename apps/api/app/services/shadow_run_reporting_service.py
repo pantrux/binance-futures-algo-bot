@@ -198,6 +198,6 @@ class ShadowRunReportingService:
             critical_risk_events_7d=sum(1 for event in risk_events_7d if event.severity == "critical"),
             warning_risk_events_7d=sum(1 for event in risk_events_7d if event.severity == "warning"),
             total_risk_events_30d=len(risk_events_30d),
-            avg_risk_events_per_day_30d=round(len(risk_events_30d) / 30, 4),
+            avg_risk_events_per_day_30d=round(len(risk_events_30d) / effective_risk_window_days_30d, 4),
             symbols=symbol_summaries,
         )
