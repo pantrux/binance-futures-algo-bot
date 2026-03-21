@@ -624,6 +624,24 @@ class BinanceTestnetTradingService:
                 result = await self.sync_exit_orders(int(trade_plan_id))
             except ValueError:
                 continue
+            except Exception as exc:  # noqa: BLE001
+                self._log_risk_event(
+                    trade_plan_id=int(trade_plan_id),
+                    event_type="testnet_open_exits_sync_item_failed",
+                    severity="warning",
+                    message=f"Falló la sincronización de exits para trade plan {trade_plan_id}: {exc}",
+                    context={
+                        "trade_plan_id": int(trade_plan_id),
+                        "exception_type": type(exc).__name__,
+                    },
+                )
+                self.db.commit()
+                results.append({
+                    "trade_plan_id": int(trade_plan_id),
+                    "synced": False,
+                    "reason": "sync_item_failed",
+                })
+                continue
             results.append({"trade_plan_id": int(trade_plan_id), **result})
 
         triggered = sum(1 for item in results if item.get("triggered_order_type"))

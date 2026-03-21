@@ -172,3 +172,4 @@ def test_command_center_excludes_mitigation_noise_from_operational_risk_counts()
     assert payload.summary.risk_events_total == 1
     assert len(payload.recent_risk_events) == 1
     assert payload.recent_risk_events[0].event_type == "shadow_run_check"
+    assert payload.operation_snapshots[0].risk_event_count == 1

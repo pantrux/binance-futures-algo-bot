@@ -241,12 +241,7 @@ class DashboardCommandCenterService:
             latest_order = plan_orders[0] if plan_orders else None
             latest_position = plan_positions[0] if plan_positions else None
             latest_risk = plan_risk_events[0] if plan_risk_events else None
-            risk_event_count = (
-                self.db.query(func.count(RiskEvent.id))
-                .filter(RiskEvent.trade_plan_id == plan.id)
-                .scalar()
-                or 0
-            )
+            risk_event_count = plan_risk_events_query.with_entities(func.count(RiskEvent.id)).scalar() or 0
 
             reconciliation = execution_state_machine.reconcile_loaded_trade_plan(
                 plan,
