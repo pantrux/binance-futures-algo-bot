@@ -376,8 +376,22 @@ class BinanceTestnetTradingService:
 
         canceled_sibling = None
         cancel_order = getattr(self.binance_client, "cancel_order", None)
-        for sibling_order in sibling_orders:
-            if sibling_order.status in self.TERMINAL_ORDER_STATUSES or not callable(cancel_order):
+        live_sibling_orders = [
+            sibling_order for sibling_order in sibling_orders if sibling_order.status not in self.TERMINAL_ORDER_STATUSES
+        ]
+        if live_sibling_orders and not callable(cancel_order):
+            self._log_risk_event(
+                trade_plan_id=trade_plan.id,
+                event_type="testnet_exit_sibling_cancel_unavailable",
+                severity="warning",
+                message="No fue posible cancelar orden hermana: cancel_order no disponible en el cliente",
+                context={
+                    "symbol": trade_plan.symbol,
+                    "sibling_order_ids": [order.external_order_id for order in live_sibling_orders],
+                },
+            )
+        for sibling_order in live_sibling_orders:
+            if not callable(cancel_order):
                 continue
             try:
                 await cancel_order(
