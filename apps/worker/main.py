@@ -70,8 +70,10 @@ async def process_symbol_cycle(
     processed_candles: dict[tuple[str, str], int] | None = None,
 ) -> SymbolRunResult:
     signals, context, thesis, levels, meta = await signal_service.build_signal_pack(symbol)
+    if context.timeframe != timeframe:
+        raise ValueError(f"timeframe_mismatch requested={timeframe} received={context.timeframe}")
     last_candle_close_ms = context.last_candle_close_ms
-    dedupe_key = (symbol, context.timeframe)
+    dedupe_key = (symbol, timeframe)
 
     if processed_candles is not None and last_candle_close_ms is not None:
         last_processed = processed_candles.get(dedupe_key)
@@ -115,9 +117,20 @@ async def process_symbol_cycle(
             "regime_confidence": context.regime_confidence,
         },
     }
-    created = await api_client.create_trade_plan(payload)
-    if processed_candles is not None and last_candle_close_ms is not None:
+    previous_processed = None
+    should_track_candle = processed_candles is not None and last_candle_close_ms is not None
+    if should_track_candle:
+        previous_processed = processed_candles.get(dedupe_key)
         processed_candles[dedupe_key] = last_candle_close_ms
+    try:
+        created = await api_client.create_trade_plan(payload)
+    except Exception:
+        if should_track_candle:
+            if previous_processed is None:
+                processed_candles.pop(dedupe_key, None)
+            else:
+                processed_candles[dedupe_key] = previous_processed
+        raise
     log_event(
         "trade_plan_created",
         symbol=symbol,
@@ -290,13 +303,27 @@ async def main() -> None:
     cycle = 0
     while True:
         cycle += 1
-        successes, failures, duplicates = await run_worker_cycle(
-            settings,
-            signal_services,
-            api_client,
-            testnet_router,
-            processed_candles=processed_candles,
-        )
+        try:
+            successes, failures, duplicates = await run_worker_cycle(
+                settings,
+                signal_services,
+                api_client,
+                testnet_router,
+                processed_candles=processed_candles,
+            )
+        except RuntimeError as exc:
+            log_event(
+                "worker_cycle_error",
+                cycle=cycle,
+                runtime_mode=settings.runtime_mode,
+                error=str(exc),
+                tracked_candles=len(processed_candles),
+            )
+            if settings.max_cycles > 0 and cycle >= settings.max_cycles:
+                raise
+            await asyncio.sleep(settings.poll_interval_seconds)
+            continue
+
         log_event(
             "worker_cycle_completed",
             cycle=cycle,

@@ -349,8 +349,3 @@ Para evaluar readiness antes de iniciar testnet serio o decidir avance hacia rea
   docker exec -i trading-bot-api python /app/scripts/backfill_testnet_fill_prices.py --limit 20
   ```
   Esto recalcula fills con `userTrades` y refresca `mark_price` / `unrealized_pnl`. Después, volver a consultar `GET /dashboard/command-center` y confirmar que `latest_position_entry_price` refleje fills reales (por ejemplo `70681`, `2082.26`, `87.23`).
-lores planificados (`50000`, `3200`, `140`) pese a existir posiciones reales en Binance Testnet, ejecutar el backfill real desde el contenedor `trading-bot-api`:
-  ```bash
-  docker exec -i trading-bot-api python /app/scripts/backfill_testnet_fill_prices.py --limit 20
-  ```
-  Esto recalcula fills con `userTrades` y refresca `mark_price` / `unrealized_pnl`. Después, volver a consultar `GET /dashboard/command-center` y confirmar que `latest_position_entry_price` refleje fills reales (por ejemplo `70681`, `2082.26`, `87.23`).

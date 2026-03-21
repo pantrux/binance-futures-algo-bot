@@ -64,7 +64,8 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
 - Variables nuevas:
   - `RUNTIME_MODE=oneshot|loop`
   - `POLL_INTERVAL_SECONDS=30`
-  - `MAX_CYCLES=0` (`0` = infinito; útil solo para testing)
+  - `MAX_CYCLES=0` (`0` = infinito)
+  - usar `MAX_CYCLES>0` solo para pruebas controladas
   - `TIMEFRAMES=5m,15m,1h`
   - `DEFAULT_SIGNAL_TIMEFRAME=15m`
 

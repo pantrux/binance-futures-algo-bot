@@ -59,4 +59,18 @@ class WorkerSettings(BaseSettings):
             raise ValueError("runtime_mode debe ser 'oneshot' o 'loop'")
         return normalized
 
+    @field_validator("poll_interval_seconds")
+    @classmethod
+    def validate_poll_interval_seconds(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("poll_interval_seconds debe ser > 0")
+        return value
+
+    @field_validator("max_cycles")
+    @classmethod
+    def validate_max_cycles(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("max_cycles debe ser >= 0")
+        return value
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

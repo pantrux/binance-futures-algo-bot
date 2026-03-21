@@ -1,6 +1,8 @@
 import asyncio
 from types import SimpleNamespace
 
+import pytest
+
 from apps.worker.main import process_symbol, process_symbol_cycle, run_worker_cycle
 from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalResult
 
@@ -149,6 +151,26 @@ def test_process_symbol_cycle_skips_duplicate_candle_for_same_symbol_and_timefra
     assert result.skipped_duplicate is True
     assert api_client.created_payloads == []
     assert api_client.paper_trade_calls == []
+
+
+def test_process_symbol_cycle_fails_fast_on_timeframe_mismatch():
+    settings = build_settings(paper_trading=True)
+    signal_service = FakeSignalService(source="market", timeframe="1h", last_candle_close_ms=123)
+    api_client = FakeApiClient()
+    router = FakeTestnetRouter()
+
+    with pytest.raises(ValueError, match="timeframe_mismatch"):
+        asyncio.run(
+            process_symbol_cycle(
+                symbol="BTCUSDT",
+                timeframe="15m",
+                settings=settings,
+                signal_service=signal_service,
+                api_client=api_client,
+                testnet_router=router,
+                processed_candles={},
+            )
+        )
 
 
 def test_run_worker_cycle_processes_distinct_timeframes_independently():
