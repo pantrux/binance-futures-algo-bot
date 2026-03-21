@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
+from apps.api.app.core.settings import settings
 from apps.api.app.db.models import Order, RiskEvent, TradePlan
 from apps.api.app.schemas.shadow_run_reporting import ShadowRunSummary, ShadowRunSymbolSummary
 
@@ -102,6 +103,10 @@ class ShadowRunReportingService:
         cutoff = now - timedelta(days=window_days)
         risk_cutoff_7d = now - timedelta(days=7)
         risk_cutoff_30d = now - timedelta(days=30)
+        if settings.operational_cutover_at is not None:
+            cutoff = max(cutoff, settings.operational_cutover_at)
+            risk_cutoff_7d = max(risk_cutoff_7d, settings.operational_cutover_at)
+            risk_cutoff_30d = max(risk_cutoff_30d, settings.operational_cutover_at)
 
         plans_query = (
             self.db.query(TradePlan)
@@ -171,6 +176,8 @@ class ShadowRunReportingService:
         if shadow_run_start_at is not None and shadow_run_end_at is not None:
             shadow_run_duration_days = round((shadow_run_end_at - shadow_run_start_at).total_seconds() / 86400, 4)
 
+        effective_risk_window_days_30d = max((now - risk_cutoff_30d).total_seconds() / 86400, 1 / 86400)
+
         return ShadowRunSummary(
             evaluated_at=now,
             window_days=window_days,
@@ -193,6 +200,6 @@ class ShadowRunReportingService:
             critical_risk_events_7d=sum(1 for event in risk_events_7d if event.severity == "critical"),
             warning_risk_events_7d=sum(1 for event in risk_events_7d if event.severity == "warning"),
             total_risk_events_30d=len(risk_events_30d),
-            avg_risk_events_per_day_30d=round(len(risk_events_30d) / 30, 4),
+            avg_risk_events_per_day_30d=round(len(risk_events_30d) / effective_risk_window_days_30d, 4),
             symbols=symbol_summaries,
         )
