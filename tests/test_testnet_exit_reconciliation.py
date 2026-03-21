@@ -33,6 +33,10 @@ class FakeBinanceClientRefreshFails(FakeBinanceClientExitTriggered):
         raise RuntimeError("refresh_failed")
 
 
+class FakeBinanceClientNoCancel(FakeBinanceClientExitTriggered):
+    cancel_order = None
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -170,6 +174,25 @@ def test_sync_exit_orders_respects_execution_disabled_flag():
     result = asyncio.run(service.sync_exit_orders(plan.id))
 
     assert result == {"synced": False, "reason": "testnet_execution_disabled"}
+
+
+
+def test_sync_exit_orders_logs_warning_when_cancel_order_is_unavailable():
+    db = build_db()
+    plan = seed_trade_plan_with_open_position(db)
+    service = BinanceTestnetTradingService(db, binance_client=FakeBinanceClientNoCancel(), execution_enabled=True)
+
+    result = asyncio.run(service.sync_exit_orders(plan.id))
+
+    assert result["synced"] is True
+    assert result["canceled_sibling_order_id"] is None
+    warning = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_exit_sibling_cancel_unavailable")
+        .one()
+    )
+    assert warning.severity == "warning"
+    assert warning.context_json["sibling_order_ids"] == ["222222"]
 
 
 
