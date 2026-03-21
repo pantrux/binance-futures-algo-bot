@@ -12,7 +12,7 @@ class DemoSignalService:
             },
             "ETHUSDT": {
                 "signals": SignalPack(technical=76, fundamental=64, sentiment=71, confidence=74),
-                "context": MarketContext(symbol="ETHUSDT", timeframe="15m", volatility_pct=2.3, trend_strength=69, liquidity_score=89),
+                "context": MarketContext(symbol="ETHUSDT", timeframe="15m", volatility_pct=2.3, trend_strength=69, liquidity_score=89, last_candle_close_ms=0),
                 "thesis": "Continuación controlada con momentum positivo y volatilidad manejable.",
                 "levels": {"entry": 3200, "stop": 3175, "take_profit": 3260},
             },

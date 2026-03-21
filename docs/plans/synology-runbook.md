@@ -43,6 +43,7 @@ Levantar el stack completo en el NAS y poblar un conjunto mínimo de trade plans
 ## Modo loop near real-time (PR-125)
 - El worker soporta `RUNTIME_MODE=loop` para correr de forma persistente con polling controlado.
 - En `oneshot`, se conserva el comportamiento histórico y se usa solo `DEFAULT_SIGNAL_TIMEFRAME`.
+- En `oneshot`, `trading-bot-worker` debería terminar en `Exited (0)`; en `loop`, debería permanecer `Up`.
 - En `loop`, el worker usa `TIMEFRAMES` y deduplica por `(symbol, timeframe, last_candle_close_ms)` para no re-crear decisiones sobre la misma vela.
 - Config útil inicial en Synology:
   - `RUNTIME_MODE=loop`
