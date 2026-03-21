@@ -449,6 +449,9 @@ class BinanceTestnetTradingService:
                         algo_cleanup_results.append({"external_order_id": external_ref, "canceled": canceled})
                 stop_payload = None
                 take_profit_payload = None
+                legacy_cleanup_results = []
+                stop_external_ref = None
+                take_profit_external_ref = None
                 try:
                     stop_payload = await self.binance_client.place_stop_market_order(
                         symbol=trade_plan.symbol,
@@ -456,14 +459,25 @@ class BinanceTestnetTradingService:
                         stop_price=stop_price,
                         client_order_id=stop_client_order_id,
                     )
+                    if stop_payload is not None:
+                        stop_external_ref = str(stop_payload.get("orderId") or stop_payload.get("clientOrderId") or stop_client_order_id)
                     take_profit_payload = await self.binance_client.place_take_profit_market_order(
                         symbol=trade_plan.symbol,
                         side=exit_side,
                         stop_price=take_profit_price,
                         client_order_id=take_profit_client_order_id,
                     )
+                    if take_profit_payload is not None:
+                        take_profit_external_ref = str(take_profit_payload.get("orderId") or take_profit_payload.get("clientOrderId") or take_profit_client_order_id)
                     used_algo_orders = False
                 except Exception as fallback_exc:  # noqa: BLE001
+                    if stop_external_ref and not take_profit_external_ref:
+                        canceled = await self._cancel_exchange_order_ref(
+                            trade_plan=trade_plan,
+                            external_order_id=stop_external_ref,
+                            reason_event_type="testnet_protection_order_cleanup_failed",
+                        )
+                        legacy_cleanup_results.append({"external_order_id": stop_external_ref, "canceled": canceled})
                     self._log_risk_event(
                         trade_plan_id=trade_plan.id,
                         event_type="testnet_protection_orders_failed",

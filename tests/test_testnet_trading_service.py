@@ -380,6 +380,18 @@ class FakeBinanceClientAlgoProtectionPartialFailure(FakeBinanceClientProtectionR
         return {"algoId": algo_id, "clientAlgoId": client_algo_id, "code": "200", "msg": "success"}
 
 
+class FakeBinanceClientAlgoAndLegacyDoubleFailure(FakeBinanceClientAlgoProtectionPartialFailure):
+    async def place_stop_market_order(self, *, symbol: str, side: str, stop_price: float, client_order_id: str, close_position: bool = True, recv_window: int = 5000) -> dict:
+        return {"orderId": 711111, "clientOrderId": client_order_id, "status": "NEW"}
+
+    async def place_take_profit_market_order(self, *, symbol: str, side: str, stop_price: float, client_order_id: str, close_position: bool = True, recv_window: int = 5000) -> dict:
+        raise RuntimeError("legacy_tp_unavailable")
+
+    async def cancel_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        self.canceled_algo_refs.append(order_id if order_id is not None else str(client_order_id))
+        return {"orderId": order_id, "clientOrderId": client_order_id, "status": "CANCELED"}
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -954,6 +966,31 @@ def test_testnet_trading_cleans_up_partial_algo_submission_before_legacy_fallbac
     assert len(protection_orders) == 2
     assert protection_orders[0].external_order_id == "111111"
     assert protection_orders[1].external_order_id == "222222"
+
+
+def test_testnet_trading_logs_failure_cleanly_when_algo_and_legacy_protection_both_fail():
+    db = build_db()
+    plan = _seed_trade_plan(db, status="approved")
+    client = FakeBinanceClientAlgoAndLegacyDoubleFailure()
+    service = BinanceTestnetTradingService(
+        db,
+        binance_client=client,
+        execution_enabled=True,
+    )
+
+    result = asyncio.run(service.execute_trade_plan(plan.id))
+
+    assert result["executed"] is True
+    assert result["reason"] == "protection_orders_failed"
+    event = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_protection_orders_failed")
+        .order_by(RiskEvent.id.desc())
+        .first()
+    )
+    assert event is not None
+    assert event.context_json["algo_cleanup_results"] == [{"external_order_id": "algo:911111", "canceled": True}]
+    assert event.context_json["legacy_cleanup_results"] == [{"external_order_id": "711111", "canceled": True}]
 
 
 def test_testnet_trading_blocks_new_entry_when_same_symbol_side_position_is_open():
