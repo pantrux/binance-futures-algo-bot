@@ -455,13 +455,36 @@ class BinanceTestnetTradingService:
                 self.db.commit()
                 return {"synced": False, "reason": "local_exit_execution_failed"}
 
+            close_payload = await self._confirm_exchange_order(
+                trade_plan_id=trade_plan.id,
+                symbol=trade_plan.symbol,
+                exchange_order=close_payload,
+                client_order_id=client_order_id,
+            )
             close_price = self._extract_fill_price(close_payload, fallback=position.mark_price)
-            close_qty = self._to_float(close_payload.get("executedQty"), fallback=position.quantity)
+            close_qty = self._to_float(close_payload.get("executedQty"), fallback=0.0)
             close_status = self._normalize_order_status(
                 close_payload.get("status"),
                 executed_qty=close_qty,
                 requested_qty=position.quantity,
             )
+            tolerance = max(1e-12, position.quantity * 1e-9)
+            if close_status != "filled" and close_qty < max(0.0, position.quantity - tolerance):
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_local_exit_not_filled",
+                    severity="critical",
+                    message="La salida local sintética no quedó completamente ejecutada",
+                    context={
+                        "symbol": trade_plan.symbol,
+                        "triggered_order_type": local_trigger,
+                        "order_status": close_status,
+                        "executed_quantity": close_qty,
+                        "requested_quantity": position.quantity,
+                    },
+                )
+                self.db.commit()
+                return {"synced": False, "reason": "local_exit_not_filled"}
             position.status = "closed"
             position.mark_price = close_price
             position.unrealized_pnl = 0.0
