@@ -241,6 +241,13 @@ async def run_worker_cycle(
     testnet_router: BinanceTestnetRouter,
     processed_candles: dict[tuple[str, str], int] | None = None,
 ) -> tuple[int, int, int]:
+    if not settings.paper_trading:
+        try:
+            sync_result = await api_client.sync_open_testnet_exits()
+            log_event("testnet_open_exits_sync_result", sync=sync_result)
+        except Exception as exc:  # noqa: BLE001
+            log_event("testnet_open_exits_sync_failed", error=str(exc), error_type=type(exc).__name__)
+
     tasks = [
         process_symbol_cycle(
             symbol=symbol,

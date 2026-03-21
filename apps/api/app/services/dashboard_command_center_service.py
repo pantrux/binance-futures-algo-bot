@@ -25,6 +25,11 @@ class DashboardCommandCenterService:
     PLAN_ORDER_HISTORY_LIMIT = 50
     PLAN_POSITION_HISTORY_LIMIT = 50
     PLAN_RISK_EVENT_HISTORY_LIMIT = 100
+    EXCLUDED_OPERATIONAL_RISK_EVENT_TYPES = {
+        "testnet_protection_orders_failed",
+        "testnet_execution_blocked_existing_open_position",
+        "testnet_local_exit_triggered",
+    }
 
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -119,7 +124,11 @@ class DashboardCommandCenterService:
         paper_executed_query = select(func.count()).select_from(TradePlan).where(TradePlan.status == "paper_executed")
         testnet_executed_query = select(func.count()).select_from(TradePlan).where(TradePlan.status == "testnet_executed")
         open_positions_count_query = select(func.count()).select_from(Position).where(Position.status == "open")
-        risk_events_query = select(func.count()).select_from(RiskEvent)
+        risk_events_query = (
+            select(func.count())
+            .select_from(RiskEvent)
+            .where(~RiskEvent.event_type.in_(sorted(self.EXCLUDED_OPERATIONAL_RISK_EVENT_TYPES)))
+        )
 
         if cutover is not None:
             trade_plans_base = trade_plans_base.where(TradePlan.created_at >= cutover)
@@ -189,7 +198,9 @@ class DashboardCommandCenterService:
             for position in open_positions_query.order_by(desc(Position.opened_at)).limit(12).all()
         ]
 
-        recent_risk_events_query = self.db.query(RiskEvent)
+        recent_risk_events_query = self.db.query(RiskEvent).filter(
+            ~RiskEvent.event_type.in_(sorted(self.EXCLUDED_OPERATIONAL_RISK_EVENT_TYPES))
+        )
         if cutover is not None:
             recent_risk_events_query = recent_risk_events_query.filter(RiskEvent.created_at >= cutover)
         recent_risk_events_rows = recent_risk_events_query.order_by(desc(RiskEvent.created_at)).limit(12).all()
@@ -202,7 +213,10 @@ class DashboardCommandCenterService:
         for plan in recent_trade_plan_rows:
             plan_orders_query = self.db.query(Order).filter(Order.trade_plan_id == plan.id)
             plan_positions_query = self.db.query(Position).filter(Position.trade_plan_id == plan.id)
-            plan_risk_events_query = self.db.query(RiskEvent).filter(RiskEvent.trade_plan_id == plan.id)
+            plan_risk_events_query = self.db.query(RiskEvent).filter(
+                RiskEvent.trade_plan_id == plan.id,
+                ~RiskEvent.event_type.in_(sorted(self.EXCLUDED_OPERATIONAL_RISK_EVENT_TYPES)),
+            )
             if cutover is not None:
                 plan_orders_query = plan_orders_query.filter(Order.created_at >= cutover)
                 plan_positions_query = plan_positions_query.filter(Position.opened_at >= cutover)

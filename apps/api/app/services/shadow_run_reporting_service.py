@@ -13,6 +13,16 @@ MAX_PAIRING_DELTA_SECONDS = 86_400
 
 
 class ShadowRunReportingService:
+    EXCLUDED_RISK_EVENT_TYPES = {
+        "testnet_protection_orders_failed",
+        "testnet_execution_blocked_existing_open_position",
+        "testnet_local_exit_triggered",
+    }
+    EXCLUDED_TESTNET_PLAN_EVENT_TYPES = {
+        "testnet_protection_orders_failed",
+        "testnet_local_exit_triggered",
+    }
+
     def __init__(self, db: Session) -> None:
         self.db = db
 
@@ -108,6 +118,19 @@ class ShadowRunReportingService:
             risk_cutoff_7d = max(risk_cutoff_7d, settings.operational_cutover_at)
             risk_cutoff_30d = max(risk_cutoff_30d, settings.operational_cutover_at)
 
+        excluded_testnet_plan_ids = {
+            trade_plan_id
+            for trade_plan_id, in (
+                self.db.query(RiskEvent.trade_plan_id)
+                .filter(RiskEvent.trade_plan_id.is_not(None))
+                .filter(RiskEvent.created_at >= cutoff)
+                .filter(RiskEvent.event_type.in_(sorted(self.EXCLUDED_TESTNET_PLAN_EVENT_TYPES)))
+                .distinct()
+                .all()
+            )
+            if trade_plan_id is not None
+        }
+
         plans_query = (
             self.db.query(TradePlan)
             .filter(TradePlan.status.in_(["paper_executed", "testnet_executed"]))
@@ -116,7 +139,11 @@ class ShadowRunReportingService:
         if timeframe is not None:
             plans_query = plans_query.filter(TradePlan.timeframe == timeframe)
 
-        plans = plans_query.order_by(TradePlan.symbol.asc(), TradePlan.created_at.asc()).all()
+        plans = [
+            plan
+            for plan in plans_query.order_by(TradePlan.symbol.asc(), TradePlan.created_at.asc()).all()
+            if not (plan.status == "testnet_executed" and plan.id in excluded_testnet_plan_ids)
+        ]
 
         plans_by_symbol_and_timeframe: dict[tuple[str, str], list[TradePlan]] = defaultdict(list)
         for plan in plans:
@@ -141,6 +168,8 @@ class ShadowRunReportingService:
             .filter(TradePlan.status == "testnet_executed")
             .filter(Order.created_at >= cutoff)
         )
+        if excluded_testnet_plan_ids:
+            testnet_orders_query = testnet_orders_query.filter(~TradePlan.id.in_(sorted(excluded_testnet_plan_ids)))
         if timeframe is not None:
             testnet_orders_query = testnet_orders_query.filter(TradePlan.timeframe == timeframe)
 
@@ -161,12 +190,14 @@ class ShadowRunReportingService:
             self.db.query(RiskEvent)
             .filter(RiskEvent.created_at >= risk_cutoff_7d)
             .filter(RiskEvent.severity.in_(["warning", "critical"]))
+            .filter(~RiskEvent.event_type.in_(sorted(self.EXCLUDED_RISK_EVENT_TYPES)))
             .all()
         )
         risk_events_30d = (
             self.db.query(RiskEvent)
             .filter(RiskEvent.created_at >= risk_cutoff_30d)
             .filter(RiskEvent.severity.in_(["warning", "critical"]))
+            .filter(~RiskEvent.event_type.in_(sorted(self.EXCLUDED_RISK_EVENT_TYPES)))
             .all()
         )
 

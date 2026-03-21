@@ -56,6 +56,22 @@ class BinanceFuturesClient:
                         break
         raise RuntimeError(f"symbol_step_size_not_found:{symbol}")
 
+    async def get_symbol_tick_size(self, symbol: str) -> float:
+        payload = await self.exchange_info()
+        symbols = payload.get("symbols", [])
+        for item in symbols:
+            if item.get("symbol") != symbol:
+                continue
+            for filt in item.get("filters", []):
+                if filt.get("filterType") == "PRICE_FILTER":
+                    try:
+                        tick = float(filt.get("tickSize", 0.0))
+                        if tick > 0:
+                            return tick
+                    except (TypeError, ValueError):
+                        break
+        raise RuntimeError(f"symbol_tick_size_not_found:{symbol}")
+
     async def get_position_risk(self, symbol: str | None = None, recv_window: int = 5000) -> list[dict] | dict | None:
         self.ensure_credentials()
 
@@ -210,6 +226,7 @@ class BinanceFuturesClient:
         quantity: float,
         client_order_id: str,
         recv_window: int = 5000,
+        reduce_only: bool = False,
     ) -> dict:
         if quantity <= 0:
             raise ValueError("quantity debe ser mayor a cero")
@@ -225,7 +242,27 @@ class BinanceFuturesClient:
             "recvWindow": str(recv_window),
             "timestamp": str(int(time.time() * 1000)),
         }
+        if reduce_only:
+            params["reduceOnly"] = "true"
         return await self._post_order(params)
+
+    async def close_position_market(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        quantity: float,
+        client_order_id: str,
+        recv_window: int = 5000,
+    ) -> dict:
+        return await self.place_market_order(
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            client_order_id=client_order_id,
+            recv_window=recv_window,
+            reduce_only=True,
+        )
 
     async def place_stop_market_order(
         self,

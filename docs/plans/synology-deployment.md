@@ -68,8 +68,17 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
   - `POLL_INTERVAL_SECONDS=30`
   - `MAX_CYCLES=0` (`0` = infinito)
   - usar `MAX_CYCLES>0` solo para pruebas controladas
-  - `TIMEFRAMES=5m,15m,1h`
+  - `TIMEFRAMES=["15m"]` para activación conservadora inicial
   - `DEFAULT_SIGNAL_TIMEFRAME=15m`
+- Importante: `TIMEFRAMES` debe declararse como JSON válido en `.env` cuando el worker se cargue vía settings (`["15m"]`), no como `15m` a secas.
++
++## Nota operativa sobre protección testnet
++- En la validación real del NAS (2026-03-21), Binance Futures testnet rechazó las protecciones nativas (`STOP*` / `TAKE_PROFIT*`) en `/fapi/v1/order` con `code=-4120` pidiendo Algo Order API.
++- Mitigación actualmente desplegada:
++  - se permite la entrada testnet
++  - el worker ejecuta sincronización local de exits abiertos en cada ciclo
++  - si `markPrice` toca SL/TP, cierra por `MARKET reduceOnly` y persiste el cierre local
++- Esto deja el runtime operativo mientras se implementa el soporte nativo del endpoint Algo Orders.
 
 ## Evidencia mínima recomendada por despliegue
 - `git rev-parse --short HEAD`

@@ -70,10 +70,10 @@ def seed_order(db, trade_plan: TradePlan, *, status: str, price: float, created_
     db.commit()
 
 
-def seed_risk_event(db, trade_plan_id: int, *, severity: str, created_at: datetime) -> None:
+def seed_risk_event(db, trade_plan_id: int, *, severity: str, created_at: datetime, event_type: str = "shadow_run_check") -> None:
     event = RiskEvent(
         trade_plan_id=trade_plan_id,
-        event_type="shadow_run_check",
+        event_type=event_type,
         severity=severity,
         message="evt",
     )
@@ -241,6 +241,29 @@ def test_shadow_run_summary_filters_by_timeframe_when_requested() -> None:
     assert len(summary.symbols) == 1
     assert summary.symbols[0].symbol == "BTCUSDT"
     assert summary.symbols[0].timeframe == "1h"
+
+
+def test_shadow_run_summary_excludes_mitigation_noise_and_invalid_testnet_plans() -> None:
+    db = build_db()
+    now = datetime.now(timezone.utc)
+    paper = seed_trade_plan(db, symbol="BTCUSDT", side="long", status="paper_executed", entry_price=50000, created_at=now - timedelta(hours=3))
+    valid_testnet = seed_trade_plan(db, symbol="BTCUSDT", side="long", status="testnet_executed", entry_price=50050, created_at=now - timedelta(hours=2, minutes=50))
+    invalid_testnet = seed_trade_plan(db, symbol="ETHUSDT", side="long", status="testnet_executed", entry_price=3000, created_at=now - timedelta(hours=2))
+    seed_order(db, valid_testnet, status="filled", price=50075, created_at=now - timedelta(hours=2, minutes=49))
+    seed_order(db, invalid_testnet, status="filled", price=3010, created_at=now - timedelta(hours=1, minutes=59))
+    seed_risk_event(db, valid_testnet.id, severity="warning", created_at=now - timedelta(hours=1), event_type="shadow_run_check")
+    seed_risk_event(db, invalid_testnet.id, severity="critical", created_at=now - timedelta(minutes=50), event_type="testnet_protection_orders_failed")
+    seed_risk_event(db, invalid_testnet.id, severity="warning", created_at=now - timedelta(minutes=40), event_type="testnet_local_exit_triggered")
+
+    summary = ShadowRunReportingService(db).build_summary(window_days=30)
+
+    assert summary.paper_executed_trade_plans == 1
+    assert summary.testnet_executed_trade_plans == 1
+    assert summary.compared_pairs == 1
+    assert summary.unmatched_testnet == 0
+    assert summary.testnet_orders_total == 1
+    assert summary.critical_risk_events_7d == 0
+    assert summary.warning_risk_events_7d == 1
 
 
 def test_shadow_run_summary_returns_empty_filtered_summary_when_timeframe_has_no_matches() -> None:

@@ -37,6 +37,23 @@ class FakeBinanceClientNoCancel(FakeBinanceClientExitTriggered):
     cancel_order = None
 
 
+class FakeBinanceClientLocalExit:
+    async def get_position_risk(self, symbol: str, recv_window: int = 5000) -> dict:
+        return {"symbol": symbol, "markPrice": "49700", "leverage": "10"}
+
+    async def close_position_market(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        assert symbol == "BTCUSDT"
+        assert side == "SELL"
+        assert quantity == 0.1
+        return {
+            "orderId": 333333,
+            "clientOrderId": client_order_id,
+            "avgPrice": "49695",
+            "executedQty": "0.1",
+            "status": "FILLED",
+        }
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -144,6 +161,35 @@ def test_sync_exit_orders_returns_without_changes_when_no_exit_triggered():
     assert result == {"synced": True, "reason": "no_triggered_exit"}
     position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
     assert position.status == "open"
+
+
+def test_sync_exit_orders_closes_position_with_local_synthetic_exit_when_native_protection_is_missing():
+    db = build_db()
+    plan = seed_trade_plan_with_open_position(db)
+    db.query(Order).filter(Order.trade_plan_id == plan.id).delete()
+    db.commit()
+    service = BinanceTestnetTradingService(db, binance_client=FakeBinanceClientLocalExit(), execution_enabled=True)
+
+    result = asyncio.run(service.sync_exit_orders(plan.id))
+
+    assert result["synced"] is True
+    assert result["local_exit"] is True
+    assert result["triggered_order_type"] == "stop_market"
+
+    position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
+    refreshed_plan = db.get(TradePlan, plan.id)
+    local_exit_order = db.query(Order).filter(Order.trade_plan_id == plan.id).one()
+    assert position.status == "closed"
+    assert refreshed_plan.status == "testnet_closed"
+    assert local_exit_order.status == "filled"
+    assert local_exit_order.order_type == "stop_market"
+
+    warning = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_local_exit_triggered")
+        .one()
+    )
+    assert warning.severity == "warning"
 
 
 def test_sync_exit_orders_logs_warning_when_cancel_sibling_fails():
