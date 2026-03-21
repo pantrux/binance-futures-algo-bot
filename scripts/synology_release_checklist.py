@@ -67,7 +67,14 @@ def build_content(output_path: Path) -> str:
 - [ ] Artifact de workflow descargable y consistente.
 - [ ] Roadmap de PR actualizado.
 - [ ] Roadmap de implementación (Gantt) actualizado.
-- [ ] Outline sincronizado (runbook/roadmap/ADRs aplicables).
+- [ ] Si hubo cambios documentales/operativos relevantes, Outline sincronizado (runbook/roadmap/ADRs aplicables).
+- [ ] Evidencia registrada usando `docs/templates/synology-deploy-evidence-template.md` o equivalente.
+
+### 4.1) Evidencia de despliegue en NAS
+- [ ] Commit SHA desplegado registrado.
+- [ ] `docker compose ps` adjunto o referenciado.
+- [ ] `docker compose images` adjunto o referenciado.
+- [ ] Estado esperado de jobs one-shot (`migrate`, `worker`) validado.
 
 ## 5) Sign-off final
 - [ ] Gate operacional aprobado para operación controlada (sin live trading).

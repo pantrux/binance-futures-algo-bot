@@ -9,7 +9,7 @@ Con PR-29 (router testnet) y PR-30 (reconciliación) necesitamos una capa de com
 ## Decisión
 Introducir servicios de parity/shadow run con reporte por símbolo, breakdown por `timeframe` y filtro opcional por `timeframe` para consumo operativo más fino:
 
-- empareja trade plans `paper_executed` vs `testnet_executed` por lado (`long/short`),
+- empareja trade plans `paper_executed` vs `testnet_executed` por lado (`long/short`), `timeframe` y cercanía temporal acotada,
 - calcula diferencias porcentuales de:
   - `entry_price`,
   - `applied_risk_pct`,
@@ -23,6 +23,7 @@ Introducir servicios de parity/shadow run con reporte por símbolo, breakdown po
 ### Positivas
 - visibilidad temprana de deriva entre modo paper y testnet.
 - base para umbrales de alerta y smoke tests automáticos.
+- consistencia semántica entre el reporte puntual de parity y el resumen agregado de shadow run al evitar emparejamientos demasiado lejanos en el tiempo.
 
 ### Negativas
 - incluso con `timeframe`, el emparejamiento por lado/orden temporal puede requerir refinamiento adicional para estrategias complejas multi-entrada dentro de una misma temporalidad.

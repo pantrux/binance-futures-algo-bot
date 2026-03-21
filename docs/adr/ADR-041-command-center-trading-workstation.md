@@ -1,4 +1,4 @@
-# ADR-037 — Command center como trading workstation modular
+# ADR-041 — Command center como trading workstation modular
 
 ## Contexto
 El command center actual consolidó suficiente información operacional (planes, órdenes, posiciones, riesgo, reconciliación, shadow run), pero su presentación seguía demasiado monolítica: demasiada densidad en una sola homepage, poco drill-down real y jerarquía visual más cercana a un reporte largo que a una terminal operativa.

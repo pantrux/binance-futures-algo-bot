@@ -23,10 +23,22 @@ Levantar el stack completo en el NAS y poblar un conjunto mínimo de trade plans
 - `trading-bot-worker` *(one-shot; debe quedar en `Exited (0)`)*
 - `trading-bot-web`
 
+## Mapa rápido de URLs
+- `http://api:8000` → red interna Docker; lo usan `worker` y SSR del `web`.
+- `SYNOLOGY_API_BASE_URL` → base interna/SSR configurable del `web` (default `http://api:8000`).
+- `NEXT_PUBLIC_API_URL` → URL pública que consumirá el navegador del operador.
+- `API_BASE_URL` / `WEB_BASE_URL` en smoke y release gate → deben apuntar a las URLs públicas reales del NAS.
+
 ## Modelo operativo validado (post PR-20)
 - Servicios persistentes 24/7: `api`, `web`, `postgres`, `redis`.
 - Jobs one-shot: `migrate` y `worker`.
 - En Synology, `worker` se ejecuta sin restart loop (`restart: "no"`) para evitar corridas infinitas.
+
+## Operación esperada del worker one-shot
+- `trading-bot-worker` puede quedar en `Exited (0)` y eso debe interpretarse como ejecución completada, no como crash.
+- Si hace falta relanzarlo, la rerun debe ser explícita y controlada en el NAS.
+- Después de cada rerun conviene revisar logs del contenedor, `docker compose ps` y los endpoints/UI que evidencian actividad (`/trade-plans`, `/dashboard/command-center`, shadow run/reporting si aplica).
+- Si no hay ejecuciones testnet pese a señales válidas, revisar primero `BINANCE_API_KEY`, `BINANCE_API_SECRET`, estado de `PAPER_TRADING` y conectividad externa antes de culpar al worker.
 
 ## Verificaciones clave
 - `/health`
@@ -226,6 +238,14 @@ Campos clave del manifest a revisar en cada corrida:
 
 ## Sync de documentación en Outline (sin duplicados)
 
+Ruta recomendada para cambios documentales relevantes:
+1. actualizar `docs/` en el repo,
+2. validar links locales,
+3. ejecutar un sync manual y controlado hacia Outline,
+4. guardar evidencia del sync en el PR o checkpoint operativo.
+
+Ejecución local explícita:
+
 ```bash
 OUTLINE_API_TOKEN="..." \
 python3 scripts/sync_outline_docs.py
@@ -240,6 +260,9 @@ El sync reescribe links locales del repo a URLs navegables:
 Variables opcionales:
 - `OUTLINE_REPO_WEB_BASE` para forzar la base web del repo (acepta tanto la URL del repo como `.../blob/<ref>`)
 - `OUTLINE_GIT_REF` para elegir la ref usada en links GitHub/raw (default `main`)
+
+Workflow manual opcional desde GitHub Actions:
+- `Outline Docs Sync` (`workflow_dispatch`), útil cuando quieras dejar el sync auditado desde CI con secrets del repo.
 
 Limpieza opcional de documentos legacy fuera del catálogo oficial:
 

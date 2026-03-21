@@ -15,9 +15,11 @@ Estructura oficial de documentación para mantener navegación simple y consiste
 
 1. Todo documento nuevo debe ir en la carpeta temática correcta.
 2. Si un documento queda obsoleto o genera conflicto de numeración, se mueve a la carpeta de archivo correspondiente (`adr/archive/`, `plans/archive/`, etc.) en vez de mantenerse como activo.
-3. Cualquier cambio documental relevante debe reflejarse también en Outline.
-4. Antes de mergear cambios documentales, la CI debe validar los links Markdown locales con `scripts/check_markdown_links.py`.
-5. Mantener títulos y contenido en español, salvo excepciones explícitas.
+3. La numeración de ADRs debe ser única y monotónica; si aparece una colisión, renumerar el documento más nuevo y actualizar referencias antes del merge.
+4. Cualquier cambio documental relevante debe reflejarse también en Outline.
+5. Antes de mergear cambios documentales, la CI debe validar los links Markdown locales con `scripts/check_markdown_links.py`.
+6. Para escribir en Outline, preferir el workflow manual de GitHub Actions o una corrida local explícita y controlada de `scripts/sync_outline_docs.py`; evitar automatizar pushes a Outline en cada commit.
+7. Mantener títulos y contenido en español, salvo excepciones explícitas.
 
 ## Índices por carpeta
 

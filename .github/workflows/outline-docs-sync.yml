@@ -1,0 +1,47 @@
+name: Outline Docs Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      archive_unknown:
+        description: "Si es true, archiva documentos legacy fuera del catálogo actual"
+        required: false
+        default: "false"
+
+jobs:
+  sync-outline-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Validar links Markdown del repo
+        run: python scripts/check_markdown_links.py
+      - name: Sincronizar documentación hacia Outline
+        env:
+          OUTLINE_API_URL: ${{ secrets.OUTLINE_API_URL }}
+          OUTLINE_API_TOKEN: ${{ secrets.OUTLINE_API_TOKEN }}
+          OUTLINE_COLLECTION_ID: ${{ secrets.OUTLINE_COLLECTION_ID }}
+          OUTLINE_REPO_WEB_BASE: ${{ secrets.OUTLINE_REPO_WEB_BASE }}
+          OUTLINE_GIT_REF: ${{ github.ref_name }}
+          ARCHIVE_UNKNOWN: ${{ github.event.inputs.archive_unknown }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${OUTLINE_API_TOKEN:-}" ]]; then
+            echo "❌ Falta secret OUTLINE_API_TOKEN" >&2
+            exit 1
+          fi
+          if [[ -z "${OUTLINE_API_URL:-}" ]]; then
+            echo "❌ Falta secret OUTLINE_API_URL" >&2
+            exit 1
+          fi
+          EXTRA_ARGS=()
+          if [[ "${ARCHIVE_UNKNOWN:-false}" == "true" ]]; then
+            EXTRA_ARGS+=(--archive-unknown)
+          fi
+          python scripts/sync_outline_docs.py "${EXTRA_ARGS[@]}"

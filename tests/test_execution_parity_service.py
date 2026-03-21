@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from apps.api.app.db.base import Base
 from apps.api.app.db.models import TradePlan
 from apps.api.app.services.execution_parity_service import ExecutionParityService
+from apps.api.app.services.shadow_run_reporting_service import MAX_PAIRING_DELTA_SECONDS
 
 
 def build_db():
@@ -219,6 +220,39 @@ def test_execution_parity_does_not_pair_same_symbol_side_when_timeframe_differs(
     assert report.unmatched_paper == 1
     assert report.unmatched_testnet == 1
     assert report.avg_entry_price_diff_pct is None
+
+
+def test_execution_parity_does_not_pair_candidates_beyond_max_temporal_delta():
+    db = build_db()
+    base = datetime(2026, 3, 13, 0, 0, tzinfo=timezone.utc)
+
+    seed_plan(
+        db,
+        symbol="BTCUSDT",
+        side="long",
+        status="paper_executed",
+        entry_price=50000,
+        risk_pct=1.0,
+        notional=200,
+        created_at=base,
+    )
+    seed_plan(
+        db,
+        symbol="BTCUSDT",
+        side="long",
+        status="testnet_executed",
+        entry_price=50010,
+        risk_pct=1.0,
+        notional=200,
+        created_at=base + timedelta(seconds=MAX_PAIRING_DELTA_SECONDS + 1),
+    )
+
+    report = ExecutionParityService(db).build_report(symbol="BTCUSDT", limit=50)
+
+    assert report.compared_pairs == 0
+    assert report.unmatched_paper == 1
+    assert report.unmatched_testnet == 1
+    assert report.pairs == []
 
 
 def test_execution_parity_filters_report_by_timeframe_when_requested():
