@@ -325,6 +325,7 @@ class BinanceTestnetTradingService:
         if not callable(get_order):
             return {"synced": False, "reason": "binance_get_order_unavailable"}
 
+        refreshed_statuses: dict[int, str] = {}
         for order in protection_orders:
             try:
                 refreshed = await get_order(
@@ -345,7 +346,10 @@ class BinanceTestnetTradingService:
                 )
                 self.db.commit()
                 return {"synced": False, "reason": "exit_order_refresh_failed"}
-            refreshed_status = str(refreshed.get("status") or order.status).strip().lower()
+            refreshed_statuses[order.id] = str(refreshed.get("status") or order.status).strip().lower()
+
+        for order in protection_orders:
+            refreshed_status = refreshed_statuses[order.id]
             order.status = refreshed_status
             if refreshed_status == "filled" and triggered_order is None:
                 triggered_order = order
