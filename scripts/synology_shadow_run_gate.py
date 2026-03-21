@@ -22,16 +22,24 @@ def fetch_json(url: str, *, headers: dict[str, str] | None = None, timeout: int 
         raise SystemExit(2) from exc
 
 
-def fetch_shadow_run_summary(api_base_url: str, metrics_api_key: str, window_days: int) -> dict:
-    query = parse.urlencode({"window_days": window_days})
+def fetch_shadow_run_summary(
+    api_base_url: str, metrics_api_key: str, window_days: int, timeframe: str | None = None
+) -> dict:
+    query_params: dict[str, str | int] = {"window_days": window_days}
+    if timeframe:
+        query_params["timeframe"] = timeframe
+    query = parse.urlencode(query_params)
     return fetch_json(
         f"{api_base_url.rstrip('/')}/reporting/shadow-run-summary?{query}",
         headers={"x-metrics-key": metrics_api_key},
     )
 
 
-def fetch_command_center_snapshot(api_base_url: str, *, limit: int = 3) -> dict:
-    payload = fetch_json(f"{api_base_url.rstrip('/')}/dashboard/command-center")
+def fetch_command_center_snapshot(
+    api_base_url: str, *, metrics_api_key: str | None = None, limit: int = 3
+) -> dict:
+    headers = {"x-metrics-key": metrics_api_key} if metrics_api_key else None
+    payload = fetch_json(f"{api_base_url.rstrip('/')}/dashboard/command-center", headers=headers)
     snapshots = payload.get("operation_snapshots") or []
     timeline = payload.get("timeline") or []
     summary = payload.get("summary") or {}
@@ -153,6 +161,7 @@ def to_markdown(summary: dict, evaluation: dict, command_center: dict) -> str:
         f"**{evaluation['overall']}**",
         "",
         f"- Ventana analizada: **{summary['window_days']} días**",
+        f"- Timeframe: **{summary.get('timeframe') or 'all'}**",
         f"- Duración observada: **{summary['shadow_run_duration_days']} días**",
         f"- Paper ejecutado: **{summary['paper_executed_trade_plans']}**",
         f"- Testnet ejecutado: **{summary['testnet_executed_trade_plans']}**",
@@ -240,6 +249,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--api-base-url", required=True)
     parser.add_argument("--metrics-api-key", required=True)
     parser.add_argument("--window-days", type=int, default=30)
+    parser.add_argument("--timeframe")
     parser.add_argument("--min-shadow-days", type=float, default=7)
     parser.add_argument("--min-trades", type=int, default=200)
     parser.add_argument("--min-fill-rate-pct", type=float, default=98)
@@ -254,8 +264,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    summary = fetch_shadow_run_summary(args.api_base_url, args.metrics_api_key, args.window_days)
-    command_center = fetch_command_center_snapshot(args.api_base_url)
+    timeframe = (args.timeframe or "").strip() or None
+    summary = fetch_shadow_run_summary(args.api_base_url, args.metrics_api_key, args.window_days, timeframe)
+    command_center = fetch_command_center_snapshot(args.api_base_url, metrics_api_key=args.metrics_api_key)
     evaluation = evaluate(summary, args)
     payload = {"summary": summary, "evaluation": evaluation, "command_center": command_center}
 
