@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,6 +20,7 @@ class Settings(BaseSettings):
     paper_trading: bool = True
     testnet_execution_enabled: bool = False
     metrics_api_key: SecretStr = SecretStr("")
+    operational_cutover_at: datetime | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

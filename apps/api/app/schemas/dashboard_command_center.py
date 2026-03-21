@@ -150,6 +150,7 @@ class DashboardCommandCenterOperationSnapshot(BaseModel):
 
 class DashboardCommandCenterResponse(BaseModel):
     generated_at: datetime
+    operational_cutover_at: datetime | None = None
     summary: DashboardCommandCenterSummary
     shadow_run: DashboardCommandCenterShadowRun
     operation_snapshots: list[DashboardCommandCenterOperationSnapshot] = Field(default_factory=list)

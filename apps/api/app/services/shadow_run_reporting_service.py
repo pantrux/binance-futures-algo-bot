@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
+from apps.api.app.core.settings import settings
 from apps.api.app.db.models import Order, RiskEvent, TradePlan
 from apps.api.app.schemas.shadow_run_reporting import ShadowRunSummary, ShadowRunSymbolSummary
 
@@ -102,6 +103,10 @@ class ShadowRunReportingService:
         cutoff = now - timedelta(days=window_days)
         risk_cutoff_7d = now - timedelta(days=7)
         risk_cutoff_30d = now - timedelta(days=30)
+        if settings.operational_cutover_at is not None:
+            cutoff = max(cutoff, settings.operational_cutover_at)
+            risk_cutoff_7d = max(risk_cutoff_7d, settings.operational_cutover_at)
+            risk_cutoff_30d = max(risk_cutoff_30d, settings.operational_cutover_at)
 
         plans_query = (
             self.db.query(TradePlan)
