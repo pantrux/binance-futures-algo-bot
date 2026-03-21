@@ -50,9 +50,44 @@ class BinanceTestnetTradingService:
         ref = str(external_order_id or "").strip()
         if not ref:
             raise ValueError("order external_order_id vacío para reconciliación")
+        if ref.startswith("algo:"):
+            algo_ref = ref.removeprefix("algo:")
+            if algo_ref.isdigit():
+                return {"algo_id": int(algo_ref)}
+            return {"client_algo_id": algo_ref}
+        if ref.startswith("algo_client:"):
+            return {"client_algo_id": ref.removeprefix("algo_client:")}
         if ref.isdigit():
             return {"order_id": int(ref)}
         return {"client_order_id": ref}
+
+    @staticmethod
+    def _is_algo_order_ref(exchange_ref: dict[str, int | str]) -> bool:
+        return "algo_id" in exchange_ref or "client_algo_id" in exchange_ref
+
+    @staticmethod
+    def _build_algo_external_order_id(payload: dict, fallback_client_algo_id: str) -> str:
+        algo_id = payload.get("algoId")
+        if algo_id not in (None, ""):
+            return f"algo:{algo_id}"
+        client_algo_id = str(payload.get("clientAlgoId") or fallback_client_algo_id).strip()
+        return f"algo_client:{client_algo_id}"
+
+    @staticmethod
+    def _normalize_algo_status(payload: dict) -> str:
+        raw_status = str(payload.get("algoStatus") or payload.get("status") or "new").strip().lower()
+        mapping = {
+            "new": "new",
+            "pending_new": "new",
+            "partially_filled": "partially_filled",
+            "filled": "filled",
+            "triggered": "filled",
+            "success": "filled",
+            "canceled": "canceled",
+            "expired": "expired",
+            "rejected": "rejected",
+        }
+        return mapping.get(raw_status, raw_status)
 
     def _extract_fill_price_from_trades(self, trades: list[dict], *, fallback: float) -> float:
         total_qty = 0.0
@@ -314,46 +349,86 @@ class BinanceTestnetTradingService:
             take_profit_price = self._round_price_to_tick(take_profit_price, tick_size, mode="down")
 
         try:
-            stop_payload = await self.binance_client.place_stop_market_order(
-                symbol=trade_plan.symbol,
-                side=exit_side,
-                stop_price=stop_price,
-                client_order_id=stop_client_order_id,
-            )
-            take_profit_payload = await self.binance_client.place_take_profit_market_order(
-                symbol=trade_plan.symbol,
-                side=exit_side,
-                stop_price=take_profit_price,
-                client_order_id=take_profit_client_order_id,
-            )
+            stop_algo = getattr(self.binance_client, "place_stop_market_algo_order", None)
+            take_profit_algo = getattr(self.binance_client, "place_take_profit_market_algo_order", None)
+            used_algo_orders = callable(stop_algo) and callable(take_profit_algo)
+            if used_algo_orders:
+                stop_payload = await stop_algo(
+                    symbol=trade_plan.symbol,
+                    side=exit_side,
+                    trigger_price=stop_price,
+                    client_algo_id=stop_client_order_id,
+                )
+                take_profit_payload = await take_profit_algo(
+                    symbol=trade_plan.symbol,
+                    side=exit_side,
+                    trigger_price=take_profit_price,
+                    client_algo_id=take_profit_client_order_id,
+                )
+            else:
+                stop_payload = await self.binance_client.place_stop_market_order(
+                    symbol=trade_plan.symbol,
+                    side=exit_side,
+                    stop_price=stop_price,
+                    client_order_id=stop_client_order_id,
+                )
+                take_profit_payload = await self.binance_client.place_take_profit_market_order(
+                    symbol=trade_plan.symbol,
+                    side=exit_side,
+                    stop_price=take_profit_price,
+                    client_order_id=take_profit_client_order_id,
+                )
         except Exception as exc:  # noqa: BLE001
-            self._log_risk_event(
-                trade_plan_id=trade_plan.id,
-                event_type="testnet_protection_orders_failed",
-                severity="critical",
-                message=f"No fue posible crear órdenes de protección testnet: {exc}",
-                context={
-                    "symbol": trade_plan.symbol,
-                    "external_order_id": external_order_id,
-                    "exception_type": type(exc).__name__,
-                    "planned_stop_loss": trade_plan.stop_loss,
-                    "planned_take_profit": trade_plan.take_profit,
-                    "effective_stop_loss": stop_price,
-                    "effective_take_profit": take_profit_price,
-                    "exchange_price": exchange_price,
-                    "mark_price": mark_price,
-                },
-            )
-            return None, None, "protection_orders_failed"
+            if used_algo_orders:
+                try:
+                    stop_payload = await self.binance_client.place_stop_market_order(
+                        symbol=trade_plan.symbol,
+                        side=exit_side,
+                        stop_price=stop_price,
+                        client_order_id=stop_client_order_id,
+                    )
+                    take_profit_payload = await self.binance_client.place_take_profit_market_order(
+                        symbol=trade_plan.symbol,
+                        side=exit_side,
+                        stop_price=take_profit_price,
+                        client_order_id=take_profit_client_order_id,
+                    )
+                    used_algo_orders = False
+                except Exception:  # noqa: BLE001
+                    pass
+            if not locals().get("stop_payload") or not locals().get("take_profit_payload"):
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_protection_orders_failed",
+                    severity="critical",
+                    message=f"No fue posible crear órdenes de protección testnet: {exc}",
+                    context={
+                        "symbol": trade_plan.symbol,
+                        "external_order_id": external_order_id,
+                        "exception_type": type(exc).__name__,
+                        "planned_stop_loss": trade_plan.stop_loss,
+                        "planned_take_profit": trade_plan.take_profit,
+                        "effective_stop_loss": stop_price,
+                        "effective_take_profit": take_profit_price,
+                        "exchange_price": exchange_price,
+                        "mark_price": mark_price,
+                        "attempted_algo_orders": used_algo_orders,
+                    },
+                )
+                return None, None, "protection_orders_failed"
 
         stop_order = Order(
             trade_plan_id=trade_plan.id,
             venue="binance_futures_testnet",
-            external_order_id=str(stop_payload.get("orderId") or stop_payload.get("clientOrderId") or stop_client_order_id),
+            external_order_id=(
+                self._build_algo_external_order_id(stop_payload, stop_client_order_id)
+                if used_algo_orders
+                else str(stop_payload.get("orderId") or stop_payload.get("clientOrderId") or stop_client_order_id)
+            ),
             symbol=trade_plan.symbol,
             side=trade_plan.side,
             order_type="stop_market",
-            status=str(stop_payload.get("status") or "new").strip().lower(),
+            status=self._normalize_algo_status(stop_payload) if used_algo_orders else str(stop_payload.get("status") or "new").strip().lower(),
             price=stop_price,
             quantity=0.0,
             executed_quantity=0.0,
@@ -362,13 +437,21 @@ class BinanceTestnetTradingService:
         take_profit_order = Order(
             trade_plan_id=trade_plan.id,
             venue="binance_futures_testnet",
-            external_order_id=str(
-                take_profit_payload.get("orderId") or take_profit_payload.get("clientOrderId") or take_profit_client_order_id
+            external_order_id=(
+                self._build_algo_external_order_id(take_profit_payload, take_profit_client_order_id)
+                if used_algo_orders
+                else str(
+                    take_profit_payload.get("orderId") or take_profit_payload.get("clientOrderId") or take_profit_client_order_id
+                )
             ),
             symbol=trade_plan.symbol,
             side=trade_plan.side,
             order_type="take_profit_market",
-            status=str(take_profit_payload.get("status") or "new").strip().lower(),
+            status=(
+                self._normalize_algo_status(take_profit_payload)
+                if used_algo_orders
+                else str(take_profit_payload.get("status") or "new").strip().lower()
+            ),
             price=take_profit_price,
             quantity=0.0,
             executed_quantity=0.0,
@@ -555,16 +638,26 @@ class BinanceTestnetTradingService:
         triggered_order = None
         sibling_orders = []
         get_order = getattr(self.binance_client, "get_order", None)
-        if not callable(get_order):
+        get_algo_order = getattr(self.binance_client, "get_algo_order", None)
+        if not callable(get_order) and not callable(get_algo_order):
             return {"synced": False, "reason": "binance_get_order_unavailable"}
 
         refreshed_statuses: dict[int, str] = {}
         for order in protection_orders:
+            exchange_ref = self._resolve_exchange_order_ref(order.external_order_id)
             try:
-                refreshed = await get_order(
-                    symbol=trade_plan.symbol,
-                    **self._resolve_exchange_order_ref(order.external_order_id),
-                )
+                if self._is_algo_order_ref(exchange_ref):
+                    if not callable(get_algo_order):
+                        return {"synced": False, "reason": "binance_get_order_unavailable"}
+                    refreshed = await get_algo_order(**exchange_ref)
+                    actual_order_id = refreshed.get("actualOrderId")
+                    if actual_order_id not in (None, "", "0") and callable(get_order):
+                        actual_order = await get_order(symbol=trade_plan.symbol, order_id=int(actual_order_id))
+                        refreshed_statuses[order.id] = str(actual_order.get("status") or "new").strip().lower()
+                        continue
+                    refreshed_statuses[order.id] = self._normalize_algo_status(refreshed)
+                    continue
+                refreshed = await get_order(symbol=trade_plan.symbol, **exchange_ref)
             except Exception as exc:  # noqa: BLE001
                 self._log_risk_event(
                     trade_plan_id=trade_plan.id,
@@ -609,10 +702,12 @@ class BinanceTestnetTradingService:
 
         canceled_sibling = None
         cancel_order = getattr(self.binance_client, "cancel_order", None)
+        cancel_algo_order = getattr(self.binance_client, "cancel_algo_order", None)
         live_sibling_orders = [
             sibling_order for sibling_order in sibling_orders if sibling_order.status not in self.TERMINAL_ORDER_STATUSES
         ]
-        if live_sibling_orders and not callable(cancel_order):
+        can_cancel_any = callable(cancel_order) or callable(cancel_algo_order)
+        if live_sibling_orders and not can_cancel_any:
             self._log_risk_event(
                 trade_plan_id=trade_plan.id,
                 event_type="testnet_exit_sibling_cancel_unavailable",
@@ -624,13 +719,16 @@ class BinanceTestnetTradingService:
                 },
             )
         for sibling_order in live_sibling_orders:
-            if not callable(cancel_order):
-                continue
+            exchange_ref = self._resolve_exchange_order_ref(sibling_order.external_order_id)
             try:
-                await cancel_order(
-                    symbol=trade_plan.symbol,
-                    **self._resolve_exchange_order_ref(sibling_order.external_order_id),
-                )
+                if self._is_algo_order_ref(exchange_ref):
+                    if not callable(cancel_algo_order):
+                        continue
+                    await cancel_algo_order(**exchange_ref)
+                else:
+                    if not callable(cancel_order):
+                        continue
+                    await cancel_order(symbol=trade_plan.symbol, **exchange_ref)
                 sibling_order.status = "canceled"
                 canceled_sibling = sibling_order.external_order_id
             except Exception as exc:  # noqa: BLE001

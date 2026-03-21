@@ -287,6 +287,28 @@ class BinanceFuturesClient:
             params["closePosition"] = "true"
         return await self._post_order(params)
 
+    async def place_stop_market_algo_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        trigger_price: float,
+        client_algo_id: str,
+        close_position: bool = True,
+        recv_window: int = 5000,
+        working_type: str = "MARK_PRICE",
+    ) -> dict:
+        return await self._post_algo_order(
+            symbol=symbol,
+            side=side,
+            order_type="STOP_MARKET",
+            trigger_price=trigger_price,
+            client_algo_id=client_algo_id,
+            close_position=close_position,
+            recv_window=recv_window,
+            working_type=working_type,
+        )
+
     async def place_take_profit_market_order(
         self,
         *,
@@ -309,6 +331,124 @@ class BinanceFuturesClient:
         if close_position:
             params["closePosition"] = "true"
         return await self._post_order(params)
+
+    async def place_take_profit_market_algo_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        trigger_price: float,
+        client_algo_id: str,
+        close_position: bool = True,
+        recv_window: int = 5000,
+        working_type: str = "MARK_PRICE",
+    ) -> dict:
+        return await self._post_algo_order(
+            symbol=symbol,
+            side=side,
+            order_type="TAKE_PROFIT_MARKET",
+            trigger_price=trigger_price,
+            client_algo_id=client_algo_id,
+            close_position=close_position,
+            recv_window=recv_window,
+            working_type=working_type,
+        )
+
+    async def get_algo_order(
+        self,
+        *,
+        algo_id: int | None = None,
+        client_algo_id: str | None = None,
+        recv_window: int = 5000,
+    ) -> dict:
+        self.ensure_credentials()
+
+        params: dict[str, str | int] = {
+            "recvWindow": str(recv_window),
+            "timestamp": str(int(time.time() * 1000)),
+        }
+        if algo_id is not None:
+            params["algoId"] = algo_id
+        if client_algo_id:
+            params["clientAlgoId"] = client_algo_id
+        if "algoId" not in params and "clientAlgoId" not in params:
+            raise ValueError("get_algo_order requiere al menos 'algo_id' o 'client_algo_id'")
+        params["signature"] = self._sign({k: str(v) for k, v in params.items()})
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(
+                f"{self.base_url}/fapi/v1/algoOrder",
+                params=params,
+                headers=self._auth_headers(),
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def cancel_algo_order(
+        self,
+        *,
+        algo_id: int | None = None,
+        client_algo_id: str | None = None,
+        recv_window: int = 5000,
+    ) -> dict:
+        self.ensure_credentials()
+
+        params: dict[str, str | int] = {
+            "recvWindow": str(recv_window),
+            "timestamp": str(int(time.time() * 1000)),
+        }
+        if algo_id is not None:
+            params["algoId"] = algo_id
+        if client_algo_id:
+            params["clientAlgoId"] = client_algo_id
+        if "algoId" not in params and "clientAlgoId" not in params:
+            raise ValueError("cancel_algo_order requiere al menos 'algo_id' o 'client_algo_id'")
+        params["signature"] = self._sign({k: str(v) for k, v in params.items()})
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.delete(
+                f"{self.base_url}/fapi/v1/algoOrder",
+                params=params,
+                headers=self._auth_headers(),
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def _post_algo_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        order_type: str,
+        trigger_price: float,
+        client_algo_id: str,
+        close_position: bool,
+        recv_window: int,
+        working_type: str,
+    ) -> dict:
+        params: dict[str, str] = {
+            "algoType": "CONDITIONAL",
+            "symbol": symbol,
+            "side": side,
+            "type": order_type,
+            "triggerPrice": str(trigger_price),
+            "clientAlgoId": client_algo_id,
+            "workingType": working_type,
+            "recvWindow": str(recv_window),
+            "timestamp": str(int(time.time() * 1000)),
+        }
+        if close_position:
+            params["closePosition"] = "true"
+        params["signature"] = self._sign(params)
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                f"{self.base_url}/fapi/v1/algoOrder",
+                params=params,
+                headers=self._auth_headers(),
+            )
+            response.raise_for_status()
+            return response.json()
 
     async def _post_order(self, params: dict[str, str]) -> dict:
         params["signature"] = self._sign(params)

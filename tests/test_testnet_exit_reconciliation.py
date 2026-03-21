@@ -28,6 +28,25 @@ class FakeBinanceClientNoExitTriggered(FakeBinanceClientExitTriggered):
         return {"orderId": order_id, "clientOrderId": client_order_id, "status": "NEW"}
 
 
+class FakeBinanceClientAlgoExitTriggered:
+    def __init__(self) -> None:
+        self.canceled_algo_refs: list[int | str] = []
+
+    async def get_algo_order(self, *, algo_id: int | None = None, client_algo_id: str | None = None, recv_window: int = 5000) -> dict:
+        if algo_id == 111111 or client_algo_id == "sl-1":
+            return {"algoId": algo_id or 111111, "clientAlgoId": client_algo_id, "algoStatus": "TRIGGERED", "actualOrderId": "333333"}
+        return {"algoId": algo_id or 222222, "clientAlgoId": client_algo_id, "algoStatus": "NEW", "actualOrderId": ""}
+
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        if order_id == 333333:
+            return {"orderId": order_id, "status": "FILLED"}
+        return {"orderId": order_id, "clientOrderId": client_order_id, "status": "NEW"}
+
+    async def cancel_algo_order(self, *, algo_id: int | None = None, client_algo_id: str | None = None, recv_window: int = 5000) -> dict:
+        self.canceled_algo_refs.append(algo_id if algo_id is not None else str(client_algo_id))
+        return {"algoId": algo_id, "clientAlgoId": client_algo_id, "code": "200", "msg": "success"}
+
+
 class FakeBinanceClientRefreshFails(FakeBinanceClientExitTriggered):
     async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
         raise RuntimeError("refresh_failed")
@@ -170,6 +189,15 @@ def seed_trade_plan_with_open_position(db):
     return plan
 
 
+def seed_trade_plan_with_open_position_algo_orders(db):
+    plan = seed_trade_plan_with_open_position(db)
+    orders = db.query(Order).filter(Order.trade_plan_id == plan.id).order_by(Order.id.asc()).all()
+    orders[0].external_order_id = "algo:111111"
+    orders[1].external_order_id = "algo:222222"
+    db.commit()
+    return plan
+
+
 def test_sync_exit_orders_closes_position_and_cancels_sibling():
     db = build_db()
     plan = seed_trade_plan_with_open_position(db)
@@ -200,6 +228,24 @@ def test_sync_exit_orders_returns_without_changes_when_no_exit_triggered():
     assert result == {"synced": True, "reason": "no_triggered_exit"}
     position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
     assert position.status == "open"
+
+
+def test_sync_exit_orders_closes_position_and_cancels_algo_sibling():
+    db = build_db()
+    plan = seed_trade_plan_with_open_position_algo_orders(db)
+    client = FakeBinanceClientAlgoExitTriggered()
+    service = BinanceTestnetTradingService(db, binance_client=client, execution_enabled=True)
+
+    result = asyncio.run(service.sync_exit_orders(plan.id))
+
+    assert result["synced"] is True
+    assert result["triggered_order_type"] == "stop_market"
+    assert result["canceled_sibling_order_id"] == "algo:222222"
+    assert client.canceled_algo_refs == [222222]
+
+    orders = db.query(Order).filter(Order.trade_plan_id == plan.id).order_by(Order.id.asc()).all()
+    assert orders[0].status == "filled"
+    assert orders[1].status == "canceled"
 
 
 def test_sync_exit_orders_closes_position_with_local_synthetic_exit_when_native_protection_is_missing():
