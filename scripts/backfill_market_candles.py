@@ -9,7 +9,10 @@ import urllib.request
 
 
 def positive_limit(value: str) -> int:
-    parsed = int(value)
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("--limit debe ser un entero entre 1 y 10000") from exc
     if parsed <= 0 or parsed > 10000:
         raise argparse.ArgumentTypeError("--limit debe estar entre 1 y 10000")
     return parsed
