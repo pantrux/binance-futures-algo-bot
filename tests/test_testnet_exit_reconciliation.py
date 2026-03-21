@@ -58,6 +58,35 @@ class FakeBinanceClientLocalExit:
             "status": "FILLED",
         }
 
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": order_id,
+            "clientOrderId": client_order_id,
+            "avgPrice": "49695",
+            "executedQty": "0.1",
+            "status": "FILLED",
+        }
+
+
+class FakeBinanceClientLocalExitAck(FakeBinanceClientLocalExit):
+    async def close_position_market(self, *, symbol: str, side: str, quantity: float, client_order_id: str, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": 444444,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "executedQty": "0",
+            "status": "NEW",
+        }
+
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        return {
+            "orderId": order_id,
+            "clientOrderId": client_order_id,
+            "avgPrice": "0",
+            "executedQty": "0",
+            "status": "NEW",
+        }
+
 
 def build_db():
     engine = create_engine("sqlite:///:memory:")
@@ -215,6 +244,28 @@ def test_sync_exit_orders_logs_warning_when_cancel_sibling_fails():
     )
     assert warning.severity == "warning"
     assert warning.context_json["sibling_order_id"] == "222222"
+
+
+def test_sync_exit_orders_does_not_close_local_position_when_local_exit_is_unconfirmed():
+    db = build_db()
+    plan = seed_trade_plan_with_open_position(db)
+    db.query(Order).filter(Order.trade_plan_id == plan.id).delete()
+    db.commit()
+    service = BinanceTestnetTradingService(db, binance_client=FakeBinanceClientLocalExitAck(), execution_enabled=True)
+
+    result = asyncio.run(service.sync_exit_orders(plan.id))
+
+    assert result == {"synced": False, "reason": "local_exit_not_filled"}
+    position = db.query(Position).filter(Position.trade_plan_id == plan.id).one()
+    refreshed_plan = db.get(TradePlan, plan.id)
+    assert position.status == "open"
+    assert refreshed_plan.status == "testnet_executed"
+    warning = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_local_exit_not_filled")
+        .one()
+    )
+    assert warning.severity == "critical"
 
 
 def test_sync_exit_orders_respects_execution_disabled_flag():
