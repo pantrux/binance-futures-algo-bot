@@ -13,6 +13,9 @@ class WorkerSettings(BaseSettings):
     seed_capital_usdt: float = 1000.0
     default_signal_timeframe: str = "15m"
     signal_snapshot_limit: int = 200
+    runtime_mode: str = "oneshot"
+    poll_interval_seconds: float = 30.0
+    max_cycles: int = 0
     strict_symbol_failures: bool = False
     testnet_execution_enabled: bool = False
     testnet_global_kill_switch: bool = False
@@ -47,5 +50,13 @@ class WorkerSettings(BaseSettings):
                 raise ValueError("lista de símbolos/timeframes no puede estar vacía")
             return result
         return value
+
+    @field_validator("runtime_mode")
+    @classmethod
+    def validate_runtime_mode(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"oneshot", "loop"}:
+            raise ValueError("runtime_mode debe ser 'oneshot' o 'loop'")
+        return normalized
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

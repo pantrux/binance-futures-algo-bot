@@ -165,6 +165,7 @@ class HybridSignalService:
             volatility_pct=volatility_pct,
             trend_strength=trend_strength,
             liquidity_score=liquidity_score,
+            last_candle_close_ms=snapshot.get("last_candle_close_ms"),
             market_regime=regime,
             regime_confidence=regime_confidence,
         )

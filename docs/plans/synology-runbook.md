@@ -40,6 +40,16 @@ Levantar el stack completo en el NAS y poblar un conjunto mínimo de trade plans
 - Después de cada rerun conviene revisar logs del contenedor, `docker compose ps` y los endpoints/UI que evidencian actividad (`/trade-plans`, `/dashboard/command-center`, shadow run/reporting si aplica).
 - Si no hay ejecuciones testnet pese a señales válidas, revisar primero `BINANCE_API_KEY`, `BINANCE_API_SECRET`, estado de `PAPER_TRADING` y conectividad externa antes de culpar al worker.
 
+## Modo loop near real-time (PR-125)
+- El worker soporta `RUNTIME_MODE=loop` para correr de forma persistente con polling controlado.
+- En `oneshot`, se conserva el comportamiento histórico y se usa solo `DEFAULT_SIGNAL_TIMEFRAME`.
+- En `loop`, el worker usa `TIMEFRAMES` y deduplica por `(symbol, timeframe, last_candle_close_ms)` para no re-crear decisiones sobre la misma vela.
+- Config útil inicial en Synology:
+  - `RUNTIME_MODE=loop`
+  - `POLL_INTERVAL_SECONDS=30`
+  - `TIMEFRAMES=5m,15m,1h`
+- `MAX_CYCLES=0` deja el loop corriendo sin límite; usar valores >0 solo para pruebas controladas.
+
 ## Verificaciones clave
 - `/health`
 - `/dashboard/summary`
@@ -47,6 +57,7 @@ Levantar el stack completo en el NAS y poblar un conjunto mínimo de trade plans
 - `/integrations/binance/testnet/ping`
 - `/metrics` (con o sin `x-metrics-key`, según configuración)
 - documentos en Outline creados por los trade plans
+- logs del worker con `worker_cycle_completed` y `trade_cycle_skipped_duplicate_candle` cuando el modo loop esté activo
 
 ## Preflight automático (PR-10)
 
@@ -334,6 +345,11 @@ Para evaluar readiness antes de iniciar testnet serio o decidir avance hacia rea
 - Si `migrate` intenta `localhost:5432`, validar que `alembic/env.py` lea `POSTGRES_DSN` desde environment.
 - Si build falla leyendo `data/postgres` (`can't stat`), agregar `.dockerignore` excluyendo `data/`.
 - Si el command center muestra `latest_order_price` / `latest_position_entry_price` con valores planificados (`50000`, `3200`, `140`) pese a existir posiciones reales en Binance Testnet, ejecutar el backfill real desde el contenedor `trading-bot-api`:
+  ```bash
+  docker exec -i trading-bot-api python /app/scripts/backfill_testnet_fill_prices.py --limit 20
+  ```
+  Esto recalcula fills con `userTrades` y refresca `mark_price` / `unrealized_pnl`. Después, volver a consultar `GET /dashboard/command-center` y confirmar que `latest_position_entry_price` refleje fills reales (por ejemplo `70681`, `2082.26`, `87.23`).
+lores planificados (`50000`, `3200`, `140`) pese a existir posiciones reales en Binance Testnet, ejecutar el backfill real desde el contenedor `trading-bot-api`:
   ```bash
   docker exec -i trading-bot-api python /app/scripts/backfill_testnet_fill_prices.py --limit 20
   ```

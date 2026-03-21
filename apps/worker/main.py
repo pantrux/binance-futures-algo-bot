@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import sys
+from dataclasses import dataclass
 
 from apps.worker.trading_bot.config.settings import WorkerSettings
 from apps.worker.trading_bot.services.api_client import TradingBotApiClient
@@ -9,6 +10,15 @@ from apps.worker.trading_bot.services.binance_testnet_router import BinanceTestn
 from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalService
 
 logger = logging.getLogger("apps.worker.observability")
+
+
+@dataclass
+class SymbolRunResult:
+    symbol: str
+    timeframe: str
+    success: bool
+    last_candle_close_ms: int | None = None
+    skipped_duplicate: bool = False
 
 
 def ensure_logging_configured() -> None:
@@ -34,14 +44,52 @@ def ensure_supported_python() -> None:
         )
 
 
-async def process_symbol(
+def build_signal_services(settings: WorkerSettings, api_client: TradingBotApiClient) -> dict[str, HybridSignalService]:
+    if settings.runtime_mode == "oneshot":
+        timeframes = (settings.default_signal_timeframe,)
+    else:
+        timeframes = settings.timeframes or (settings.default_signal_timeframe,)
+    return {
+        timeframe: HybridSignalService(
+            api_client=api_client,
+            timeframe=timeframe,
+            limit=settings.signal_snapshot_limit,
+        )
+        for timeframe in timeframes
+    }
+
+
+async def process_symbol_cycle(
+    *,
     symbol: str,
+    timeframe: str,
     settings: WorkerSettings,
     signal_service: HybridSignalService,
     api_client: TradingBotApiClient,
     testnet_router: BinanceTestnetRouter,
-) -> bool:
+    processed_candles: dict[tuple[str, str], int] | None = None,
+) -> SymbolRunResult:
     signals, context, thesis, levels, meta = await signal_service.build_signal_pack(symbol)
+    last_candle_close_ms = context.last_candle_close_ms
+    dedupe_key = (symbol, context.timeframe)
+
+    if processed_candles is not None and last_candle_close_ms is not None:
+        last_processed = processed_candles.get(dedupe_key)
+        if last_processed == last_candle_close_ms:
+            log_event(
+                "trade_cycle_skipped_duplicate_candle",
+                symbol=symbol,
+                timeframe=context.timeframe,
+                last_candle_close_ms=last_candle_close_ms,
+            )
+            return SymbolRunResult(
+                symbol=symbol,
+                timeframe=context.timeframe,
+                success=True,
+                last_candle_close_ms=last_candle_close_ms,
+                skipped_duplicate=True,
+            )
+
     payload = {
         "symbol": symbol,
         "side": meta.side,
@@ -68,30 +116,42 @@ async def process_symbol(
         },
     }
     created = await api_client.create_trade_plan(payload)
-    log_event("trade_plan_created", symbol=symbol, source=meta.source, reason=meta.reason, trade_plan=created)
+    if processed_candles is not None and last_candle_close_ms is not None:
+        processed_candles[dedupe_key] = last_candle_close_ms
+    log_event(
+        "trade_plan_created",
+        symbol=symbol,
+        timeframe=context.timeframe,
+        source=meta.source,
+        reason=meta.reason,
+        last_candle_close_ms=last_candle_close_ms,
+        trade_plan=created,
+    )
     if created.get("status") != "approved":
         log_event(
             "trade_execution_skipped_not_approved",
             symbol=symbol,
+            timeframe=context.timeframe,
             status=created.get("status"),
             trade_plan_id=created.get("id"),
         )
-        return True
+        return SymbolRunResult(symbol=symbol, timeframe=context.timeframe, success=True, last_candle_close_ms=last_candle_close_ms)
 
     trade_plan_id = created.get("id")
     if not trade_plan_id:
-        log_event("trade_execution_skip_missing_id", symbol=symbol, trade_plan=created)
-        return False
+        log_event("trade_execution_skip_missing_id", symbol=symbol, timeframe=context.timeframe, trade_plan=created)
+        return SymbolRunResult(symbol=symbol, timeframe=context.timeframe, success=False, last_candle_close_ms=last_candle_close_ms)
 
     if settings.paper_trading:
         executed = await api_client.execute_paper_trade(trade_plan_id)
-        log_event("paper_trade_executed", symbol=symbol, source=meta.source, execution=executed)
-        return True
+        log_event("paper_trade_executed", symbol=symbol, timeframe=context.timeframe, source=meta.source, execution=executed)
+        return SymbolRunResult(symbol=symbol, timeframe=context.timeframe, success=True, last_candle_close_ms=last_candle_close_ms)
 
     if meta.source != "market":
         log_event(
             "testnet_trade_execution_blocked_non_market_source",
             symbol=symbol,
+            timeframe=context.timeframe,
             trade_plan_id=trade_plan_id,
             source=meta.source,
             reason=meta.reason,
@@ -101,42 +161,112 @@ async def process_symbol(
             log_event(
                 "paper_trade_fallback_executed_non_market_source",
                 symbol=symbol,
+                timeframe=context.timeframe,
                 source=meta.source,
                 reason=meta.reason,
                 execution=executed,
             )
-        return True
+        return SymbolRunResult(symbol=symbol, timeframe=context.timeframe, success=True, last_candle_close_ms=last_candle_close_ms)
 
     testnet_execution = await testnet_router.execute_trade_plan(symbol=symbol, trade_plan=created)
-    log_event("testnet_trade_execution_result", symbol=symbol, execution=testnet_execution)
+    log_event("testnet_trade_execution_result", symbol=symbol, timeframe=context.timeframe, execution=testnet_execution)
 
     if testnet_execution.get("executed"):
-        return True
+        return SymbolRunResult(symbol=symbol, timeframe=context.timeframe, success=True, last_candle_close_ms=last_candle_close_ms)
 
     if settings.testnet_fallback_to_paper:
         executed = await api_client.execute_paper_trade(trade_plan_id)
         log_event(
             "paper_trade_fallback_executed",
             symbol=symbol,
+            timeframe=context.timeframe,
             reason=testnet_execution.get("reason"),
             execution=executed,
         )
-        return True
+        return SymbolRunResult(symbol=symbol, timeframe=context.timeframe, success=True, last_candle_close_ms=last_candle_close_ms)
 
     log_event(
         "testnet_trade_execution_failed",
         symbol=symbol,
+        timeframe=context.timeframe,
         reason=testnet_execution.get("reason"),
         trade_plan_id=trade_plan_id,
     )
 
-    return testnet_execution.get("reason") in {
+    success = testnet_execution.get("reason") in {
         "testnet_execution_disabled",
         "global_kill_switch_enabled",
         "symbol_kill_switch_enabled",
         "trade_plan_not_approved",
         "trade_plan_missing_id",
     }
+    return SymbolRunResult(symbol=symbol, timeframe=context.timeframe, success=success, last_candle_close_ms=last_candle_close_ms)
+
+
+async def process_symbol(
+    symbol: str,
+    settings: WorkerSettings,
+    signal_service: HybridSignalService,
+    api_client: TradingBotApiClient,
+    testnet_router: BinanceTestnetRouter,
+) -> bool:
+    result = await process_symbol_cycle(
+        symbol=symbol,
+        timeframe=signal_service.timeframe,
+        settings=settings,
+        signal_service=signal_service,
+        api_client=api_client,
+        testnet_router=testnet_router,
+    )
+    return result.success
+
+
+async def run_worker_cycle(
+    settings: WorkerSettings,
+    signal_services: dict[str, HybridSignalService],
+    api_client: TradingBotApiClient,
+    testnet_router: BinanceTestnetRouter,
+    processed_candles: dict[tuple[str, str], int] | None = None,
+) -> tuple[int, int, int]:
+    tasks = [
+        process_symbol_cycle(
+            symbol=symbol,
+            timeframe=timeframe,
+            settings=settings,
+            signal_service=signal_service,
+            api_client=api_client,
+            testnet_router=testnet_router,
+            processed_candles=processed_candles,
+        )
+        for timeframe, signal_service in signal_services.items()
+        for symbol in settings.symbols
+    ]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    successes = 0
+    failures = 0
+    duplicates = 0
+    ordered_targets = [(symbol, timeframe) for timeframe in signal_services for symbol in settings.symbols]
+    for (symbol, timeframe), result in zip(ordered_targets, results):
+        if isinstance(result, BaseException):
+            failures += 1
+            log_event("symbol_failed_exception", symbol=symbol, timeframe=timeframe, error=str(result))
+            continue
+        if result.skipped_duplicate:
+            duplicates += 1
+        if result.success:
+            successes += 1
+        else:
+            failures += 1
+            log_event("symbol_failed_without_exception", symbol=symbol, timeframe=timeframe)
+
+    if failures > 0:
+        log_event("symbol_failures_detected", failures=failures, successes=successes, duplicates=duplicates)
+
+    if settings.symbols and (successes == 0 or (settings.strict_symbol_failures and failures > 0)):
+        raise RuntimeError(f"symbol_failures={failures};symbol_successes={successes};duplicates={duplicates}")
+
+    return successes, failures, duplicates
 
 
 async def main() -> None:
@@ -144,11 +274,7 @@ async def main() -> None:
     ensure_supported_python()
     settings = WorkerSettings()
     api_client = TradingBotApiClient(settings.api_base_url)
-    signal_service = HybridSignalService(
-        api_client=api_client,
-        timeframe=settings.default_signal_timeframe,
-        limit=settings.signal_snapshot_limit,
-    )
+    signal_services = build_signal_services(settings, api_client)
     testnet_router = BinanceTestnetRouter(
         api_client=api_client,
         execution_enabled=settings.testnet_execution_enabled,
@@ -156,29 +282,33 @@ async def main() -> None:
         kill_switch_symbols=settings.testnet_kill_switch_symbols,
     )
 
-    results = await asyncio.gather(
-        *(process_symbol(symbol, settings, signal_service, api_client, testnet_router) for symbol in settings.symbols),
-        return_exceptions=True,
-    )
+    if settings.runtime_mode == "oneshot":
+        await run_worker_cycle(settings, signal_services, api_client, testnet_router)
+        return
 
-    successes = 0
-    failures = 0
-    for symbol, result in zip(settings.symbols, results):
-        if isinstance(result, BaseException):
-            failures += 1
-            log_event("symbol_failed_exception", symbol=symbol, error=str(result))
-            continue
-        if result is True:
-            successes += 1
-        else:
-            failures += 1
-            log_event("symbol_failed_without_exception", symbol=symbol)
-
-    if failures > 0:
-        log_event("symbol_failures_detected", failures=failures, successes=successes)
-
-    if settings.symbols and (successes == 0 or (settings.strict_symbol_failures and failures > 0)):
-        raise RuntimeError(f"symbol_failures={failures};symbol_successes={successes}")
+    processed_candles: dict[tuple[str, str], int] = {}
+    cycle = 0
+    while True:
+        cycle += 1
+        successes, failures, duplicates = await run_worker_cycle(
+            settings,
+            signal_services,
+            api_client,
+            testnet_router,
+            processed_candles=processed_candles,
+        )
+        log_event(
+            "worker_cycle_completed",
+            cycle=cycle,
+            runtime_mode=settings.runtime_mode,
+            successes=successes,
+            failures=failures,
+            duplicates=duplicates,
+            tracked_candles=len(processed_candles),
+        )
+        if settings.max_cycles > 0 and cycle >= settings.max_cycles:
+            break
+        await asyncio.sleep(settings.poll_interval_seconds)
 
 
 if __name__ == "__main__":

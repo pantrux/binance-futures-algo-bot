@@ -16,5 +16,6 @@ class MarketContext:
     volatility_pct: float
     trend_strength: float
     liquidity_score: float
+    last_candle_close_ms: int | None = None
     market_regime: str | None = None
     regime_confidence: float | None = None
