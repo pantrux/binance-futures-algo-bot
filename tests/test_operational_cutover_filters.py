@@ -121,7 +121,7 @@ def test_shadow_run_summary_respects_operational_cutover():
 
 
 
-def test_command_center_respects_operational_cutover():
+def test_command_center_respects_operational_cutover(monkeypatch):
     db = build_db()
     now = datetime.now(timezone.utc)
     legacy_time = now - timedelta(days=7)

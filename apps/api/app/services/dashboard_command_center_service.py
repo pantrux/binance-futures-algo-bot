@@ -118,7 +118,7 @@ class DashboardCommandCenterService:
         approved_trade_plans_query = select(func.count()).select_from(TradePlan).where(TradePlan.status == "approved")
         paper_executed_query = select(func.count()).select_from(TradePlan).where(TradePlan.status == "paper_executed")
         testnet_executed_query = select(func.count()).select_from(TradePlan).where(TradePlan.status == "testnet_executed")
-        open_positions_query = select(func.count()).select_from(Position).where(Position.status == "open")
+        open_positions_count_query = select(func.count()).select_from(Position).where(Position.status == "open")
         risk_events_query = select(func.count()).select_from(RiskEvent)
 
         if cutover is not None:
@@ -126,7 +126,7 @@ class DashboardCommandCenterService:
             approved_trade_plans_query = approved_trade_plans_query.where(TradePlan.created_at >= cutover)
             paper_executed_query = paper_executed_query.where(TradePlan.created_at >= cutover)
             testnet_executed_query = testnet_executed_query.where(TradePlan.created_at >= cutover)
-            open_positions_query = open_positions_query.where(Position.opened_at >= cutover)
+            open_positions_count_query = open_positions_count_query.where(Position.opened_at >= cutover)
             risk_events_query = risk_events_query.where(RiskEvent.created_at >= cutover)
 
         summary = DashboardCommandCenterSummary(
@@ -134,7 +134,7 @@ class DashboardCommandCenterService:
             approved_trade_plans=self.db.scalar(approved_trade_plans_query) or 0,
             paper_executed_trade_plans=self.db.scalar(paper_executed_query) or 0,
             testnet_executed_trade_plans=self.db.scalar(testnet_executed_query) or 0,
-            open_positions=self.db.scalar(open_positions_query) or 0,
+            open_positions=self.db.scalar(open_positions_count_query) or 0,
             risk_events_total=self.db.scalar(risk_events_query) or 0,
         )
 
