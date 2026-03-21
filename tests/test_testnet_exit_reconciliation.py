@@ -28,6 +28,11 @@ class FakeBinanceClientNoExitTriggered(FakeBinanceClientExitTriggered):
         return {"orderId": order_id, "clientOrderId": client_order_id, "status": "NEW"}
 
 
+class FakeBinanceClientRefreshFails(FakeBinanceClientExitTriggered):
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        raise RuntimeError("refresh_failed")
+
+
 def build_db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -165,3 +170,21 @@ def test_sync_exit_orders_respects_execution_disabled_flag():
     result = asyncio.run(service.sync_exit_orders(plan.id))
 
     assert result == {"synced": False, "reason": "testnet_execution_disabled"}
+
+
+
+def test_sync_exit_orders_returns_warning_reason_when_refresh_fails():
+    db = build_db()
+    plan = seed_trade_plan_with_open_position(db)
+    service = BinanceTestnetTradingService(db, binance_client=FakeBinanceClientRefreshFails(), execution_enabled=True)
+
+    result = asyncio.run(service.sync_exit_orders(plan.id))
+
+    assert result == {"synced": False, "reason": "exit_order_refresh_failed"}
+    warning = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.trade_plan_id == plan.id, RiskEvent.event_type == "testnet_exit_order_refresh_failed")
+        .one()
+    )
+    assert warning.severity == "warning"
+    assert warning.context_json["order_id"] == "111111"

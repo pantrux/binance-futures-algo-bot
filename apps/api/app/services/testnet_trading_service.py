@@ -324,10 +324,25 @@ class BinanceTestnetTradingService:
             return {"synced": False, "reason": "binance_get_order_unavailable"}
 
         for order in protection_orders:
-            refreshed = await get_order(
-                symbol=trade_plan.symbol,
-                **self._resolve_exchange_order_ref(order.external_order_id),
-            )
+            try:
+                refreshed = await get_order(
+                    symbol=trade_plan.symbol,
+                    **self._resolve_exchange_order_ref(order.external_order_id),
+                )
+            except Exception as exc:  # noqa: BLE001
+                self._log_risk_event(
+                    trade_plan_id=trade_plan.id,
+                    event_type="testnet_exit_order_refresh_failed",
+                    severity="warning",
+                    message=f"No fue posible refrescar orden de protección: {exc}",
+                    context={
+                        "symbol": trade_plan.symbol,
+                        "order_id": order.external_order_id,
+                        "exception_type": type(exc).__name__,
+                    },
+                )
+                self.db.commit()
+                return {"synced": False, "reason": "exit_order_refresh_failed"}
             refreshed_status = str(refreshed.get("status") or order.status).strip().lower()
             order.status = refreshed_status
             if refreshed_status == "filled" and triggered_order is None:
