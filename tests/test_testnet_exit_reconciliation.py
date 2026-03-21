@@ -173,6 +173,19 @@ def test_sync_exit_orders_respects_execution_disabled_flag():
 
 
 
+def test_sync_exit_orders_returns_reason_when_trade_plan_already_closed():
+    db = build_db()
+    plan = seed_trade_plan_with_open_position(db)
+    plan.status = "testnet_closed"
+    db.commit()
+    service = BinanceTestnetTradingService(db, binance_client=FakeBinanceClientExitTriggered(), execution_enabled=True)
+
+    result = asyncio.run(service.sync_exit_orders(plan.id))
+
+    assert result == {"synced": False, "reason": "trade_plan_already_closed"}
+
+
+
 def test_sync_exit_orders_returns_warning_reason_when_refresh_fails():
     db = build_db()
     plan = seed_trade_plan_with_open_position(db)

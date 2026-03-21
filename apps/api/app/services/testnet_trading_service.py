@@ -294,6 +294,8 @@ class BinanceTestnetTradingService:
         trade_plan = self.db.get(TradePlan, trade_plan_id)
         if not trade_plan:
             raise ValueError("Trade plan no encontrado")
+        if trade_plan.status == "testnet_closed":
+            return {"synced": False, "reason": "trade_plan_already_closed"}
 
         position = (
             self.db.query(Position)
