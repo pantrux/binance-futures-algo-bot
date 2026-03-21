@@ -30,6 +30,24 @@ def test_fetch_shadow_run_summary_includes_timeframe_query_and_metrics_header(mo
 
 
 
+def test_fetch_shadow_run_summary_without_timeframe_omits_param(monkeypatch):
+    captured: dict[str, object] = {}
+
+    def fake_fetch_json(url: str, *, headers=None, timeout=40):
+        captured["url"] = url
+        captured["headers"] = headers
+        return {"ok": True}
+
+    monkeypatch.setattr(MODULE, "fetch_json", fake_fetch_json)
+
+    payload = MODULE.fetch_shadow_run_summary("https://api.example.com/", "secret-key", 30)
+
+    assert payload == {"ok": True}
+    assert captured["url"] == "https://api.example.com/reporting/shadow-run-summary?window_days=30"
+    assert captured["headers"] == {"x-metrics-key": "secret-key"}
+
+
+
 def test_fetch_command_center_snapshot_forwards_metrics_header(monkeypatch):
     captured: dict[str, object] = {}
 

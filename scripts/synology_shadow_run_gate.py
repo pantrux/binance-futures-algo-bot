@@ -264,7 +264,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    summary = fetch_shadow_run_summary(args.api_base_url, args.metrics_api_key, args.window_days, args.timeframe)
+    timeframe = (args.timeframe or "").strip() or None
+    summary = fetch_shadow_run_summary(args.api_base_url, args.metrics_api_key, args.window_days, timeframe)
     command_center = fetch_command_center_snapshot(args.api_base_url, metrics_api_key=args.metrics_api_key)
     evaluation = evaluate(summary, args)
     payload = {"summary": summary, "evaluation": evaluation, "command_center": command_center}
