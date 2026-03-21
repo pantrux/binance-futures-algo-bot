@@ -250,6 +250,15 @@ def test_sync_exit_orders_does_not_close_local_position_when_local_exit_is_uncon
     db = build_db()
     plan = seed_trade_plan_with_open_position(db)
     db.query(Order).filter(Order.trade_plan_id == plan.id).delete()
+    db.add(
+        RiskEvent(
+            trade_plan_id=plan.id,
+            event_type="testnet_protection_orders_failed",
+            severity="critical",
+            message="fallback levels",
+            context_json={"effective_stop_loss": 49725.0, "effective_take_profit": 50650.0},
+        )
+    )
     db.commit()
     service = BinanceTestnetTradingService(db, binance_client=FakeBinanceClientLocalExitAck(), execution_enabled=True)
 

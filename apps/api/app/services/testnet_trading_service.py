@@ -248,19 +248,34 @@ class BinanceTestnetTradingService:
     def _get_exit_side(position_side: str) -> str:
         return "SELL" if position_side == "long" else "BUY"
 
+    def _resolve_local_exit_levels(self, *, trade_plan: TradePlan) -> tuple[float, float]:
+        effective_event = (
+            self.db.query(RiskEvent)
+            .filter(RiskEvent.trade_plan_id == trade_plan.id, RiskEvent.event_type == "testnet_protection_orders_failed")
+            .order_by(RiskEvent.created_at.desc(), RiskEvent.id.desc())
+            .first()
+        )
+        if not effective_event:
+            return trade_plan.stop_loss, trade_plan.take_profit
+
+        context = effective_event.context_json or {}
+        stop_loss = self._to_float(context.get("effective_stop_loss"), fallback=trade_plan.stop_loss)
+        take_profit = self._to_float(context.get("effective_take_profit"), fallback=trade_plan.take_profit)
+        return stop_loss, take_profit
+
     @staticmethod
-    def _detect_local_exit_trigger(*, trade_plan: TradePlan, mark_price: float) -> str | None:
+    def _detect_local_exit_trigger(*, trade_plan: TradePlan, mark_price: float, stop_loss: float, take_profit: float) -> str | None:
         if mark_price <= 0:
             return None
         if trade_plan.side == "long":
-            if mark_price <= trade_plan.stop_loss:
+            if mark_price <= stop_loss:
                 return "stop_market"
-            if mark_price >= trade_plan.take_profit:
+            if mark_price >= take_profit:
                 return "take_profit_market"
             return None
-        if mark_price >= trade_plan.stop_loss:
+        if mark_price >= stop_loss:
             return "stop_market"
-        if mark_price <= trade_plan.take_profit:
+        if mark_price <= take_profit:
             return "take_profit_market"
         return None
 
@@ -422,7 +437,13 @@ class BinanceTestnetTradingService:
             mark_price = self._to_float((position_risk or {}).get("markPrice"), fallback=position.mark_price)
             if mark_price > 0:
                 position.mark_price = mark_price
-            local_trigger = self._detect_local_exit_trigger(trade_plan=trade_plan, mark_price=position.mark_price)
+            effective_stop_loss, effective_take_profit = self._resolve_local_exit_levels(trade_plan=trade_plan)
+            local_trigger = self._detect_local_exit_trigger(
+                trade_plan=trade_plan,
+                mark_price=position.mark_price,
+                stop_loss=effective_stop_loss,
+                take_profit=effective_take_profit,
+            )
             if local_trigger is None:
                 self.db.commit()
                 return {"synced": True, "reason": "no_triggered_exit"}
@@ -449,6 +470,8 @@ class BinanceTestnetTradingService:
                         "symbol": trade_plan.symbol,
                         "triggered_order_type": local_trigger,
                         "mark_price": position.mark_price,
+                        "effective_stop_loss": effective_stop_loss,
+                        "effective_take_profit": effective_take_profit,
                         "exception_type": type(exc).__name__,
                     },
                 )
@@ -481,6 +504,8 @@ class BinanceTestnetTradingService:
                         "order_status": close_status,
                         "executed_quantity": close_qty,
                         "requested_quantity": position.quantity,
+                        "effective_stop_loss": effective_stop_loss,
+                        "effective_take_profit": effective_take_profit,
                     },
                 )
                 self.db.commit()
@@ -512,6 +537,8 @@ class BinanceTestnetTradingService:
                     "symbol": trade_plan.symbol,
                     "triggered_order_type": local_trigger,
                     "mark_price": position.mark_price,
+                    "effective_stop_loss": effective_stop_loss,
+                    "effective_take_profit": effective_take_profit,
                     "external_order_id": close_order.external_order_id,
                 },
             )
