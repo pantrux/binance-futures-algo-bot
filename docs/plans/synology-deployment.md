@@ -57,6 +57,19 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
 - Si necesitas reejecutarlo en el NAS, usar una corrida explícita controlada (`docker compose up worker` o equivalente documentado por tu operación actual).
 - Después de reejecutarlo, revisar logs del contenedor y validar efectos en API/UI antes de asumir éxito.
 
+## Runtime near real-time (habilitado por config)
+- El worker ahora soporta `RUNTIME_MODE=loop` para operar como loop persistente con polling controlado.
+- En `oneshot`, se mantiene el comportamiento histórico y se usa `DEFAULT_SIGNAL_TIMEFRAME`.
+- En `oneshot`, el estado sano esperado del contenedor sigue siendo `Exited (0)`; en `loop`, el estado sano esperado es `Up`.
+- En `loop`, el worker evalúa `TIMEFRAMES` y evita duplicar decisiones dentro de la misma vela por `(symbol, timeframe, last_candle_close_ms)`.
+- Variables nuevas:
+  - `RUNTIME_MODE=oneshot|loop`
+  - `POLL_INTERVAL_SECONDS=30`
+  - `MAX_CYCLES=0` (`0` = infinito)
+  - usar `MAX_CYCLES>0` solo para pruebas controladas
+  - `TIMEFRAMES=5m,15m,1h`
+  - `DEFAULT_SIGNAL_TIMEFRAME=15m`
+
 ## Evidencia mínima recomendada por despliegue
 - `git rev-parse --short HEAD`
 - `docker compose ps`

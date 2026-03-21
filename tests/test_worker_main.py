@@ -1,23 +1,28 @@
 import asyncio
 from types import SimpleNamespace
 
-from apps.worker.main import process_symbol
+import pytest
+
+from apps.worker.main import process_symbol, process_symbol_cycle, run_worker_cycle
 from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalResult
 
 
 class FakeSignalService:
-    def __init__(self, *, source: str, reason: str = "ok") -> None:
+    def __init__(self, *, source: str, reason: str = "ok", timeframe: str = "15m", last_candle_close_ms: int = 123) -> None:
         self.source = source
         self.reason = reason
+        self.timeframe = timeframe
+        self.last_candle_close_ms = last_candle_close_ms
 
     async def build_signal_pack(self, symbol: str):
         signals = SimpleNamespace(technical=80, fundamental=60, sentiment=70, confidence=75)
         context = SimpleNamespace(
             symbol=symbol,
-            timeframe="15m",
+            timeframe=self.timeframe,
             volatility_pct=2.0,
             trend_strength=70,
             liquidity_score=90,
+            last_candle_close_ms=self.last_candle_close_ms,
             market_regime="tendencia_alcista",
             regime_confidence=68,
         )
@@ -55,6 +60,8 @@ def build_settings(*, paper_trading: bool, testnet_fallback_to_paper: bool = Tru
         seed_capital_usdt=1000.0,
         paper_trading=paper_trading,
         testnet_fallback_to_paper=testnet_fallback_to_paper,
+        strict_symbol_failures=False,
+        symbols=("BTCUSDT", "ETHUSDT", "SOLUSDT"),
     )
 
 
@@ -119,3 +126,73 @@ def test_process_symbol_skips_non_market_testnet_without_paper_fallback():
     assert result is True
     assert router.calls == []
     assert api_client.paper_trade_calls == []
+
+
+def test_process_symbol_cycle_skips_duplicate_candle_for_same_symbol_and_timeframe():
+    settings = build_settings(paper_trading=True)
+    signal_service = FakeSignalService(source="market", timeframe="15m", last_candle_close_ms=123)
+    api_client = FakeApiClient()
+    router = FakeTestnetRouter()
+    processed_candles = {("BTCUSDT", "15m"): 123}
+
+    result = asyncio.run(
+        process_symbol_cycle(
+            symbol="BTCUSDT",
+            timeframe="15m",
+            settings=settings,
+            signal_service=signal_service,
+            api_client=api_client,
+            testnet_router=router,
+            processed_candles=processed_candles,
+        )
+    )
+
+    assert result.success is True
+    assert result.skipped_duplicate is True
+    assert api_client.created_payloads == []
+    assert api_client.paper_trade_calls == []
+
+
+def test_process_symbol_cycle_fails_fast_on_timeframe_mismatch():
+    settings = build_settings(paper_trading=True)
+    signal_service = FakeSignalService(source="market", timeframe="1h", last_candle_close_ms=123)
+    api_client = FakeApiClient()
+    router = FakeTestnetRouter()
+
+    with pytest.raises(ValueError, match="timeframe_mismatch"):
+        asyncio.run(
+            process_symbol_cycle(
+                symbol="BTCUSDT",
+                timeframe="15m",
+                settings=settings,
+                signal_service=signal_service,
+                api_client=api_client,
+                testnet_router=router,
+                processed_candles={},
+            )
+        )
+
+
+def test_run_worker_cycle_processes_distinct_timeframes_independently():
+    settings = build_settings(paper_trading=True)
+    settings.symbols = ("BTCUSDT",)
+    signal_services = {
+        "15m": FakeSignalService(source="market", timeframe="15m", last_candle_close_ms=123),
+        "1h": FakeSignalService(source="market", timeframe="1h", last_candle_close_ms=123),
+    }
+    api_client = FakeApiClient()
+    router = FakeTestnetRouter()
+
+    successes, failures, duplicates = asyncio.run(
+        run_worker_cycle(
+            settings=settings,
+            signal_services=signal_services,
+            api_client=api_client,
+            testnet_router=router,
+            processed_candles={},
+        )
+    )
+
+    assert (successes, failures, duplicates) == (2, 0, 0)
+    assert len(api_client.created_payloads) == 2
+    assert api_client.created_payloads[0]["market_state"]["timeframe"] != api_client.created_payloads[1]["market_state"]["timeframe"]
