@@ -9,6 +9,8 @@ from apps.api.app.services.binance_client import BinanceFuturesClient
 
 
 class BinanceTestnetTradingService:
+    TERMINAL_ORDER_STATUSES = {"filled", "canceled", "expired", "rejected"}
+
     def __init__(
         self,
         db: Session,
@@ -276,6 +278,95 @@ class BinanceTestnetTradingService:
             },
         )
         return stop_order, take_profit_order, None
+
+    async def sync_exit_orders(self, trade_plan_id: int) -> dict:
+        trade_plan = self.db.get(TradePlan, trade_plan_id)
+        if not trade_plan:
+            raise ValueError("Trade plan no encontrado")
+
+        position = (
+            self.db.query(Position)
+            .filter(Position.trade_plan_id == trade_plan_id)
+            .filter(Position.status == "open")
+            .filter(Position.is_testnet.is_(True))
+            .order_by(Position.id.desc())
+            .first()
+        )
+        if not position:
+            return {"synced": False, "reason": "no_open_position"}
+
+        protection_orders = (
+            self.db.query(Order)
+            .filter(Order.trade_plan_id == trade_plan_id)
+            .filter(Order.order_type.in_(["stop_market", "take_profit_market"]))
+            .filter(Order.is_testnet.is_(True))
+            .order_by(Order.id.asc())
+            .all()
+        )
+        if not protection_orders:
+            return {"synced": False, "reason": "no_protection_orders"}
+
+        triggered_order = None
+        sibling_order = None
+        get_order = getattr(self.binance_client, "get_order", None)
+        if not callable(get_order):
+            return {"synced": False, "reason": "binance_get_order_unavailable"}
+
+        for order in protection_orders:
+            refreshed = await get_order(symbol=trade_plan.symbol, client_order_id=order.external_order_id)
+            refreshed_status = str(refreshed.get("status") or order.status).strip().lower()
+            order.status = refreshed_status
+            if refreshed_status == "filled" and triggered_order is None:
+                triggered_order = order
+            elif order.id != (triggered_order.id if triggered_order else None):
+                sibling_order = order
+
+        if triggered_order is None:
+            self.db.commit()
+            return {"synced": True, "reason": "no_triggered_exit"}
+
+        position.status = "closed"
+        trade_plan.status = "testnet_closed"
+        self._log_risk_event(
+            trade_plan_id=trade_plan.id,
+            event_type="testnet_exit_order_filled",
+            severity="info",
+            message=f"Orden de salida ejecutada en testnet: {triggered_order.order_type}",
+            context={
+                "symbol": trade_plan.symbol,
+                "triggered_order_id": triggered_order.external_order_id,
+                "triggered_order_type": triggered_order.order_type,
+            },
+        )
+
+        canceled_sibling = None
+        if sibling_order and sibling_order.status not in self.TERMINAL_ORDER_STATUSES:
+            cancel_order = getattr(self.binance_client, "cancel_order", None)
+            if callable(cancel_order):
+                try:
+                    await cancel_order(symbol=trade_plan.symbol, client_order_id=sibling_order.external_order_id)
+                    sibling_order.status = "canceled"
+                    canceled_sibling = sibling_order.external_order_id
+                except Exception as exc:  # noqa: BLE001
+                    self._log_risk_event(
+                        trade_plan_id=trade_plan.id,
+                        event_type="testnet_exit_sibling_cancel_failed",
+                        severity="warning",
+                        message=f"No fue posible cancelar la orden hermana: {exc}",
+                        context={
+                            "symbol": trade_plan.symbol,
+                            "sibling_order_id": sibling_order.external_order_id,
+                            "exception_type": type(exc).__name__,
+                        },
+                    )
+
+        self.db.commit()
+        return {
+            "synced": True,
+            "reason": None,
+            "triggered_order_type": triggered_order.order_type,
+            "canceled_sibling_order_id": canceled_sibling,
+        }
 
     async def execute_trade_plan(self, trade_plan_id: int) -> dict:
         trade_plan = self.db.get(TradePlan, trade_plan_id)

@@ -33,6 +33,18 @@ class FakeBinanceClient:
             "status": "FILLED",
         }
 
+    async def place_stop_market_order(self, *, symbol: str, side: str, stop_price: float, client_order_id: str, close_position: bool = True, recv_window: int = 5000) -> dict:
+        return {"orderId": 111111, "clientOrderId": client_order_id, "status": "NEW"}
+
+    async def place_take_profit_market_order(self, *, symbol: str, side: str, stop_price: float, client_order_id: str, close_position: bool = True, recv_window: int = 5000) -> dict:
+        return {"orderId": 222222, "clientOrderId": client_order_id, "status": "NEW"}
+
+    async def get_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        return {"orderId": order_id or 321, "clientOrderId": client_order_id, "status": "NEW"}
+
+    async def cancel_order(self, *, symbol: str, order_id: int | None = None, client_order_id: str | None = None, recv_window: int = 5000) -> dict:
+        return {"orderId": order_id or 321, "origClientOrderId": client_order_id, "status": "CANCELED"}
+
 
 class FakeBinanceClientZeroAvgPrice:
     async def get_symbol_step_size(self, symbol: str) -> float:
