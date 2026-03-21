@@ -38,10 +38,31 @@ Toda la infraestructura del proyecto debe ejecutarse en contenedores dentro del 
 8. Configurar reverse proxy del NAS o Nginx Proxy Manager.
 9. Ejecutar release gate unificado (recomendado):
    - `ENV_FILE=... API_BASE_URL=... WEB_BASE_URL=... ./scripts/synology_release_gate.sh`
-10. Ejecutar validaciones remotas opcionales por GitHub Actions:
+10. Registrar evidencia del despliegue usando `docs/templates/synology-deploy-evidence-template.md`.
+11. Ejecutar validaciones remotas opcionales por GitHub Actions:
    - `Synology Preflight` (`workflow_dispatch`)
    - `Synology Smoke Test` (`workflow_dispatch`)
    - `Synology Release Gate` (`workflow_dispatch`)
+   - `Outline Docs Sync` (`workflow_dispatch`, cuando el despliegue implique cambios documentales relevantes)
+
+## Mapa operativo de URLs
+- `http://api:8000` → tráfico interno entre contenedores Docker (`worker`, SSR del `web`, validaciones internas del stack).
+- `NEXT_PUBLIC_API_URL` → URL pública accesible desde el navegador del operador (por IP LAN o dominio/reverse proxy del NAS).
+- `API_BASE_URL` en smoke/release gate → endpoint público que debe representar la API real expuesta por el NAS.
+- `WEB_BASE_URL` en smoke/release gate → endpoint público real de la UI expuesta por el NAS.
+
+## Worker one-shot
+- `trading-bot-worker` está diseñado para correr como job one-shot y quedar en `Exited (0)` cuando termina correctamente.
+- Ese estado no implica falla; implica que el ciclo de trabajo concluyó según diseño.
+- Si necesitas reejecutarlo en el NAS, usar una corrida explícita controlada (`docker compose up worker` o equivalente documentado por tu operación actual).
+- Después de reejecutarlo, revisar logs del contenedor y validar efectos en API/UI antes de asumir éxito.
+
+## Evidencia mínima recomendada por despliegue
+- `git rev-parse --short HEAD`
+- `docker compose ps`
+- `docker compose images`
+- resultado de preflight/smoke/release gate
+- evidencia de sync a Outline si hubo cambios documentales u operativos relevantes
 
 ## Prohibiciones
 - No desplegar API/worker/web en OpenClaw.

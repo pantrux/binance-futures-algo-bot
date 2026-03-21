@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from apps.api.app.db.models import TradePlan
 from apps.api.app.schemas.execution_parity import ExecutionParityReport, ParityPairDiff
+from apps.api.app.services.shadow_run_reporting_service import MAX_PAIRING_DELTA_SECONDS
 
 
 class ExecutionParityService:
@@ -47,6 +48,8 @@ class ExecutionParityService:
                 if candidate.timeframe != paper.timeframe:
                     continue
                 delta_seconds = abs((candidate.created_at - paper.created_at).total_seconds())
+                if delta_seconds > MAX_PAIRING_DELTA_SECONDS:
+                    continue
                 candidates.append((idx, delta_seconds))
 
             if not candidates:

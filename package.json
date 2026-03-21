@@ -5,6 +5,7 @@
     "apps/web"
   ],
   "scripts": {
+    "test:backend": "pytest -q",
     "lint:web": "npm --workspace apps/web run lint",
     "build:web": "npm --workspace apps/web run build"
   }

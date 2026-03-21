@@ -22,19 +22,21 @@ jobs:
       - name: Validar links Markdown del repo
         run: python scripts/check_markdown_links.py
 
-  api-tests:
+  backend-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Instalar dependencias API
+      - name: Instalar dependencias backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Smoke test FastAPI
         run: python -c "from apps.api.app.main import app; print(app.title)"
+      - name: Ejecutar suite backend completa
+        run: pytest -q
 
   web-build:
     runs-on: ubuntu-latest
@@ -45,6 +47,8 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Instalar dependencias web
-        run: npm install
+        run: npm ci
+      - name: Lint frontend
+        run: npm run lint:web
       - name: Build frontend
         run: npm run build:web

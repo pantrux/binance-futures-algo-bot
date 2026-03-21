@@ -17,12 +17,14 @@
 ## Documentación
 - [ ] `docs/` actualizado
 - [ ] Outline actualizado si hubo cambio de diseño o implementación
+- [ ] Si se escribió en Outline, quedó evidencia del sync manual (workflow o ejecución local)
 - [ ] Diagramas/ADR añadidos si aplica
 
 ## Operación
 - [ ] Compatible con Synology-first
 - [ ] Sin runtime en OpenClaw
 - [ ] Variables de entorno documentadas
+- [ ] Si hubo despliegue/cambio operacional en NAS, quedó evidencia de deploy (commit, `docker compose ps`, `docker compose images`, estado de jobs one-shot)
 
 ## Merge
 - [ ] Reviews/comments revisados

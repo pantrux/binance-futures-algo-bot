@@ -9,3 +9,4 @@ Plantillas listas para copiar/usar en ejercicios de cutover, incidentes y cierre
 - `incident-log-template.md`
 - `drill-results-template.md`
 - `post-cutover-closeout-template.md`
+- `synology-deploy-evidence-template.md`
