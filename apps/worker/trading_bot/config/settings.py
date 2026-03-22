@@ -1,6 +1,6 @@
 import json
 
-from pydantic import field_validator
+from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,10 +26,12 @@ class WorkerSettings(BaseSettings):
 
     @field_validator("symbols", "timeframes", "testnet_kill_switch_symbols", "signal_strategy_symbols", mode="before")
     @classmethod
-    def parse_tuple_env(cls, value: object):
+    def parse_tuple_env(cls, value: object, info: ValidationInfo):
         if isinstance(value, str):
             raw = value.strip()
             if not raw:
+                if info.field_name == "signal_strategy_symbols":
+                    return ()
                 raise ValueError("lista de símbolos/timeframes no puede estar vacía")
             try:
                 parsed = json.loads(raw)

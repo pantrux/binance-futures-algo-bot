@@ -19,3 +19,8 @@ def test_worker_settings_accepts_ema_rsi_strategy_and_symbol_list():
     settings = WorkerSettings(signal_strategy="ema_rsi_baseline", signal_strategy_symbols="ETHUSDT")
     assert settings.signal_strategy == "ema_rsi_baseline"
     assert settings.signal_strategy_symbols == ("ETHUSDT",)
+
+
+def test_worker_settings_accepts_empty_signal_strategy_symbols_string():
+    settings = WorkerSettings(signal_strategy_symbols="")
+    assert settings.signal_strategy_symbols == ()
