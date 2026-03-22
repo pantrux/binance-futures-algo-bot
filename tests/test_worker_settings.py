@@ -24,3 +24,8 @@ def test_worker_settings_accepts_ema_rsi_strategy_and_symbol_list():
 def test_worker_settings_accepts_empty_signal_strategy_symbols_string():
     settings = WorkerSettings(signal_strategy_symbols="")
     assert settings.signal_strategy_symbols == ()
+
+
+def test_worker_settings_accepts_empty_signal_strategy_symbols_json_array():
+    settings = WorkerSettings(signal_strategy_symbols="[]")
+    assert settings.signal_strategy_symbols == ()

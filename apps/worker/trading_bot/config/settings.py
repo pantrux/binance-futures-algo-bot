@@ -40,6 +40,8 @@ class WorkerSettings(BaseSettings):
                         raise ValueError("todos los elementos de la lista deben ser strings")
                     result = tuple(item.strip() for item in parsed if item.strip())
                     if not result:
+                        if info.field_name == "signal_strategy_symbols":
+                            return ()
                         raise ValueError("lista de símbolos/timeframes no puede estar vacía")
                     return result
                 raise ValueError(f"se esperaba una lista JSON, se recibió {type(parsed).__name__}")
@@ -50,6 +52,8 @@ class WorkerSettings(BaseSettings):
                     )
             result = tuple(item.strip() for item in raw.split(",") if item.strip())
             if not result:
+                if info.field_name == "signal_strategy_symbols":
+                    return ()
                 raise ValueError("lista de símbolos/timeframes no puede estar vacía")
             return result
         return value

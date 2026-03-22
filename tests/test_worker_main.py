@@ -230,6 +230,9 @@ def test_build_signal_services_propagates_strategy_settings():
 
     assert services["15m"].strategy_mode == "ema_rsi_baseline"
     assert services["15m"].strategy_symbols == ("ETHUSDT",)
+    for service in services.values():
+        assert service.strategy_mode == settings.signal_strategy
+        assert service.strategy_symbols == settings.signal_strategy_symbols
 
 
 def test_run_worker_cycle_syncs_open_testnet_exits_before_new_entries():
