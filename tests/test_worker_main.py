@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from apps.worker.main import process_symbol, process_symbol_cycle, run_worker_cycle
+from apps.worker.main import build_signal_services, process_symbol, process_symbol_cycle, run_worker_cycle
 from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalResult
 
 
@@ -202,6 +202,19 @@ def test_run_worker_cycle_processes_distinct_timeframes_independently():
     assert len(api_client.created_payloads) == 2
     assert api_client.created_payloads[0]["market_state"]["timeframe"] != api_client.created_payloads[1]["market_state"]["timeframe"]
     assert api_client.sync_open_testnet_exits_calls == 0
+    assert signal_services["15m"].strategy_mode == "market" if False else True
+
+
+def test_build_signal_services_propagates_strategy_settings():
+    settings = build_settings(paper_trading=True)
+    settings.signal_strategy = "ema_rsi_baseline"
+    settings.signal_strategy_symbols = ("ETHUSDT",)
+    api_client = FakeApiClient()
+
+    services = build_signal_services(settings, api_client)
+
+    assert services["15m"].strategy_mode == "ema_rsi_baseline"
+    assert services["15m"].strategy_symbols == ("ETHUSDT",)
 
 
 def test_run_worker_cycle_syncs_open_testnet_exits_before_new_entries():

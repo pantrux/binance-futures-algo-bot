@@ -93,6 +93,34 @@ def test_hybrid_uses_market_when_snapshot_is_usable():
     assert "market-driven" in thesis
 
 
+def test_hybrid_ema_rsi_baseline_uses_market_snapshot_for_eth():
+    snapshot = {
+        "symbol": "ETHUSDT",
+        "timeframe": "15m",
+        "last_candle_close_ms": 123,
+        "trend_bias": "bearish",
+        "momentum_bias": "bearish",
+        "volatility_regime": "medium",
+        "ema_spread_pct": 0.12,
+        "atr_pct": 1.0,
+        "rsi_14": 55.0,
+        "momentum_10": -2.0,
+    }
+    market = {"mark_price": 2500.0, "volume_24h": 1_000_000.0}
+    service = HybridSignalService(
+        api_client=FakeApiClient(snapshot=snapshot, market=market),
+        strategy_mode="ema_rsi_baseline",
+        strategy_symbols=("ETHUSDT",),
+    )
+
+    signals, _, thesis, _, meta = asyncio.run(service.build_signal_pack("ETHUSDT"))
+
+    assert meta.source == "market"
+    assert meta.side == "long"
+    assert signals.technical == 78.0
+    assert "Baseline EMA/RSI activo" in thesis
+
+
 def test_hybrid_tolerates_regime_endpoint_error_without_falling_to_demo():
     snapshot = {
         "symbol": "BTCUSDT",

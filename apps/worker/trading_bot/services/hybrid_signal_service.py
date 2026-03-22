@@ -24,11 +24,15 @@ class HybridSignalService:
         demo_service: DemoSignalService | None = None,
         timeframe: str = "15m",
         limit: int = 200,
+        strategy_mode: str = "hybrid",
+        strategy_symbols: tuple[str, ...] = (),
     ) -> None:
         self.api_client = api_client
         self.demo_service = demo_service or DemoSignalService()
         self.timeframe = timeframe
         self.limit = limit
+        self.strategy_mode = strategy_mode
+        self.strategy_symbols = tuple(item.upper() for item in strategy_symbols)
 
     async def build_signal_pack(
         self, symbol: str
@@ -171,10 +175,8 @@ class HybridSignalService:
         )
 
         entry = self._entry_price(market)
-        side = "short" if trend_bias == "bearish" and momentum_bias == "bearish" else "long"
         levels = self._levels_from_atr(entry, atr_pct, side)
 
-        thesis = self._thesis(trend_bias, momentum_bias, vol_regime)
         pack = SignalPack(technical=technical, fundamental=fundamental, sentiment=sentiment, confidence=confidence)
         return pack, context, thesis, levels, side
 
@@ -267,6 +269,74 @@ class HybridSignalService:
         # Escala más gradual para diferenciar volúmenes reales de crypto sin saturar demasiado rápido.
         score = (math.log10(float(vol) + 1.0) - 3.0) * 12.5
         return max(0.0, min(100.0, score))
+
+    def _use_ema_rsi_baseline(self, symbol: str) -> bool:
+        if self.strategy_mode != "ema_rsi_baseline":
+            return False
+        if not self.strategy_symbols:
+            return True
+        return symbol.upper() in self.strategy_symbols
+
+    def _ema_rsi_baseline_signal(
+        self,
+        *,
+        ema_spread_pct: float | None,
+        rsi_14: float | None,
+        vol_regime: str,
+        atr_pct: float,
+    ) -> tuple[float, float, str, str]:
+        spread = ema_spread_pct or 0.0
+        rsi = rsi_14 if rsi_14 is not None else 50.0
+        long_active = spread > 0 and rsi >= 50.0
+        short_active = spread < 0 and rsi <= 50.0
+        side = "short" if spread < 0 else "long"
+        if long_active or short_active:
+            technical = 78.0
+            confidence = max(52.0, self._confidence_score(vol_regime, atr_pct))
+            state = "activo"
+        else:
+            technical = 42.0
+            confidence = max(35.0, self._confidence_score(vol_regime, atr_pct) - 15.0)
+            state = "en espera"
+        thesis = (
+            f"Baseline EMA/RSI {state}: ema_spread_pct={spread:.4f}, RSI14={rsi:.2f}, "
+            f"vol_regime={vol_regime}."
+        )
+        return technical, confidence, side, thesis
+
+    def _use_ema_rsi_baseline(self, symbol: str) -> bool:
+        if self.strategy_mode != "ema_rsi_baseline":
+            return False
+        if not self.strategy_symbols:
+            return True
+        return symbol.upper() in self.strategy_symbols
+
+    def _ema_rsi_baseline_signal(
+        self,
+        *,
+        ema_spread_pct: float | None,
+        rsi_14: float | None,
+        vol_regime: str,
+        atr_pct: float,
+    ) -> tuple[float, float, str, str]:
+        spread = ema_spread_pct or 0.0
+        rsi = rsi_14 if rsi_14 is not None else 50.0
+        long_active = spread > 0 and rsi >= 50.0
+        short_active = spread < 0 and rsi <= 50.0
+        side = "short" if spread < 0 else "long"
+        if long_active or short_active:
+            technical = 78.0
+            confidence = max(52.0, self._confidence_score(vol_regime, atr_pct))
+            state = "activo"
+        else:
+            technical = 42.0
+            confidence = max(35.0, self._confidence_score(vol_regime, atr_pct) - 15.0)
+            state = "en espera"
+        thesis = (
+            f"Baseline EMA/RSI {state}: ema_spread_pct={spread:.4f}, RSI14={rsi:.2f}, "
+            f"vol_regime={vol_regime}."
+        )
+        return technical, confidence, side, thesis
 
     @staticmethod
     def _thesis(trend_bias: str, momentum_bias: str, vol_regime: str) -> str:

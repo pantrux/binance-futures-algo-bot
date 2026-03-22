@@ -54,6 +54,8 @@ def build_signal_services(settings: WorkerSettings, api_client: TradingBotApiCli
             api_client=api_client,
             timeframe=timeframe,
             limit=settings.signal_snapshot_limit,
+            strategy_mode=settings.signal_strategy,
+            strategy_symbols=settings.signal_strategy_symbols,
         )
         for timeframe in timeframes
     }
