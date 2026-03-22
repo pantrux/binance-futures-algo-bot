@@ -3,16 +3,27 @@ from types import SimpleNamespace
 
 import pytest
 
-from apps.worker.main import process_symbol, process_symbol_cycle, run_worker_cycle
+from apps.worker.main import build_signal_services, process_symbol, process_symbol_cycle, run_worker_cycle
 from apps.worker.trading_bot.services.hybrid_signal_service import HybridSignalResult
 
 
 class FakeSignalService:
-    def __init__(self, *, source: str, reason: str = "ok", timeframe: str = "15m", last_candle_close_ms: int = 123) -> None:
+    def __init__(
+        self,
+        *,
+        source: str,
+        reason: str = "ok",
+        timeframe: str = "15m",
+        last_candle_close_ms: int = 123,
+        strategy_mode: str = "hybrid",
+        strategy_symbols: tuple[str, ...] = (),
+    ) -> None:
         self.source = source
         self.reason = reason
         self.timeframe = timeframe
         self.last_candle_close_ms = last_candle_close_ms
+        self.strategy_mode = strategy_mode
+        self.strategy_symbols = strategy_symbols
 
     async def build_signal_pack(self, symbol: str):
         signals = SimpleNamespace(technical=80, fundamental=60, sentiment=70, confidence=75)
@@ -67,6 +78,12 @@ def build_settings(*, paper_trading: bool, testnet_fallback_to_paper: bool = Tru
         testnet_fallback_to_paper=testnet_fallback_to_paper,
         strict_symbol_failures=False,
         symbols=("BTCUSDT", "ETHUSDT", "SOLUSDT"),
+        runtime_mode="oneshot",
+        default_signal_timeframe="15m",
+        timeframes=("5m", "15m", "1h"),
+        signal_snapshot_limit=200,
+        signal_strategy="hybrid",
+        signal_strategy_symbols=(),
     )
 
 
@@ -202,6 +219,38 @@ def test_run_worker_cycle_processes_distinct_timeframes_independently():
     assert len(api_client.created_payloads) == 2
     assert api_client.created_payloads[0]["market_state"]["timeframe"] != api_client.created_payloads[1]["market_state"]["timeframe"]
     assert api_client.sync_open_testnet_exits_calls == 0
+
+
+def test_build_signal_services_propagates_strategy_settings():
+    settings = build_settings(paper_trading=True)
+    settings.signal_strategy = "ema_rsi_baseline"
+    settings.signal_strategy_symbols = ("ethusdt",)
+    api_client = FakeApiClient()
+
+    services = build_signal_services(settings, api_client)
+
+    assert services["15m"].strategy_mode == "ema_rsi_baseline"
+    assert services["15m"].strategy_symbols == ("ETHUSDT",)
+    for service in services.values():
+        assert service.strategy_mode == settings.signal_strategy
+        assert service.strategy_symbols == tuple(symbol.upper() for symbol in settings.signal_strategy_symbols)
+
+
+def test_build_signal_services_propagates_strategy_settings_across_loop_timeframes():
+    settings = build_settings(paper_trading=True)
+    settings.runtime_mode = "loop"
+    settings.timeframes = ("5m", "15m", "1h")
+    settings.signal_strategy = "ema_rsi_baseline"
+    settings.signal_strategy_symbols = ("ethusdt", "btcusdt")
+    api_client = FakeApiClient()
+
+    services = build_signal_services(settings, api_client)
+
+    assert tuple(services.keys()) == ("5m", "15m", "1h")
+    for timeframe, service in services.items():
+        assert service.timeframe == timeframe
+        assert service.strategy_mode == settings.signal_strategy
+        assert service.strategy_symbols == ("ETHUSDT", "BTCUSDT")
 
 
 def test_run_worker_cycle_syncs_open_testnet_exits_before_new_entries():
