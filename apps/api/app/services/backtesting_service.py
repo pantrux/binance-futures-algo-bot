@@ -37,9 +37,9 @@ class BacktestingService:
     RSI_PERIOD = 14
     FLOAT_COMPARISON_ABS_TOL = 1e-9
     CANDIDATE_PARAMETERS = (
-        BacktestStrategyParameters(ema_fast_period=7, ema_slow_period=21, rsi_entry_min=52, rsi_exit_max=47),
-        BacktestStrategyParameters(ema_fast_period=9, ema_slow_period=21, rsi_entry_min=55, rsi_exit_max=45),
-        BacktestStrategyParameters(ema_fast_period=12, ema_slow_period=30, rsi_entry_min=58, rsi_exit_max=42),
+        BacktestStrategyParameters(ema_fast_period=12, ema_slow_period=30, rsi_entry_min=50, rsi_exit_max=47),
+        BacktestStrategyParameters(ema_fast_period=9, ema_slow_period=30, rsi_entry_min=50, rsi_exit_max=45),
+        BacktestStrategyParameters(ema_fast_period=5, ema_slow_period=30, rsi_entry_min=50, rsi_exit_max=45),
     )
 
     def __init__(self, db: Session) -> None:
