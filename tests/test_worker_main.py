@@ -16,12 +16,14 @@ class FakeSignalService:
         timeframe: str = "15m",
         last_candle_close_ms: int = 123,
         strategy_mode: str = "hybrid",
+        strategy_symbols: tuple[str, ...] = (),
     ) -> None:
         self.source = source
         self.reason = reason
         self.timeframe = timeframe
         self.last_candle_close_ms = last_candle_close_ms
         self.strategy_mode = strategy_mode
+        self.strategy_symbols = strategy_symbols
 
     async def build_signal_pack(self, symbol: str):
         signals = SimpleNamespace(technical=80, fundamental=60, sentiment=70, confidence=75)

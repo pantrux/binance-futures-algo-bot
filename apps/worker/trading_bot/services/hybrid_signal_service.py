@@ -296,8 +296,12 @@ class HybridSignalService:
         vol_regime: str,
         atr_pct: float,
     ) -> tuple[float, float, str, str]:
-        spread = ema_spread_pct or 0.0
-        rsi = rsi_14 if rsi_14 is not None else 50.0
+        if ema_spread_pct is None:
+            raise ValueError("ema_spread_pct_missing")
+        if rsi_14 is None:
+            raise ValueError("rsi_14_missing")
+        spread = float(ema_spread_pct)
+        rsi = float(rsi_14)
         long_active = spread > 0 and rsi >= 50.0
         short_active = spread < 0 and rsi <= 50.0
         side = "short" if spread < 0 else "long"
