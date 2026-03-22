@@ -142,10 +142,8 @@ class HybridSignalService:
         rsi_14 = self._coerce_optional_number(snapshot.get("rsi_14"), default=None)
         momentum_10 = self._coerce_optional_number(snapshot.get("momentum_10"), default=0.0)
 
-        technical = self._technical_score(trend_bias, momentum_bias, rsi_14=rsi_14, momentum_10=momentum_10)
         fundamental = 50.0
         sentiment = 50.0
-        confidence = self._confidence_score(vol_regime, atr_pct)
 
         volatility_pct = max(0.0, atr_pct)
         trend_strength = self._trend_strength(ema_spread_pct)
@@ -182,6 +180,8 @@ class HybridSignalService:
                 atr_pct=atr_pct,
             )
         else:
+            technical = self._technical_score(trend_bias, momentum_bias, rsi_14=rsi_14, momentum_10=momentum_10)
+            confidence = self._confidence_score(vol_regime, atr_pct)
             side = "short" if trend_bias == "bearish" and momentum_bias == "bearish" else "long"
             thesis = self._thesis(trend_bias, momentum_bias, vol_regime)
 

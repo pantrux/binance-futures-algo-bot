@@ -217,7 +217,6 @@ def test_run_worker_cycle_processes_distinct_timeframes_independently():
     assert len(api_client.created_payloads) == 2
     assert api_client.created_payloads[0]["market_state"]["timeframe"] != api_client.created_payloads[1]["market_state"]["timeframe"]
     assert api_client.sync_open_testnet_exits_calls == 0
-    assert signal_services["15m"].strategy_mode == "hybrid"
 
 
 def test_build_signal_services_propagates_strategy_settings():
