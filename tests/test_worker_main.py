@@ -234,6 +234,23 @@ def test_build_signal_services_propagates_strategy_settings():
         assert service.strategy_symbols == tuple(symbol.upper() for symbol in settings.signal_strategy_symbols)
 
 
+def test_build_signal_services_propagates_strategy_settings_across_loop_timeframes():
+    settings = build_settings(paper_trading=True)
+    settings.runtime_mode = "loop"
+    settings.timeframes = ("5m", "15m", "1h")
+    settings.signal_strategy = "ema_rsi_baseline"
+    settings.signal_strategy_symbols = ("ethusdt", "btcusdt")
+    api_client = FakeApiClient()
+
+    services = build_signal_services(settings, api_client)
+
+    assert tuple(services.keys()) == ("5m", "15m", "1h")
+    for timeframe, service in services.items():
+        assert service.timeframe == timeframe
+        assert service.strategy_mode == settings.signal_strategy
+        assert service.strategy_symbols == ("ETHUSDT", "BTCUSDT")
+
+
 def test_run_worker_cycle_syncs_open_testnet_exits_before_new_entries():
     settings = build_settings(paper_trading=False)
     settings.symbols = ("BTCUSDT",)
