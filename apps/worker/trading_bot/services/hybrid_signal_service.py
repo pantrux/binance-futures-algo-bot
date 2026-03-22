@@ -182,7 +182,7 @@ class HybridSignalService:
                 atr_pct=atr_pct,
             )
         else:
-            side = "short" if ema_spread_pct is not None and ema_spread_pct < 0 else "long"
+            side = "short" if trend_bias == "bearish" and momentum_bias == "bearish" else "long"
             thesis = self._thesis(trend_bias, momentum_bias, vol_regime)
 
         entry = self._entry_price(market)

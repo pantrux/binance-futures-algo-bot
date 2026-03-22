@@ -223,7 +223,7 @@ def test_run_worker_cycle_processes_distinct_timeframes_independently():
 def test_build_signal_services_propagates_strategy_settings():
     settings = build_settings(paper_trading=True)
     settings.signal_strategy = "ema_rsi_baseline"
-    settings.signal_strategy_symbols = ("ETHUSDT",)
+    settings.signal_strategy_symbols = ("ethusdt",)
     api_client = FakeApiClient()
 
     services = build_signal_services(settings, api_client)
@@ -232,7 +232,7 @@ def test_build_signal_services_propagates_strategy_settings():
     assert services["15m"].strategy_symbols == ("ETHUSDT",)
     for service in services.values():
         assert service.strategy_mode == settings.signal_strategy
-        assert service.strategy_symbols == settings.signal_strategy_symbols
+        assert service.strategy_symbols == tuple(symbol.upper() for symbol in settings.signal_strategy_symbols)
 
 
 def test_run_worker_cycle_syncs_open_testnet_exits_before_new_entries():
