@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const STREAM_INTERVAL_MS = 4_000;
+const STREAM_FETCH_TIMEOUT_MS = 10_000;
 const RETRY_MS = 3_000;
 
 function normalizeBaseUrl(value: string | undefined) {
@@ -59,7 +60,10 @@ export async function GET(request: NextRequest) {
   let closed = false;
 
   const sleepController = new AbortController();
-  let closeStream = () => {
+  const closeStream = () => {
+    if (closed) {
+      return;
+    }
     closed = true;
     sleepController.abort();
   };
@@ -70,7 +74,7 @@ export async function GET(request: NextRequest) {
         if (closed) {
           return;
         }
-        closed = true;
+        closeStream();
         try {
           controller.close();
         } catch {
@@ -99,7 +103,10 @@ export async function GET(request: NextRequest) {
 
       const fetchAndSend = async () => {
         try {
-          const response = await fetch(targetUrl, { cache: "no-store", signal: request.signal });
+          const response = await fetch(targetUrl, {
+            cache: "no-store",
+            signal: AbortSignal.any([request.signal, AbortSignal.timeout(STREAM_FETCH_TIMEOUT_MS)]),
+          });
           if (!response.ok) {
             throw new Error(`Live pricing upstream failed (${response.status})`);
           }
@@ -110,11 +117,15 @@ export async function GET(request: NextRequest) {
             safeClose();
             return;
           }
-          sendError(error instanceof Error ? error.message : "Live pricing stream failed");
+          const message = error instanceof Error && error.name === "TimeoutError"
+            ? "Live pricing upstream timeout"
+            : error instanceof Error
+              ? error.message
+              : "Live pricing stream failed";
+          sendError(message);
         }
       };
 
-      closeStream = safeClose;
       request.signal.addEventListener("abort", safeClose, { once: true });
 
       void (async () => {
