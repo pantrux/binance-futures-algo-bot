@@ -1,8 +1,11 @@
 import asyncio
+import logging
 from datetime import datetime, timezone
 
 from apps.api.app.schemas.live_pricing import DashboardLivePricingResponse, LivePricingItem, LiveQuoteItem
 from apps.api.app.services.binance_client import BinanceFuturesClient
+
+logger = logging.getLogger(__name__)
 
 
 class LivePricingService:
@@ -42,14 +45,18 @@ class LivePricingService:
         if quote_symbols:
             premium_indexes = await asyncio.gather(
                 *(self.client.get_premium_index(symbol) for symbol in quote_symbols),
+                return_exceptions=True,
             )
-            quotes = [
-                LiveQuoteItem(
-                    symbol=str(quote.get("symbol", "")).upper(),
-                    mark_price=float(quote.get("markPrice", 0.0)),
+            for symbol, quote in zip(quote_symbols, premium_indexes):
+                if isinstance(quote, Exception):
+                    logger.warning("live_pricing_quote_failed", extra={"symbol": symbol, "error": str(quote)})
+                    continue
+                quotes.append(
+                    LiveQuoteItem(
+                        symbol=str(quote.get("symbol", symbol)).upper(),
+                        mark_price=float(quote.get("markPrice", 0.0)),
+                    )
                 )
-                for quote in premium_indexes
-            ]
 
         return DashboardLivePricingResponse(
             timestamp=datetime.now(timezone.utc).isoformat(),

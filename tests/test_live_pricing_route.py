@@ -112,3 +112,22 @@ def test_dashboard_live_pricing_preserves_multiple_rows_for_same_symbol(mock_get
     assert data["quotes"] == [{"symbol": "BTCUSDT", "mark_price": 95002.0}]
     mock_get_position_risk.assert_awaited_once_with(symbol=None)
     mock_get_premium_index.assert_awaited_once_with("BTCUSDT")
+
+
+@patch("apps.api.app.services.binance_client.BinanceFuturesClient.get_premium_index", new_callable=AsyncMock)
+@patch("apps.api.app.services.binance_client.BinanceFuturesClient.get_position_risk", new_callable=AsyncMock)
+def test_dashboard_live_pricing_keeps_partial_quotes_when_one_symbol_fails(mock_get_position_risk, mock_get_premium_index):
+    mock_get_position_risk.return_value = []
+    mock_get_premium_index.side_effect = [
+        {"symbol": "BTCUSDT", "markPrice": "95001.0"},
+        RuntimeError("binance timeout"),
+    ]
+
+    response = client.get("/dashboard/live-pricing", params=[("symbols", "BTCUSDT"), ("symbols", "ETHUSDT")])
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["positions"] == []
+    assert data["quotes"] == [{"symbol": "BTCUSDT", "mark_price": 95001.0}]
+    mock_get_position_risk.assert_awaited_once_with(symbol=None)
+    assert mock_get_premium_index.await_count == 2

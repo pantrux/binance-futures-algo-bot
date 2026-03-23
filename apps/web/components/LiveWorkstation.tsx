@@ -4,6 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 import { buildLiveStateLabel, formatElapsedMs, formatRelativeAge, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
+
+function liveEntrySide(positionAmt: number | null | undefined) {
+  if (positionAmt == null || positionAmt === 0) {
+    return null;
+  }
+  return positionAmt > 0 ? "LONG" : "SHORT";
+}
 import { OperationDrillDown } from "./OperationDrillDown";
 
 import { OrderBlotter } from "./OrderBlotter";
@@ -37,24 +44,23 @@ function collectVisibleSymbols(data: any, initialTape: any[], visibleSectionIds:
   return Array.from(scopedSymbols).sort();
 }
 
-function buildLivePricingUrl() {
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "");
-  return apiBaseUrl ? `${apiBaseUrl}/dashboard/live-pricing` : null;
+function buildLivePricingUrl(symbols: string[]) {
+  const params = new URLSearchParams();
+  symbols.forEach((symbol) => params.append("symbols", symbol));
+  const query = params.toString();
+  return query ? `/api/live-pricing?${query}` : "/api/live-pricing";
 }
 
 function buildLivePricingStreamUrl(symbols: string[]) {
-  if (symbols.length === 0) {
-    return null;
-  }
-
   const params = new URLSearchParams();
   symbols.forEach((symbol) => params.append("symbols", symbol));
-  return `/api/live-pricing/stream?${params.toString()}`;
+  const query = params.toString();
+  return query ? `/api/live-pricing/stream?${query}` : "/api/live-pricing/stream";
 }
 
 export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: any) {
   const data = initialData;
-  const [livePrices, setLivePrices] = useState<Record<string, LivePriceEntry>>({});
+  const [livePrices, setLivePrices] = useState<Record<string, Array<LivePriceEntry & { side: string | null }>>>({});
   const [liveQuotes, setLiveQuotes] = useState<Record<string, { markPrice: number }>>({});
   const [isPolling, setIsPolling] = useState(true);
   const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
@@ -67,25 +73,12 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [openDrilldownTradePlanIds, setOpenDrilldownTradePlanIds] = useState<number[]>(() =>
     initialData?.operation_snapshots?.[0]?.trade_plan_id ? [initialData.operation_snapshots[0].trade_plan_id] : [],
   );
-  const livePricingUrl = buildLivePricingUrl();
   const livePricingRequestUrlRef = useRef<string | null>(null);
   const visibleSymbols = useMemo(
     () => collectVisibleSymbols(data, initialTape, visibleSectionIds, openDrilldownTradePlanIds),
     [data, initialTape, openDrilldownTradePlanIds, visibleSectionIds],
   );
-  const livePricingRequestUrl = useMemo(() => {
-    if (!livePricingUrl) {
-      return null;
-    }
-
-    if (visibleSymbols.length === 0) {
-      return null;
-    }
-
-    const params = new URLSearchParams();
-    visibleSymbols.forEach((symbol) => params.append("symbols", symbol));
-    return `${livePricingUrl}?${params.toString()}`;
-  }, [livePricingUrl, visibleSymbols]);
+  const livePricingRequestUrl = useMemo(() => buildLivePricingUrl(visibleSymbols), [visibleSymbols]);
   const livePricingStreamUrl = useMemo(() => buildLivePricingStreamUrl(visibleSymbols), [visibleSymbols]);
 
   useEffect(() => {
@@ -128,7 +121,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   }, [livePricingRequestUrl]);
 
   const applyLivePayload = useCallback((result: any) => {
-    const pricesMap: Record<string, LivePriceEntry> = {};
+    const pricesMap: Record<string, Array<LivePriceEntry & { side: string | null }>> = {};
     const quotesMap: Record<string, { markPrice: number }> = {};
 
     (result.quotes ?? []).forEach((quote: any) => {
@@ -144,11 +137,15 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
       if (!position?.symbol) {
         return;
       }
-      pricesMap[position.symbol] = {
+      if (!pricesMap[position.symbol]) {
+        pricesMap[position.symbol] = [];
+      }
+      pricesMap[position.symbol].push({
         markPrice: position.mark_price,
         unrealizedPnl: position.unrealized_pnl,
         positionAmt: position.position_amt,
-      };
+        side: liveEntrySide(position.position_amt),
+      });
       if (!quotesMap[position.symbol]) {
         quotesMap[position.symbol] = {
           markPrice: position.mark_price,
@@ -270,7 +267,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const positions = useMemo(
     () =>
       data.open_positions.map((pos: any) => {
-        const live = livePrices[pos.symbol];
+        const liveRows = livePrices[pos.symbol] ?? [];
+        const live = liveRows.find((entry) => entry.side === String(pos.side ?? "").toUpperCase()) ?? liveRows[0];
         const liveQuote = liveQuotes[pos.symbol];
         const currentPnl = live ? live.unrealizedPnl : pos.unrealized_pnl;
         const currentMark = liveQuote ? liveQuote.markPrice : live ? live.markPrice : pos.mark_price;
@@ -289,7 +287,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
 
   // Update tape with live prices
   const tape = initialTape.map((item: any) => {
-    const live = livePrices[item.symbol];
+    const liveRows = livePrices[item.symbol] ?? [];
+    const live = liveRows.find((entry) => entry.side === String(item.side ?? "").toUpperCase()) ?? liveRows[0];
     const liveQuote = liveQuotes[item.symbol];
     if (liveQuote && ["open", "testnet_executed", "partially_filled"].includes(item.status.toLowerCase())) {
       return { ...item, price: liveQuote.markPrice, pnl: live ? live.unrealizedPnl : item.pnl };
@@ -324,7 +323,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         ? "badge danger"
         : isLiveStaleWarn
           ? "badge warn"
-          : hasLivePrices ? "badge ok pulse" : livePricingUrl ? "badge warn" : "badge neutral";
+          : hasLivePrices ? "badge ok pulse" : "badge warn";
   const liveBadgeLabel = isLivePaused
     ? buildLiveStateLabel("live pausado", liveAgeMs)
     : livePollingError
@@ -333,7 +332,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         ? buildLiveStateLabel("live vencido", liveAgeMs)
         : isLiveStaleWarn
           ? buildLiveStateLabel("live envejeciendo", liveAgeMs)
-          : hasLivePrices ? buildLiveStateLabel("live pricing", liveAgeMs) : livePricingUrl ? "snapshot data" : "snapshot only";
+          : hasLivePrices ? buildLiveStateLabel("live pricing", liveAgeMs) : "snapshot data";
   const liveScopeLabel = visibleSectionIds.length === 0 ? "idle" : visibleSectionIds.join("+");
   const liveScopeSymbolsLabel = visibleSymbols.length === 0 ? "sin símbolos en scope" : `scope symbols: ${visibleSymbols.join(", ")}`;
   const openDrilldownOperations = useMemo(
@@ -357,9 +356,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         ? `último tick ${formatDate(lastLiveUpdateAt!)} · feed con ${formatElapsedMs(liveAgeMs ?? 0)} de antigüedad`
         : lastLiveUpdateAt
           ? `último live ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`
-          : livePricingUrl
-            ? "esperando primer tick live"
-            : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
+          : "esperando primer tick live";
   const liveCoveredPositions = positions.filter((position: any) => liveQuotes[position.symbol]).length;
   const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => liveQuotes[operation.symbol]).length;
   const snapshotRelativeAgeLabel = formatRelativeAge(data.generated_at, liveClockMs);
@@ -372,10 +369,10 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const defaultSnapshotLiveState = useMemo(
     () => ({
       label: "snapshot",
-      tone: livePricingUrl ? "warn" : "neutral",
-      hint: livePricingUrl ? "sin cobertura live para este símbolo" : "live pricing deshabilitado",
+      tone: "warn",
+      hint: "sin cobertura live para este símbolo",
     }),
-    [livePricingUrl],
+    [],
   );
 
   const symbolLiveStates = useMemo(() => {
@@ -581,7 +578,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           {data.operation_snapshots.length === 0 ? (
             <p className="empty-state">Sin operaciones consolidadas.</p>
           ) : data.operation_snapshots.slice(0, 8).map((operation: any) => {
-            const live = livePrices[operation.symbol];
+            const liveRows = livePrices[operation.symbol] ?? [];
+            const live = liveRows.find((entry) => entry.side === String(operation.side ?? "").toUpperCase()) ?? liveRows[0];
             const liveState = symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState;
             let latestPnl = operation.latest_position_unrealized_pnl;
             const actualEntry = getActualEntryPrice(operation);
@@ -750,12 +748,15 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         <div className="drawer-stack">
           {data.operation_snapshots.length === 0 ? (
             <p className="empty-state">Sin operaciones para drill-down.</p>
-          ) : data.operation_snapshots.slice(0, 8).map((operation: any, index: number) => (
+          ) : data.operation_snapshots.slice(0, 8).map((operation: any, index: number) => {
+            const liveRows = livePrices[operation.symbol] ?? [];
+            const operationLivePrice = liveRows.find((entry) => entry.side === String(operation.side ?? "").toUpperCase()) ?? liveRows[0];
+            return (
             <OperationDrillDown
               key={operation.trade_plan_id}
               operation={operation}
               index={index}
-              livePrice={livePrices[operation.symbol]}
+              livePrice={operationLivePrice}
               liveState={symbolLiveStates[operation.symbol] ?? defaultSnapshotLiveState}
               snapshotGeneratedAt={data.generated_at}
               lastLiveUpdateAt={lastLiveUpdateAt}
@@ -784,7 +785,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
                 }
               }}
             />
-          ))}
+            );
+          })}
         </div>
       </section>
     </>

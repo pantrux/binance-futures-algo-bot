@@ -25,8 +25,27 @@ function buildLivePricingUrl(request: NextRequest, apiBaseUrl: string) {
   return url;
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function sleep(ms: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+
+    const onAbort = () => {
+      clearTimeout(timeout);
+      signal?.removeEventListener("abort", onAbort);
+      reject(new Error("sleep_aborted"));
+    };
+
+    if (signal) {
+      if (signal.aborted) {
+        onAbort();
+        return;
+      }
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+  });
 }
 
 export async function GET(request: NextRequest) {
@@ -39,8 +58,10 @@ export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
   let closed = false;
 
+  const sleepController = new AbortController();
   let closeStream = () => {
     closed = true;
+    sleepController.abort();
   };
 
   const stream = new ReadableStream<Uint8Array>({
@@ -102,7 +123,12 @@ export async function GET(request: NextRequest) {
           if (closed) {
             break;
           }
-          await sleep(STREAM_INTERVAL_MS);
+          try {
+            await sleep(STREAM_INTERVAL_MS, sleepController.signal);
+          } catch {
+            safeClose();
+            break;
+          }
         }
       })();
     },
