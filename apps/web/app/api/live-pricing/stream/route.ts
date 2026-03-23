@@ -3,8 +3,8 @@ import { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const STREAM_INTERVAL_MS = 4_000;
-const STREAM_FETCH_TIMEOUT_MS = 10_000;
+const STREAM_INTERVAL_MS = 1_000;
+const STREAM_FETCH_TIMEOUT_MS = 5_000;
 const RETRY_MS = 3_000;
 
 function normalizeBaseUrl(value: string | undefined) {
