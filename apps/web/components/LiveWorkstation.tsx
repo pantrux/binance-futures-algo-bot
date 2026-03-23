@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 import { buildLiveStateLabel, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
@@ -16,8 +16,24 @@ function liveEntrySide(positionAmt: number | null | undefined) {
 
 const LIVE_POLL_INTERVAL_MS = 4000;
 const LIVE_SCOPE_SECTION_IDS = ["desk", "operations", "drilldown"] as const;
+const MARKET_CLOCKS = [
+  { label: "NY", timeZone: "America/New_York" },
+  { label: "EU", timeZone: "Europe/London" },
+  { label: "ASIA", timeZone: "Asia/Tokyo" },
+  { label: "UTC-3", timeZone: "America/Argentina/Buenos_Aires" },
+] as const;
 
 type LiveScopeSectionId = (typeof LIVE_SCOPE_SECTION_IDS)[number];
+
+function formatMarketTime(timeZone: string) {
+  return new Intl.DateTimeFormat("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZone,
+  }).format(new Date());
+}
 
 function collectVisibleSymbols(data: any, initialTape: any[], visibleSectionIds: LiveScopeSectionId[], openDrilldownTradePlanIds: number[]) {
   const scopedSymbols = new Set<string>(data.open_positions.map((position: any) => position.symbol));
@@ -43,13 +59,6 @@ function collectVisibleSymbols(data: any, initialTape: any[], visibleSectionIds:
   return Array.from(scopedSymbols).sort();
 }
 
-function buildLivePricingUrl(symbols: string[]) {
-  const params = new URLSearchParams();
-  symbols.forEach((symbol) => params.append("symbols", symbol));
-  const query = params.toString();
-  return query ? `/api/live-pricing?${query}` : "/api/live-pricing";
-}
-
 function buildLivePricingStreamUrl(symbols: string[]) {
   const params = new URLSearchParams();
   symbols.forEach((symbol) => params.append("symbols", symbol));
@@ -64,19 +73,14 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [isPolling, setIsPolling] = useState(true);
   const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
-  const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
-  const [liveRefreshNote, setLiveRefreshNote] = useState<string | null>(null);
-  const [liveScopeNote, setLiveScopeNote] = useState<string | null>(null);
   const [visibleSectionIds, setVisibleSectionIds] = useState<LiveScopeSectionId[]>([...LIVE_SCOPE_SECTION_IDS]);
   const [openDrilldownTradePlanIds, setOpenDrilldownTradePlanIds] = useState<number[]>(() =>
     initialData?.operation_snapshots?.[0]?.trade_plan_id ? [initialData.operation_snapshots[0].trade_plan_id] : [],
   );
-  const livePricingRequestUrlRef = useRef<string | null>(null);
   const visibleSymbols = useMemo(
     () => collectVisibleSymbols(data, initialTape, visibleSectionIds, openDrilldownTradePlanIds),
     [data, initialTape, openDrilldownTradePlanIds, visibleSectionIds],
   );
-  const livePricingRequestUrl = useMemo(() => buildLivePricingUrl(visibleSymbols), [visibleSymbols]);
   const livePricingStreamUrl = useMemo(() => buildLivePricingStreamUrl(visibleSymbols), [visibleSymbols]);
 
   useEffect(() => {
@@ -113,10 +117,6 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
 
     return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    livePricingRequestUrlRef.current = livePricingRequestUrl;
-  }, [livePricingRequestUrl]);
 
   const applyLivePayload = useCallback((result: any) => {
     const pricesMap: Record<string, Array<LivePriceEntry & { side: string | null }>> = {};
@@ -157,50 +157,6 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     setLivePollingError(null);
   }, []);
 
-  const refreshLivePricing = useCallback(
-    async (mode: "interval" | "manual" = "interval") => {
-      const requestUrl = livePricingRequestUrlRef.current;
-      if (!requestUrl) {
-        setLivePollingError(null);
-        if (mode === "manual") {
-          setLiveRefreshNote("scope idle: no hay símbolos activos para refrescar");
-        }
-        return;
-      }
-
-      if (mode === "manual") {
-        setIsLiveRefreshing(true);
-        setLiveRefreshNote(null);
-      }
-
-      try {
-        const res = await fetch(requestUrl, { cache: "no-store" });
-        if (!res.ok) {
-          throw new Error(`Live pricing poll failed (${res.status})`);
-        }
-
-        const result = await res.json();
-        applyLivePayload(result);
-        if (mode === "manual") {
-          const liveCount = Array.isArray(result.quotes) ? result.quotes.length : Array.isArray(result.positions) ? result.positions.length : 0;
-          setLiveRefreshNote(`refresh manual OK · ${liveCount} símbolos live`);
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Live pricing poll failed";
-        setLivePollingError(message);
-        if (mode === "manual") {
-          setLiveRefreshNote(`refresh manual falló · ${message}`);
-        }
-        console.error("Live pricing poll failed:", err);
-      } finally {
-        if (mode === "manual") {
-          setIsLiveRefreshing(false);
-        }
-      }
-    },
-    [applyLivePayload],
-  );
-
   useEffect(() => {
     if (!isPolling || !livePricingStreamUrl) {
       return;
@@ -229,31 +185,6 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
       eventSource.close();
     };
   }, [applyLivePayload, isPolling, livePricingStreamUrl]);
-
-  useEffect(() => {
-    if (!liveRefreshNote) {
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      setLiveRefreshNote(null);
-    }, 5_000);
-
-    return () => clearTimeout(timeout);
-  }, [liveRefreshNote]);
-
-  useEffect(() => {
-    if (!liveScopeNote) {
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      setLiveScopeNote(null);
-    }, 5_000);
-
-    return () => clearTimeout(timeout);
-  }, [liveScopeNote]);
-
 
   const positions = useMemo(
     () =>
@@ -296,16 +227,16 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const isLiveStaleWarn = liveAgeMs != null && liveAgeMs >= LIVE_STALE_WARN_MS && !isLiveStaleDanger;
   const liveFreshnessValue = lastLiveUpdateAt ? formatDate(lastLiveUpdateAt) : "—";
   const liveFreshnessHint = isLivePaused
-    ? "polling pausado"
+    ? "feed pausado"
     : livePollingError
       ? hasLivePrices ? "error activo con último tick cacheado" : "polling con error"
       : liveAgeMs == null
-        ? "sin tick live todavía"
+        ? "sin feed todavía"
         : isLiveStaleDanger
           ? "feed demasiado viejo"
           : isLiveStaleWarn
             ? "feed envejeciendo"
-            : "último tick reciente";
+            : "feed activo";
   const liveBadgeClassName = isLivePaused
     ? hasLivePrices ? "badge warn" : "badge neutral"
     : livePollingError
@@ -315,15 +246,6 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         : isLiveStaleWarn
           ? "badge warn"
           : hasLivePrices ? "badge ok pulse" : "badge warn";
-  const liveBadgeLabel = isLivePaused
-    ? buildLiveStateLabel("live pausado", liveAgeMs)
-    : livePollingError
-      ? buildLiveStateLabel(isLiveStaleDanger ? "live crítico" : "live degradado", liveAgeMs)
-      : isLiveStaleDanger
-        ? buildLiveStateLabel("live vencido", liveAgeMs)
-        : isLiveStaleWarn
-          ? buildLiveStateLabel("live envejeciendo", liveAgeMs)
-          : hasLivePrices ? buildLiveStateLabel("live pricing", liveAgeMs) : "snapshot data";
   const liveScopeLabel = visibleSectionIds.length === 0 ? "idle" : visibleSectionIds.join("+");
   const liveScopeSymbolsLabel = visibleSymbols.length === 0 ? "sin símbolos en scope" : `scope symbols: ${visibleSymbols.join(", ")}`;
   const openDrilldownOperations = useMemo(
@@ -335,19 +257,19 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     : openDrilldownTradePlanIds.length === 0
       ? "driver: drill-down visible sin drawers abiertos; fallback a todas las operaciones"
       : `driver: drill-down aporta ${openDrilldownOperations.length} drawer(s) abierto(s) al scope → ${openDrilldownOperations.map((operation: any) => `#${operation.trade_plan_id} ${operation.symbol}`).join(", ")}`;
-  const liveStatusCopy = isLivePaused
+  const feedStatusCopy = isLivePaused
     ? lastLiveUpdateAt
-      ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)}`
-      : "polling pausado"
+      ? `feed pausado · último tick ${formatDate(lastLiveUpdateAt)}`
+      : "feed pausado"
     : livePollingError
       ? lastLiveUpdateAt
-        ? `${livePollingError} · último tick ${formatDate(lastLiveUpdateAt)}`
-        : livePollingError
+        ? `${livePollingError.replace(/live/gi, "feed")} · último tick ${formatDate(lastLiveUpdateAt)}`
+        : livePollingError.replace(/live/gi, "feed")
       : isLiveStaleDanger || isLiveStaleWarn
         ? `último tick ${formatDate(lastLiveUpdateAt!)} · feed desfasado`
         : lastLiveUpdateAt
-          ? `último live ${formatDate(lastLiveUpdateAt)}`
-          : "esperando primer tick live";
+          ? `último feed ${formatDate(lastLiveUpdateAt)}`
+          : "esperando primer tick del feed";
   const liveCoveredPositions = positions.filter((position: any) => liveQuotes[position.symbol]).length;
   const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => liveQuotes[operation.symbol]).length;
   const snapshotRelativeAgeLabel = null;
@@ -432,7 +354,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     { title: "Fill rate testnet", value: `${formatNumber(shadowRun.testnet_fill_rate_pct, 1)}%`, hint: "órdenes ejecutadas / enviadas", tone: (shadowRun.testnet_fill_rate_pct ?? 0) >= 80 ? "ok" : "warn" },
     { title: "Pairs parity", value: String(shadowRun.compared_pairs), hint: "paper ↔ testnet comparados", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
     { title: "Risk 7d", value: `${shadowRun.critical_risk_events_7d}/${shadowRun.warning_risk_events_7d}`, hint: "critical / warning", tone: shadowRun.critical_risk_events_7d > 0 ? "danger" : shadowRun.warning_risk_events_7d > 0 ? "warn" : "ok" },
-    { title: "Live freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || !!livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
+    { title: "Feed freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || !!livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
   ];
 
   const commandBoard = {
@@ -454,14 +376,17 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           </p>
         </div>
         <div className="header-status-panel">
-          <span className={liveBadgeClassName}>{liveBadgeLabel}</span>
+          <span className={liveBadgeClassName}>{feedStatusCopy}</span>
           <strong>{formatDate(data.generated_at)}{snapshotRelativeAgeLabel ? ` · ${snapshotRelativeAgeLabel}` : ""}</strong>
-          <p>{liveStatusCopy}</p>
-          <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length || "idle"} símbolos ({liveScopeLabel}) · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
-          <small className="muted">{liveScopeSymbolsLabel}</small>
-          <small className="muted">{liveScopeDriverLabel}</small>
-          {liveScopeNote && <small className="muted">{liveScopeNote}</small>}
-          {liveRefreshNote && <small className="muted">{liveRefreshNote}</small>}
+          <div className="market-clock-grid">
+            {MARKET_CLOCKS.map((clock) => (
+              <article key={clock.label} className="market-clock-card">
+                <span>{clock.label}</span>
+                <strong>{formatMarketTime(clock.timeZone)}</strong>
+              </article>
+            ))}
+          </div>
+          <small className="muted">scope {visibleSymbols.length || "idle"} símbolos ({liveScopeLabel})</small>
         </div>
       </header>
 
@@ -495,32 +420,24 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             <p className="eyebrow">Command pulse</p>
             <h2>Panel de decisión</h2>
             <p className="lead compact-lead">
-              Una lectura compacta del estado real: qué está vivo, qué está cubierto, qué está envejeciendo y qué exige atención ahora mismo.
+              Una lectura compacta del estado real: qué está cubierto, qué está sano y qué exige atención ahora mismo.
             </p>
             <div className="command-chip-row">
-              <span className={`badge ${commandBoard.marketTone}`}>{liveBadgeLabel}</span>
+              <span className={`badge ${commandBoard.marketTone}`}>{feedStatusCopy}</span>
               <span className="badge subtle">{liveScopeSymbolsLabel}</span>
               <span className="badge subtle">{liveScopeDriverLabel}</span>
             </div>
-            <p className="command-hero-copyline">{liveStatusCopy}</p>
-            <div className="command-actions">
-              <button type="button" className="action-link primary" onClick={() => void refreshLivePricing("manual")} disabled={isLiveRefreshing}>
-                {isLiveRefreshing ? "refrescando..." : "refresh now"}
-              </button>
-              <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
-                {isPolling ? "pausar live" : "reanudar live"}
-              </button>
-            </div>
+            <p className="command-hero-copyline">{feedStatusCopy}</p>
           </div>
 
           <div className="command-stage-summary">
             <div className="command-stage-stat">
-              <span>Live coverage</span>
+              <span>Coverage</span>
               <strong>{liveCoveredPositions}/{positions.length || 0}</strong>
               <small>{liveCoveredOperations}/{data.operation_snapshots.length} operaciones con mark live</small>
             </div>
             <div className="command-stage-stat">
-              <span>Freshness</span>
+              <span>Feed age</span>
               <strong>{liveFreshnessValue}</strong>
               <small>{lastLiveTickHint}</small>
             </div>
@@ -550,21 +467,17 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             <strong>{visibleSymbols.length || 0}</strong>
             <small>{liveScopeLabel} · {LIVE_SCOPE_SECTION_IDS.join(" / ")}</small>
           </article>
-          <article className="rail-card rail-card--compact">
-            <span>Control notes</span>
-            <small className="muted">{liveScopeNote || liveRefreshNote || "sin notas activas"}</small>
-          </article>
         </aside>
       </section>
 
       <section className="signal-wall" aria-label="signal wall">
         <article className="signal-card signal-card--wide">
           <p className="eyebrow">Market thesis</p>
-          <h3>{liveBadgeLabel}</h3>
-          <p>{liveStatusCopy}</p>
+          <h3>{feedStatusCopy}</h3>
+          <p>{feedStatusCopy}</p>
           <div className="signal-meta-row">
             <span>coverage {commandBoard.coveragePercent}%</span>
-            <span>freshness {commandBoard.freshnessPercent}%</span>
+            <span>feed age {commandBoard.freshnessPercent}%</span>
             <span>risk {commandBoard.riskPercent}%</span>
           </div>
         </article>
@@ -841,13 +754,6 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
                 const nextScopeKey = nextSymbols.join("|");
 
                 setOpenDrilldownTradePlanIds(nextIds);
-                if (previousScopeKey !== nextScopeKey) {
-                  setLiveScopeNote(
-                    nextIds.length === 0
-                      ? `scope live actualizado: se cerró #${tradePlanId} ${operation.symbol} y drill-down volvió al fallback (${nextSymbols.length} símbolos en scope)`
-                      : `scope live actualizado: ${isOpen ? "abierto" : "cerrado"} #${tradePlanId} ${operation.symbol} · ${nextSymbols.length} símbolos en scope · drawers activos ${nextIds.join(", ")}`,
-                  );
-                }
               }}
             />
             );

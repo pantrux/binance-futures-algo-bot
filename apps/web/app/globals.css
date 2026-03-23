@@ -208,7 +208,36 @@ small, .muted { color: var(--muted); }
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 14px;
   background: linear-gradient(180deg, rgba(16, 31, 49, 0.96), rgba(11, 22, 35, 0.88));
+}
+
+.market-clock-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.market-clock-card {
+  border-radius: 18px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(143, 166, 190, 0.14);
+}
+
+.market-clock-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.market-clock-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
 }
 
 .header-status-panel strong {
