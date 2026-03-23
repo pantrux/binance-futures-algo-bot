@@ -442,10 +442,15 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     { title: "Pairs parity", value: String(shadowRun.compared_pairs), hint: "paper ↔ testnet comparados", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
     { title: "Risk 7d", value: `${shadowRun.critical_risk_events_7d}/${shadowRun.warning_risk_events_7d}`, hint: "critical / warning", tone: shadowRun.critical_risk_events_7d > 0 ? "danger" : shadowRun.warning_risk_events_7d > 0 ? "warn" : "ok" },
     { title: "Live freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || !!livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
-    { title: "Último live tick", value: lastLiveTickLabel, hint: lastLiveTickHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || !!livePollingError ? "warn" : lastLiveUpdateAt ? "ok" : "neutral" },
-    { title: "Live coverage", value: `${liveCoveredPositions}/${positions.length}`, hint: `posiciones con mark live · ${liveCoveredOperations}/${data.operation_snapshots.length} operaciones`, tone: liveCoveredPositions === positions.length && positions.length > 0 ? "ok" : liveCoveredPositions > 0 ? "warn" : "neutral" },
-    { title: "Trade plans", value: String(summary.trade_plans_total), hint: "universo persistido", tone: "neutral" },
   ];
+
+  const commandBoard = {
+    marketTone: isLivePaused ? (hasLivePrices ? "warn" : "neutral") : livePollingError ? (isLiveStaleDanger ? "danger" : hasLivePrices ? "warn" : "danger") : isLiveStaleDanger ? "danger" : isLiveStaleWarn ? "warn" : hasLivePrices ? "ok" : "warn",
+    coveragePercent: positions.length > 0 ? Math.round((liveCoveredPositions / positions.length) * 100) : 0,
+    freshnessPercent: liveAgeMs == null ? 0 : isLiveStaleDanger ? 100 : isLiveStaleWarn ? 65 : 18,
+    riskPercent: Math.min(100, (shadowRun.critical_risk_events_7d * 22) + (shadowRun.warning_risk_events_7d * 6)),
+    fillPercent: Math.max(0, Math.min(100, Number(shadowRun.testnet_fill_rate_pct ?? 0))),
+  };
 
   return (
     <>
@@ -461,14 +466,6 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           <span className={liveBadgeClassName}>{liveBadgeLabel}</span>
           <strong>{formatDate(data.generated_at)}{snapshotRelativeAgeLabel ? ` · ${snapshotRelativeAgeLabel}` : ""}</strong>
           <p>{liveStatusCopy}</p>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <button type="button" className="action-link" onClick={() => void refreshLivePricing("manual")} disabled={isLiveRefreshing}>
-              {isLiveRefreshing ? "refrescando..." : "refresh now"}
-            </button>
-            <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
-              {isPolling ? "pausar live" : "reanudar live"}
-            </button>
-          </div>
           <small className="muted">poll cada {LIVE_POLL_INTERVAL_MS / 1000}s · scope {visibleSymbols.length || "idle"} símbolos ({liveScopeLabel}) · warn ≥ {LIVE_STALE_WARN_MS / 1000}s · danger ≥ {LIVE_STALE_DANGER_MS / 1000}s</small>
           <small className="muted">{liveScopeSymbolsLabel}</small>
           <small className="muted">{liveScopeDriverLabel}</small>
@@ -501,9 +498,87 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         ))}
       </section>
 
-      <section className="metric-grid">
+      <section className="command-grid" aria-label="command pulse">
+        <article className="command-stage panel workstation-panel">
+          <div className="command-stage-copy">
+            <p className="eyebrow">Command pulse</p>
+            <h2>Panel de decisión</h2>
+            <p className="lead compact-lead">
+              Una lectura compacta del estado real: qué está vivo, qué está cubierto, qué está envejeciendo y qué exige atención ahora mismo.
+            </p>
+            <div className="command-chip-row">
+              <span className={`badge ${commandBoard.marketTone}`}>{liveBadgeLabel}</span>
+              <span className="badge subtle">{liveScopeSymbolsLabel}</span>
+              <span className="badge subtle">{liveScopeDriverLabel}</span>
+            </div>
+            <p className="command-hero-copyline">{liveStatusCopy}</p>
+            <div className="command-actions">
+              <button type="button" className="action-link primary" onClick={() => void refreshLivePricing("manual")} disabled={isLiveRefreshing}>
+                {isLiveRefreshing ? "refrescando..." : "refresh now"}
+              </button>
+              <button type="button" className="action-link" onClick={() => setIsPolling((current) => !current)}>
+                {isPolling ? "pausar live" : "reanudar live"}
+              </button>
+            </div>
+          </div>
+
+          <div className="command-stage-summary">
+            <div className="command-stage-stat">
+              <span>Live coverage</span>
+              <strong>{liveCoveredPositions}/{positions.length || 0}</strong>
+              <small>{liveCoveredOperations}/{data.operation_snapshots.length} operaciones con mark live</small>
+            </div>
+            <div className="command-stage-stat">
+              <span>Freshness</span>
+              <strong>{liveFreshnessValue}</strong>
+              <small>{lastLiveTickHint}</small>
+            </div>
+            <div className="command-stage-stat">
+              <span>Risk load</span>
+              <strong>{shadowRun.critical_risk_events_7d + shadowRun.warning_risk_events_7d}</strong>
+              <small>{shadowRun.critical_risk_events_7d} critical · {shadowRun.warning_risk_events_7d} warning</small>
+            </div>
+          </div>
+        </article>
+
+        <aside className="command-rail">
+          <article className="rail-card rail-card--positive">
+            <span>Execution</span>
+            <strong>{formatNumber(commandBoard.fillPercent, 1)}%</strong>
+            <small>testnet fill rate · {shadowRun.testnet_orders_filled}/{shadowRun.testnet_orders_total} fills</small>
+            <div className="progress-track"><span className="progress-fill ok" style={{ width: `${commandBoard.fillPercent}%` }} /></div>
+          </article>
+          <article className="rail-card">
+            <span>Operational tone</span>
+            <strong>{commandBoard.marketTone === "danger" ? "hot" : commandBoard.marketTone === "warn" ? "watch" : "calm"}</strong>
+            <small>{summary.approved_trade_plans} approved · {summary.open_positions} open</small>
+            <div className="progress-track"><span className={`progress-fill ${commandBoard.marketTone}`} style={{ width: `${commandBoard.coveragePercent}%` }} /></div>
+          </article>
+          <article className="rail-card">
+            <span>Scope</span>
+            <strong>{visibleSymbols.length || 0}</strong>
+            <small>{liveScopeLabel} · {LIVE_SCOPE_SECTION_IDS.join(" / ")}</small>
+          </article>
+          <article className="rail-card rail-card--compact">
+            <span>Control notes</span>
+            <small className="muted">{liveScopeNote || liveRefreshNote || "sin notas activas"}</small>
+          </article>
+        </aside>
+      </section>
+
+      <section className="signal-wall" aria-label="signal wall">
+        <article className="signal-card signal-card--wide">
+          <p className="eyebrow">Market thesis</p>
+          <h3>{liveBadgeLabel}</h3>
+          <p>{liveStatusCopy}</p>
+          <div className="signal-meta-row">
+            <span>coverage {commandBoard.coveragePercent}%</span>
+            <span>freshness {commandBoard.freshnessPercent}%</span>
+            <span>risk {commandBoard.riskPercent}%</span>
+          </div>
+        </article>
         {summaryCards.map((card) => (
-          <article key={card.title} className="metric-card">
+          <article key={card.title} className="signal-card">
             <p>{card.title}</p>
             <h3 className={card.tone === "danger" ? "negative" : card.tone === "ok" ? "positive" : undefined}>{card.value}</h3>
             <small>{card.hint}</small>
