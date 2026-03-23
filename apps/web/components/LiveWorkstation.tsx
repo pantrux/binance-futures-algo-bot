@@ -247,7 +247,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const liveFreshnessHint = isLivePaused
     ? "feed pausado"
     : livePollingError
-      ? hasLivePrices ? "error activo con último tick cacheado" : "polling con error"
+      ? hasLivePrices ? "error activo con último tick cacheado" : "feed con error"
       : liveAgeMs == null
         ? "sin feed todavía"
         : isLiveStaleDanger
@@ -370,7 +370,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
     { title: "Open positions", value: String(summary.open_positions), hint: "inventario vivo", tone: summary.open_positions > 0 ? "ok" : "neutral" },
     { title: "Fill rate testnet", value: `${formatNumber(shadowRun.testnet_fill_rate_pct, 1)}%`, hint: "órdenes ejecutadas / enviadas", tone: (shadowRun.testnet_fill_rate_pct ?? 0) >= 80 ? "ok" : "warn" },
-    { title: "Pairs parity", value: String(shadowRun.compared_pairs), hint: "paper ↔ testnet comparados", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
+    { title: "Testnet parity", value: String(shadowRun.compared_pairs), hint: "comparados contra testnet", tone: shadowRun.compared_pairs > 0 ? "ok" : "neutral" },
     { title: "Risk 7d", value: `${shadowRun.critical_risk_events_7d}/${shadowRun.warning_risk_events_7d}`, hint: "critical / warning", tone: shadowRun.critical_risk_events_7d > 0 ? "danger" : shadowRun.warning_risk_events_7d > 0 ? "warn" : "ok" },
     { title: "Feed freshness", value: liveFreshnessValue, hint: liveFreshnessHint, tone: isLivePaused ? "warn" : isLiveStaleDanger ? "danger" : isLiveStaleWarn || !!livePollingError ? "warn" : hasLivePrices ? "ok" : "neutral" },
   ];
@@ -530,8 +530,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
               <small>planes listos para ejecución / vigilancia</small>
             </div>
             <div className="desk-hero-block">
-              <span>Paper / Testnet</span>
-              <strong>{summary.paper_executed_trade_plans} / {summary.testnet_executed_trade_plans}</strong>
+              <span>Testnet executed</span>
+              <strong>{summary.testnet_executed_trade_plans}</strong>
               <small>baseline parity del snapshot</small>
             </div>
           </div>

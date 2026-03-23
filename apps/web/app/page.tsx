@@ -131,8 +131,7 @@ export default async function HomePage() {
             <span className="badge ok">shadow run</span>
             <strong>{commandCenter.shadow_run.shadow_run_duration_days?.toFixed(2) ?? "0.00"} días</strong>
             <p>
-              Comparados: {commandCenter.shadow_run.compared_pairs} · Unmatched: {commandCenter.shadow_run.unmatched_paper}/
-              {commandCenter.shadow_run.unmatched_testnet}
+              Comparados: {commandCenter.shadow_run.compared_pairs} · Unmatched testnet: {commandCenter.shadow_run.unmatched_testnet}
             </p>
           </article>
           <article className="sidebar-card">
