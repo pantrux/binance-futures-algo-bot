@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+BACKTESTING_ALLOWED_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 
 
 class BacktestStrategyParameters(BaseModel):
@@ -54,6 +56,16 @@ class BacktestRunRequest(BaseModel):
     testing_window: int = Field(default=100, ge=10, le=1000)
     initial_capital: float = Field(default=1000.0, gt=0)
     fee_rate: float = Field(default=0.0004, ge=0, le=0.05)
+
+    @field_validator("symbol")
+    @classmethod
+    def validate_allowed_symbol(cls, value: str) -> str:
+        normalized = value.strip().upper()
+        if normalized not in BACKTESTING_ALLOWED_SYMBOLS:
+            raise ValueError(
+                f"symbol debe ser uno de: {', '.join(BACKTESTING_ALLOWED_SYMBOLS)}"
+            )
+        return normalized
 
     @model_validator(mode="after")
     def validate_windows(self) -> "BacktestRunRequest":

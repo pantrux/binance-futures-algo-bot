@@ -17,6 +17,7 @@ El objetivo de `PR-33` no es construir un motor de research genérico, sino una 
 Se incorpora un servicio `BacktestingService` con las siguientes decisiones explícitas:
 
 1. La fuente de datos es exclusivamente `market_candles` persistido en la base.
+   El scope operacional permitido para backtesting queda limitado a `BTCUSDT`, `ETHUSDT` y `SOLUSDT`.
 2. La estrategia baseline es `ema_rsi_baseline`, solo posiciones largas, con cruce EMA rápido/lento y filtro RSI.
 3. El benchmark es `buy_and_hold` del mismo activo, mismo timeframe y mismo periodo.
 4. El walk-forward usa ventanas deslizantes simples de entrenamiento/prueba.

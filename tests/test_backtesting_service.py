@@ -163,6 +163,21 @@ def test_backtest_run_request_requires_at_least_two_walk_forward_windows():
         raise AssertionError("Se esperaba ValueError para walk-forward degenerado de una sola ventana")
 
 
+def test_backtest_run_request_rejects_symbols_outside_btc_eth_sol_scope():
+    try:
+        BacktestRunRequest(
+            symbol="XRPUSDT",
+            timeframe="15m",
+            candles_limit=180,
+            training_window=120,
+            testing_window=30,
+        )
+    except ValueError as exc:
+        assert "BTCUSDT, ETHUSDT, SOLUSDT" in str(exc)
+    else:
+        raise AssertionError("Se esperaba ValueError para símbolo fuera del scope permitido")
+
+
 def test_is_better_result_uses_tolerance_before_drawdown_tiebreak():
     candidate = SimpleNamespace(
         metrics=BacktestMetrics(
