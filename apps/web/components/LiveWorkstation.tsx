@@ -25,14 +25,23 @@ const MARKET_CLOCKS = [
 
 type LiveScopeSectionId = (typeof LIVE_SCOPE_SECTION_IDS)[number];
 
-function formatMarketTime(timeZone: string) {
-  return new Intl.DateTimeFormat("es-ES", {
+function formatMarketClock(nowMs: number, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
     timeZone,
-  }).format(new Date());
+    timeZoneName: "short",
+  }).formatToParts(new Date(nowMs));
+
+  const time = parts
+    .filter((part) => part.type === "hour" || part.type === "minute" || part.type === "second")
+    .map((part) => part.value)
+    .join(":");
+  const zone = parts.find((part) => part.type === "timeZoneName")?.value ?? timeZone;
+
+  return { time, zone };
 }
 
 function collectVisibleSymbols(data: any, initialTape: any[], visibleSectionIds: LiveScopeSectionId[], openDrilldownTradePlanIds: number[]) {
@@ -70,7 +79,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const data = initialData;
   const [livePrices, setLivePrices] = useState<Record<string, Array<LivePriceEntry & { side: string | null }>>>({});
   const [liveQuotes, setLiveQuotes] = useState<Record<string, { markPrice: number }>>({});
-  const [isPolling, setIsPolling] = useState(true);
+  const isPolling = true;
+  const [marketNowMs, setMarketNowMs] = useState(() => Date.now());
   const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
   const [visibleSectionIds, setVisibleSectionIds] = useState<LiveScopeSectionId[]>([...LIVE_SCOPE_SECTION_IDS]);
@@ -82,6 +92,14 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     [data, initialTape, openDrilldownTradePlanIds, visibleSectionIds],
   );
   const livePricingStreamUrl = useMemo(() => buildLivePricingStreamUrl(visibleSymbols), [visibleSymbols]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setMarketNowMs(Date.now());
+    }, 1_000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -382,7 +400,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
             {MARKET_CLOCKS.map((clock) => (
               <article key={clock.label} className="market-clock-card">
                 <span>{clock.label}</span>
-                <strong>{formatMarketTime(clock.timeZone)}</strong>
+                <strong>{formatMarketClock(marketNowMs, clock.timeZone).time}</strong>
+                <small>{formatMarketClock(marketNowMs, clock.timeZone).zone}</small>
               </article>
             ))}
           </div>
