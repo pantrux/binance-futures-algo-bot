@@ -108,6 +108,23 @@ class BinanceFuturesClient:
         except (TypeError, ValueError):
             return 1
 
+    async def get_premium_index(self, symbol: str) -> dict:
+        normalized_symbol = symbol.strip().upper()
+        if not normalized_symbol:
+            raise ValueError("symbol requerido para premium index")
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(
+                f"{self.base_url}/fapi/v1/premiumIndex",
+                params={"symbol": normalized_symbol},
+            )
+            response.raise_for_status()
+            payload = response.json()
+
+        if not isinstance(payload, dict):
+            raise RuntimeError(f"premium_index_invalid_payload:{normalized_symbol}")
+        return payload
+
     def _sign(self, params: dict[str, str]) -> str:
         self.ensure_credentials()
         query = urlencode(params)
