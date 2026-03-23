@@ -43,8 +43,14 @@ class LivePricingService:
         quote_symbols = normalized_symbols or sorted(active_position_symbols)
         quotes: list[LiveQuoteItem] = []
         if quote_symbols:
+            semaphore = asyncio.Semaphore(8)
+
+            async def fetch_quote(symbol: str):
+                async with semaphore:
+                    return await self.client.get_premium_index(symbol)
+
             premium_indexes = await asyncio.gather(
-                *(self.client.get_premium_index(symbol) for symbol in quote_symbols),
+                *(fetch_quote(symbol) for symbol in quote_symbols),
                 return_exceptions=True,
             )
             for symbol, quote in zip(quote_symbols, premium_indexes):

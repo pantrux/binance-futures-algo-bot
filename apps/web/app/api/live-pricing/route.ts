@@ -28,18 +28,30 @@ export async function GET(request: NextRequest) {
     return Response.json({ detail: "live pricing unavailable: missing API base URL" }, { status: 503 });
   }
 
-  const response = await fetch(buildLivePricingUrl(request, apiBaseUrl), {
-    cache: "no-store",
-    signal: request.signal,
-  });
+  try {
+    const response = await fetch(buildLivePricingUrl(request, apiBaseUrl), {
+      cache: "no-store",
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(10_000)]),
+    });
 
-  const payload = await response.text();
+    const payload = await response.text();
 
-  return new Response(payload, {
-    status: response.status,
-    headers: {
-      "Content-Type": response.headers.get("Content-Type") ?? "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-  });
+    return new Response(payload, {
+      status: response.status,
+      headers: {
+        "Content-Type": response.headers.get("Content-Type") ?? "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (error) {
+    if (request.signal.aborted) {
+      return new Response(null, { status: 499 });
+    }
+
+    const detail = error instanceof Error && error.name === "TimeoutError"
+      ? "live pricing upstream timeout"
+      : "live pricing upstream unavailable";
+    const status = error instanceof Error && error.name === "TimeoutError" ? 504 : 503;
+    return Response.json({ detail }, { status });
+  }
 }
