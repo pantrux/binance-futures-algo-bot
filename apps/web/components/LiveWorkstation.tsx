@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
 import { buildLiveStateLabel, formatElapsedMs, formatRelativeAge, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
+import { OperationDrillDown } from "./OperationDrillDown";
+import { OrderBlotter } from "./OrderBlotter";
 
 function liveEntrySide(positionAmt: number | null | undefined) {
   if (positionAmt == null || positionAmt === 0) {
@@ -11,9 +13,6 @@ function liveEntrySide(positionAmt: number | null | undefined) {
   }
   return positionAmt > 0 ? "LONG" : "SHORT";
 }
-import { OperationDrillDown } from "./OperationDrillDown";
-
-import { OrderBlotter } from "./OrderBlotter";
 
 const LIVE_POLL_INTERVAL_MS = 4000;
 const LIVE_SCOPE_SECTION_IDS = ["desk", "operations", "drilldown"] as const;
