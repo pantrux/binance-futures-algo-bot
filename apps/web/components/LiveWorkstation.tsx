@@ -42,9 +42,20 @@ function buildLivePricingUrl() {
   return apiBaseUrl ? `${apiBaseUrl}/dashboard/live-pricing` : null;
 }
 
+function buildLivePricingStreamUrl(symbols: string[]) {
+  if (symbols.length === 0) {
+    return null;
+  }
+
+  const params = new URLSearchParams();
+  symbols.forEach((symbol) => params.append("symbols", symbol));
+  return `/api/live-pricing/stream?${params.toString()}`;
+}
+
 export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: any) {
   const data = initialData;
   const [livePrices, setLivePrices] = useState<Record<string, LivePriceEntry>>({});
+  const [liveQuotes, setLiveQuotes] = useState<Record<string, { markPrice: number }>>({});
   const [isPolling, setIsPolling] = useState(true);
   const [lastLiveUpdateAt, setLastLiveUpdateAt] = useState<string | null>(null);
   const [livePollingError, setLivePollingError] = useState<string | null>(null);
@@ -75,6 +86,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     visibleSymbols.forEach((symbol) => params.append("symbols", symbol));
     return `${livePricingUrl}?${params.toString()}`;
   }, [livePricingUrl, visibleSymbols]);
+  const livePricingStreamUrl = useMemo(() => buildLivePricingStreamUrl(visibleSymbols), [visibleSymbols]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -115,6 +127,41 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     livePricingRequestUrlRef.current = livePricingRequestUrl;
   }, [livePricingRequestUrl]);
 
+  const applyLivePayload = useCallback((result: any) => {
+    const pricesMap: Record<string, LivePriceEntry> = {};
+    const quotesMap: Record<string, { markPrice: number }> = {};
+
+    (result.quotes ?? []).forEach((quote: any) => {
+      if (!quote?.symbol) {
+        return;
+      }
+      quotesMap[quote.symbol] = {
+        markPrice: quote.mark_price,
+      };
+    });
+
+    (result.positions ?? []).forEach((position: any) => {
+      if (!position?.symbol) {
+        return;
+      }
+      pricesMap[position.symbol] = {
+        markPrice: position.mark_price,
+        unrealizedPnl: position.unrealized_pnl,
+        positionAmt: position.position_amt,
+      };
+      if (!quotesMap[position.symbol]) {
+        quotesMap[position.symbol] = {
+          markPrice: position.mark_price,
+        };
+      }
+    });
+
+    setLivePrices(pricesMap);
+    setLiveQuotes(quotesMap);
+    setLastLiveUpdateAt(typeof result.timestamp === "string" && !Number.isNaN(Date.parse(result.timestamp)) ? result.timestamp : new Date().toISOString());
+    setLivePollingError(null);
+  }, []);
+
   const refreshLivePricing = useCallback(
     async (mode: "interval" | "manual" = "interval") => {
       const requestUrl = livePricingRequestUrlRef.current;
@@ -138,20 +185,10 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         }
 
         const result = await res.json();
-        const pricesMap: Record<string, LivePriceEntry> = {};
-        (result.positions ?? []).forEach((position: any) => {
-          pricesMap[position.symbol] = {
-            markPrice: position.mark_price,
-            unrealizedPnl: position.unrealized_pnl,
-            positionAmt: position.position_amt,
-          };
-        });
-
-        setLivePrices(pricesMap);
-        setLastLiveUpdateAt(typeof result.timestamp === "string" && !Number.isNaN(Date.parse(result.timestamp)) ? result.timestamp : new Date().toISOString());
-        setLivePollingError(null);
+        applyLivePayload(result);
         if (mode === "manual") {
-          setLiveRefreshNote(`refresh manual OK · ${Object.keys(pricesMap).length} símbolos live`);
+          const liveCount = Array.isArray(result.quotes) ? result.quotes.length : Array.isArray(result.positions) ? result.positions.length : 0;
+          setLiveRefreshNote(`refresh manual OK · ${liveCount} símbolos live`);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Live pricing poll failed";
@@ -166,19 +203,37 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         }
       }
     },
-    [],
+    [applyLivePayload],
   );
 
   useEffect(() => {
-    if (!isPolling || !livePricingUrl) return;
+    if (!isPolling || !livePricingStreamUrl) {
+      return;
+    }
 
-    void refreshLivePricing("interval");
-    const interval = setInterval(() => {
-      void refreshLivePricing("interval");
-    }, LIVE_POLL_INTERVAL_MS);
+    const eventSource = new EventSource(livePricingStreamUrl);
 
-    return () => clearInterval(interval);
-  }, [isPolling, livePricingUrl, refreshLivePricing]);
+    eventSource.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (!message?.ok) {
+          setLivePollingError(message?.error ?? "Live pricing stream failed");
+          return;
+        }
+        applyLivePayload(message.payload);
+      } catch (error) {
+        setLivePollingError(error instanceof Error ? error.message : "Live pricing stream parse failed");
+      }
+    };
+
+    eventSource.onerror = () => {
+      setLivePollingError((current) => current ?? "Live pricing stream disconnected");
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [applyLivePayload, isPolling, livePricingStreamUrl]);
 
   useEffect(() => {
     if (!liveRefreshNote) {
@@ -216,12 +271,13 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     () =>
       data.open_positions.map((pos: any) => {
         const live = livePrices[pos.symbol];
+        const liveQuote = liveQuotes[pos.symbol];
         const currentPnl = live ? live.unrealizedPnl : pos.unrealized_pnl;
-        const currentMark = live ? live.markPrice : pos.mark_price;
+        const currentMark = liveQuote ? liveQuote.markPrice : live ? live.markPrice : pos.mark_price;
 
         return { ...pos, unrealized_pnl: currentPnl, mark_price: currentMark };
       }),
-    [data.open_positions, livePrices],
+    [data.open_positions, livePrices, liveQuotes],
   );
   const liveOpenPnl = useMemo(() => {
     if (Object.keys(livePrices).length === 0) {
@@ -234,15 +290,16 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   // Update tape with live prices
   const tape = initialTape.map((item: any) => {
     const live = livePrices[item.symbol];
-    if (live && ["open", "testnet_executed", "partially_filled"].includes(item.status.toLowerCase())) {
-      return { ...item, price: live.markPrice, pnl: live.unrealizedPnl };
+    const liveQuote = liveQuotes[item.symbol];
+    if (liveQuote && ["open", "testnet_executed", "partially_filled"].includes(item.status.toLowerCase())) {
+      return { ...item, price: liveQuote.markPrice, pnl: live ? live.unrealizedPnl : item.pnl };
     }
     return item;
   });
 
   const summary = data.summary;
   const shadowRun = data.shadow_run;
-  const hasLivePrices = Object.keys(livePrices).length > 0;
+  const hasLivePrices = Object.keys(liveQuotes).length > 0;
   const isLivePaused = !isPolling;
   const liveAgeMs = lastLiveUpdateAt ? Math.max(0, liveClockMs - Date.parse(lastLiveUpdateAt)) : null;
   const isLiveStaleDanger = liveAgeMs != null && liveAgeMs >= LIVE_STALE_DANGER_MS;
@@ -303,8 +360,8 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           : livePricingUrl
             ? "esperando primer tick live"
             : "live pricing deshabilitado: falta NEXT_PUBLIC_API_URL";
-  const liveCoveredPositions = positions.filter((position: any) => livePrices[position.symbol]).length;
-  const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => livePrices[operation.symbol]).length;
+  const liveCoveredPositions = positions.filter((position: any) => liveQuotes[position.symbol]).length;
+  const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => liveQuotes[operation.symbol]).length;
   const snapshotRelativeAgeLabel = formatRelativeAge(data.generated_at, liveClockMs);
   const lastLiveTickLabel = lastLiveUpdateAt ? formatDate(lastLiveUpdateAt) : "—";
   const lastLiveTickAgeLabel = lastLiveUpdateAt ? formatRelativeAge(lastLiveUpdateAt, liveClockMs) : null;
@@ -329,7 +386,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     const states: Record<string, { label: string; tone: string; hint: string }> = {};
 
     symbols.forEach((symbol) => {
-      const hasSymbolLivePrice = Boolean(livePrices[symbol]);
+      const hasSymbolLivePrice = Boolean(liveQuotes[symbol]);
 
       if (!hasSymbolLivePrice) {
         states[symbol] = defaultSnapshotLiveState;
@@ -380,7 +437,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     });
 
     return states;
-  }, [data.operation_snapshots, defaultSnapshotLiveState, isLivePaused, isLiveStaleDanger, isLiveStaleWarn, lastLiveUpdateAt, liveAgeMs, livePollingError, livePrices, positions]);
+  }, [data.operation_snapshots, defaultSnapshotLiveState, isLivePaused, isLiveStaleDanger, isLiveStaleWarn, lastLiveUpdateAt, liveAgeMs, livePollingError, liveQuotes, positions]);
 
   const summaryCards = [
     { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
