@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatNumber, formatPercent, formatDate, statusTone, toneClassName, timelineEntityLabel, renderRiskContext, reconcileTone } from "../lib/formatters";
-import { buildLiveStateLabel, formatElapsedMs, formatRelativeAge, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
+import { buildLiveStateLabel, LIVE_STALE_DANGER_MS, LIVE_STALE_WARN_MS } from "../lib/time-format";
 import { getActualEntryPrice, type LivePriceEntry } from "../lib/trade-utils";
 import { OperationDrillDown } from "./OperationDrillDown";
 import { OrderBlotter } from "./OrderBlotter";
@@ -67,7 +67,6 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
   const [liveRefreshNote, setLiveRefreshNote] = useState<string | null>(null);
   const [liveScopeNote, setLiveScopeNote] = useState<string | null>(null);
-  const [liveClockMs, setLiveClockMs] = useState(() => Date.now());
   const [visibleSectionIds, setVisibleSectionIds] = useState<LiveScopeSectionId[]>([...LIVE_SCOPE_SECTION_IDS]);
   const [openDrilldownTradePlanIds, setOpenDrilldownTradePlanIds] = useState<number[]>(() =>
     initialData?.operation_snapshots?.[0]?.trade_plan_id ? [initialData.operation_snapshots[0].trade_plan_id] : [],
@@ -255,13 +254,6 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
     return () => clearTimeout(timeout);
   }, [liveScopeNote]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLiveClockMs(Date.now());
-    }, 1_000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const positions = useMemo(
     () =>
@@ -299,10 +291,10 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
   const shadowRun = data.shadow_run;
   const hasLivePrices = Object.keys(liveQuotes).length > 0;
   const isLivePaused = !isPolling;
-  const liveAgeMs = lastLiveUpdateAt ? Math.max(0, liveClockMs - Date.parse(lastLiveUpdateAt)) : null;
+  const liveAgeMs = lastLiveUpdateAt ? Math.max(0, Date.now() - Date.parse(lastLiveUpdateAt)) : null;
   const isLiveStaleDanger = liveAgeMs != null && liveAgeMs >= LIVE_STALE_DANGER_MS;
   const isLiveStaleWarn = liveAgeMs != null && liveAgeMs >= LIVE_STALE_WARN_MS && !isLiveStaleDanger;
-  const liveFreshnessValue = liveAgeMs == null ? "—" : formatElapsedMs(liveAgeMs);
+  const liveFreshnessValue = lastLiveUpdateAt ? formatDate(lastLiveUpdateAt) : "—";
   const liveFreshnessHint = isLivePaused
     ? "polling pausado"
     : livePollingError
@@ -313,7 +305,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
           ? "feed demasiado viejo"
           : isLiveStaleWarn
             ? "feed envejeciendo"
-            : "dentro de ventana fresca";
+            : "último tick reciente";
   const liveBadgeClassName = isLivePaused
     ? hasLivePrices ? "badge warn" : "badge neutral"
     : livePollingError
@@ -345,24 +337,23 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
       : `driver: drill-down aporta ${openDrilldownOperations.length} drawer(s) abierto(s) al scope → ${openDrilldownOperations.map((operation: any) => `#${operation.trade_plan_id} ${operation.symbol}`).join(", ")}`;
   const liveStatusCopy = isLivePaused
     ? lastLiveUpdateAt
-      ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`
+      ? `polling pausado · último tick ${formatDate(lastLiveUpdateAt)}`
       : "polling pausado"
     : livePollingError
       ? lastLiveUpdateAt
-        ? `${livePollingError} · último tick ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`
+        ? `${livePollingError} · último tick ${formatDate(lastLiveUpdateAt)}`
         : livePollingError
       : isLiveStaleDanger || isLiveStaleWarn
-        ? `último tick ${formatDate(lastLiveUpdateAt!)} · feed con ${formatElapsedMs(liveAgeMs ?? 0)} de antigüedad`
+        ? `último tick ${formatDate(lastLiveUpdateAt!)} · feed desfasado`
         : lastLiveUpdateAt
-          ? `último live ${formatDate(lastLiveUpdateAt)} · hace ${formatElapsedMs(liveAgeMs ?? 0)}`
+          ? `último live ${formatDate(lastLiveUpdateAt)}`
           : "esperando primer tick live";
   const liveCoveredPositions = positions.filter((position: any) => liveQuotes[position.symbol]).length;
   const liveCoveredOperations = data.operation_snapshots.filter((operation: any) => liveQuotes[operation.symbol]).length;
-  const snapshotRelativeAgeLabel = formatRelativeAge(data.generated_at, liveClockMs);
+  const snapshotRelativeAgeLabel = null;
   const lastLiveTickLabel = lastLiveUpdateAt ? formatDate(lastLiveUpdateAt) : "—";
-  const lastLiveTickAgeLabel = lastLiveUpdateAt ? formatRelativeAge(lastLiveUpdateAt, liveClockMs) : null;
   const lastLiveTickHint = lastLiveUpdateAt
-    ? `${lastLiveTickAgeLabel ? `${lastLiveTickAgeLabel} · ` : ""}timestamp backend de /dashboard/live-pricing · feed ${liveFreshnessHint}`
+    ? `timestamp backend de /dashboard/live-pricing · ${liveFreshnessHint}`
     : `${liveFreshnessHint} · esperando timestamp backend del feed`;
 
   const defaultSnapshotLiveState = useMemo(
@@ -393,7 +384,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         states[symbol] = {
           label: buildLiveStateLabel("live pausado", liveAgeMs),
           tone: "warn",
-          hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "polling pausado",
+          hint: lastLiveUpdateAt ? `último tick ${formatDate(lastLiveUpdateAt)}` : "polling pausado",
         };
         return;
       }
@@ -411,7 +402,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         states[symbol] = {
           label: buildLiveStateLabel("live vencido", liveAgeMs),
           tone: "danger",
-          hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
+          hint: lastLiveTickLabel,
         };
         return;
       }
@@ -420,7 +411,7 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
         states[symbol] = {
           label: buildLiveStateLabel("live envejeciendo", liveAgeMs),
           tone: "warn",
-          hint: `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}`,
+          hint: lastLiveTickLabel,
         };
         return;
       }
@@ -428,12 +419,12 @@ export function LiveWorkstation({ initialData, initialTape, initialOpenPnl }: an
       states[symbol] = {
         label: buildLiveStateLabel("live fresco", liveAgeMs),
         tone: "ok",
-        hint: lastLiveUpdateAt ? `último tick hace ${formatElapsedMs(liveAgeMs ?? 0)}` : "live pricing activo",
+        hint: lastLiveUpdateAt ? lastLiveTickLabel : "live pricing activo",
       };
     });
 
     return states;
-  }, [data.operation_snapshots, defaultSnapshotLiveState, isLivePaused, isLiveStaleDanger, isLiveStaleWarn, lastLiveUpdateAt, liveAgeMs, livePollingError, liveQuotes, positions]);
+  }, [data.operation_snapshots, defaultSnapshotLiveState, isLivePaused, isLiveStaleDanger, isLiveStaleWarn, lastLiveTickLabel, lastLiveUpdateAt, liveAgeMs, livePollingError, liveQuotes, positions]);
 
   const summaryCards = [
     { title: "PnL abierto", value: formatNumber(liveOpenPnl, 2), hint: "mark-to-market actual", tone: liveOpenPnl >= 0 ? "ok" : "danger" },
